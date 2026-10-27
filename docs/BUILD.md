@@ -2,7 +2,7 @@
 
 ## iPhone（第一优先）
 
-状态：**源码和 CI 工作流完成；本机未构建；无 IPA**。
+状态：**源码和 CI 工作流完成；本机未构建；无 IPA**。Windows 下实际执行 `flutter build ios` 返回“找不到 ios 子命令”，见 `docs/evidence/ios-build-attempt-20261027.log`。
 
 环境要求：
 

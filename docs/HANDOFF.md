@@ -104,7 +104,7 @@ CI：
 ## Git
 
 - 初始功能提交：`dad796e`（`feat: add native cinema client foundation`）。
-- 之后还有一次平台配置、截图和验证文档提交；用 `git log --oneline -3` 查看当前完整提交链。
+- 之后还有平台配置、截图证据和 CocoaPods 构建配置提交；用 `git log --oneline -5` 查看完整提交链。
 - 仓库仅在本地 `main`，没有远程，没有推送。
 - 构建产物、Pub 缓存、Flutter SDK 不在仓库内。
 - `pubspec.lock` 已提交；`Podfile.lock` 需 macOS 首次构建后生成并补入。

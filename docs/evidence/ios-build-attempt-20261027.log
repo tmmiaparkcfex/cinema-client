@@ -1,0 +1,10 @@
+$ flutter build ios
+Could not find a subcommand named "ios" for "flutter build".
+
+Run 'flutter -h' (or 'flutter <command> -h') for available flutter commands and options.
+exit=64
+$ flutter devices
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+Flutter failed to run "reg query HKEY_CURRENT_USER\Software\Microsoft\Edge\BLBeacon /v version". The flutter tool cannot access the file or directory.
+Please ensure that the SDK and/or project is installed in a location that has read/write permissions for the current user.
+exit=1

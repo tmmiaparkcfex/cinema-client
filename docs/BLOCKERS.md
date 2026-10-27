@@ -6,7 +6,9 @@
 
 **事实**：当前是 Windows 10；无 Xcode、无 macOS、无 Apple 签名环境；本机没有 GitHub CLI，也没有可用的 GitHub 仓库/凭据。
 
-**已完成**：完整 Flutter iOS 工程、Podfile、iOS 接口权限、GitHub Actions 工作流。
+**已完成**：完整 Flutter iOS 工程、Podfile、Pods xcconfig 接入、iOS 接口权限、GitHub Actions 工作流。
+
+**实际尝试记录**：在 Windows 验证环境执行 `flutter build ios` 得到 `Could not find a subcommand named "ios" for "flutter build"`，退出码 64。原始日志见 `docs/evidence/ios-build-attempt-20261027.log`。这不是代码编译错误，而是 Windows Flutter 没有 iOS 构建命令。
 
 **需要你选择一种方式解除阻塞**：
 

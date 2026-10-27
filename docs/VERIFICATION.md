@@ -94,6 +94,29 @@ flutter test test/screenshot_capture_test.dart \
 
 截图测试日志中的 `MissingPluginException` 来自组件测试环境没有 Keychain 原生实现，截图页面栈包含“我的”页所致；它不是产品运行错误，真机 Keychain 未在此环境验证。
 
+## 实际构建尝试
+
+在 Windows 验证环境直接执行：
+
+```text
+$ flutter build ios
+Could not find a subcommand named "ios" for "flutter build".
+exit=64
+```
+
+当前 Windows 版 Flutter 不提供 iOS 构建子命令，不能产生 `.ipa`。原始日志：`docs/evidence/ios-build-attempt-20261027.log`。
+
+Windows 桌面：
+
+```text
+Building with plugins requires symlink support.
+Please enable Developer Mode in your system settings.
+```
+
+没有启用开发者模式，也没有 Visual Studio C++ 工具链，因此未生成 Windows 可执行文件。原始日志：`docs/evidence/windows-build-attempt-20261027.log`。
+
+`flutter devices` 在该受限终端中因调用系统 `reg.exe` 被安全策略阻止而没有完成；先前的只读 PnP 查询也没有发现已连接的 iPhone/Android 设备。
+
 ## 未验证
 
 以下项目**没有通过**，不能从静态检查或接口测试推断：
@@ -117,6 +140,8 @@ flutter test test/screenshot_capture_test.dart \
 | 全量测试原始输出 | `docs/evidence/flutter-test-20261027.log` |
 | 真实接口测试原始输出 | `docs/evidence/live-api-20261027.log` |
 | 截图捕获原始输出 | `docs/evidence/screenshots-20261027.log` |
+| iOS 构建阻塞原始输出 | `docs/evidence/ios-build-attempt-20261027.log` |
+| Windows 构建阻塞原始输出 | `docs/evidence/windows-build-attempt-20261027.log` |
 | 固定依赖 | `pubspec.lock` |
 | iOS Pod 依赖 | 需首次 macOS 构建后生成 `ios/Podfile.lock`，尚未生成 |
 | 设备/系统/进程环境 | `docs/evidence/environment-20261027.json` |
