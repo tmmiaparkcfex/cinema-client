@@ -27,7 +27,7 @@
 
 ```text
 Analyzing cinema-client-validate-20261027-2...
-No issues found! (ran in 16.5s)
+No issues found! (ran in 17.2s)
 ```
 
 原始日志：`docs/evidence/flutter-analyze-20261027.log`。

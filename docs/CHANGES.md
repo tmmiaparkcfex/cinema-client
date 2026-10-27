@@ -43,6 +43,18 @@
 | `test/widget_test.dart` | 首页真实数据渲染、分类切换、空值展示 |
 | `test/live_api_test.dart` | 可选真实接口只读冒烟 |
 | `test/fixtures/vod_fixtures.dart` | 合成数据，分享地址和 ID 均为假值 |
+| `test/fixtures/live_home_snapshot.json` | 真实目录的公开字段快照，已去掉线路/分享/播放信息，用于版式渲染 |
+| `test/fixtures/live_detail_snapshot.json` | 真实详情的公开字段与实测规格快照，资源 ID/分享/文件/播放地址已去除 |
+| `test/screenshot_capture_test.dart` | 可选 390×844 测试渲染截图，默认跳过 |
+
+## 修复记录
+
+- 详情页根 `Stack` 改为 `StackFit.expand`，修复 iPhone 尺寸下滚动视口仅 129 px、正文被裁切的问题；
+- `/api/home` 中出现 `mediaType=null` 时不猜测为电影：标记“类型待补齐”并在精选排除；首页可用条目不足时用 typed list 第 1 页补足；
+- 电影/电视剧分区独立，不再把剧集放在“精选电影”标题下；
+- iOS 启动屏改为深色，Android 启动背景改为黑色；
+- 移除 Android release 使用 debug 签名的模板行为。
+
 
 ## 文档和证据
 
