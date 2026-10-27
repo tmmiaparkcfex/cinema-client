@@ -1,0 +1,85 @@
+name: Build unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: "vod-web API base (http/https, no path or credentials)"
+        required: true
+        default: "http://192.168.1.4:8765"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: Analyze, test and build iOS
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      VOD_API_BASE: ${{ inputs.api_base }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.47.8
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.8
+          cache: true
+
+      - name: Record toolchain
+        run: |
+          flutter --version | tee toolchain.txt
+          xcodebuild -version | tee -a toolchain.txt
+          pod --version | tee -a toolchain.txt
+          flutter doctor -v | tee -a toolchain.txt
+
+      - name: Use CocoaPods for plugins without Swift Package support
+        run: flutter config --no-enable-swift-package-manager
+
+      - name: Resolve locked dependencies
+        run: flutter pub get
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Unit and widget tests
+        run: flutter test --reporter expanded
+
+      - name: Build unsigned iOS app
+        run: |
+          flutter build ios \
+            --release \
+            --no-codesign \
+            --dart-define=VOD_API_BASE="$VOD_API_BASE"
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          APP_PATH="build/ios/iphoneos/Runner.app"
+          test -d "$APP_PATH"
+          rm -rf build/ios/ipa
+          mkdir -p build/ios/ipa/Payload
+          cp -R "$APP_PATH" build/ios/ipa/Payload/Runner.app
+          (
+            cd build/ios/ipa
+            zip -qry CinemaClient-unsigned.ipa Payload
+          )
+          shasum -a 256 CinemaClient-unsigned.ipa > CinemaClient-unsigned.ipa.sha256
+          du -h CinemaClient-unsigned.ipa
+
+      - name: Upload unsigned IPA and evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinema-client-ios-unsigned
+          if-no-files-found: error
+          path: |
+            build/ios/ipa/CinemaClient-unsigned.ipa
+            build/ios/ipa/CinemaClient-unsigned.ipa.sha256
+            ios/Podfile.lock
+            toolchain.txt
+            pubspec.lock
+          retention-days: 14

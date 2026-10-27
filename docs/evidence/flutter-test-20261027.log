@@ -1,0 +1,35 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+Resolving dependencies...
+Downloading packages...
+  cupertino_icons 1.0.8 (2.0.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  test_api 0.7.12 (0.7.15 available)
+Got dependencies!
+3 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading D:/Codex/work/cinema-client-validate-20261027-2/test/api_client_test.dart
+00:00 +0: D:/Codex/work/cinema-client-validate-20261027-2/test/api_client_test.dart: home parsing keeps only real API metadata and tolerates empty poster
+2026-10-27T17:13:53.852556 INFO api GET /api/home status=200 ms=11 bytes=639
+00:00 +1: D:/Codex/work/cinema-client-validate-20261027-2/test/api_client_test.dart: list and search use the documented query parameters
+2026-10-27T17:13:53.869512 INFO api GET /api/list status=200 ms=0 bytes=55
+2026-10-27T17:13:53.871506 INFO api GET /api/search status=200 ms=0 bytes=55
+00:00 +2: D:/Codex/work/cinema-client-validate-20261027-2/test/api_client_test.dart: detail preserves episode and measured resource fields
+2026-10-27T17:13:53.877490 INFO api GET /api/detail status=200 ms=1 bytes=1596
+00:00 +3: D:/Codex/work/cinema-client-validate-20261027-2/test/api_client_test.dart: unknown mediaType is not silently coerced to a movie
+00:00 +4: D:/Codex/work/cinema-client-validate-20261027-2/test/api_client_test.dart: server error is surfaced as an explicit failure
+2026-10-27T17:13:53.890455 INFO api GET /api/home status=503 ms=2 bytes=35
+00:00 +5: D:/Codex/work/cinema-client-validate-20261027-2/test/episode_choice_test.dart: next episode stays inside the selected line and respects order
+00:00 +6: D:/Codex/work/cinema-client-validate-20261027-2/test/episode_choice_test.dart: line switch finds the same episode
+00:00 +7: D:/Codex/work/cinema-client-validate-20261027-2/test/episode_choice_test.dart: cached home does not retain resource or share data
+00:00 +8: D:/Codex/work/cinema-client-validate-20261027-2/test/live_api_test.dart: live API smoke is opt-in
+  Skip: Set --dart-define=LIVE_VOD_API=http://host:port
+00:00 +8 ~1: D:/Codex/work/cinema-client-validate-20261027-2/test/local_store_test.dart: favorites and progress survive a new store instance
+00:01 +9 ~1: D:/Codex/work/cinema-client-validate-20261027-2/test/screenshot_capture_test.dart: capture iPhone-sized UI render
+00:01 +9 ~2: D:/Codex/work/cinema-client-validate-20261027-2/test/screenshot_capture_test.dart: capture iPhone-sized detail render
+00:01 +9 ~3: D:/Codex/work/cinema-client-validate-20261027-2/test/widget_test.dart: home renders real list content and capability-neutral missing metadata
+2026-10-27T17:13:56.381216 INFO api GET /api/home status=200 ms=17 bytes=639
+2026-10-27T17:13:56.389194 INFO api GET /api/list status=200 ms=1 bytes=639
+2026-10-27T17:13:56.390191 INFO api GET /api/list status=200 ms=1 bytes=639
+00:02 +10 ~3: D:/Codex/work/cinema-client-validate-20261027-2/test/widget_test.dart: detail scroll viewport fills an iPhone-sized screen
+2026-10-27T17:13:56.688970 INFO api GET /api/detail status=200 ms=0 bytes=1596
+00:03 +11 ~3: All tests passed!

@@ -1,0 +1,82 @@
+{
+  "capturedAt": "2026-10-27T16:59:05.3992857+08:00",
+  "os": {
+    "Caption": "Microsoft Windows 10 专业版",
+    "Version": "10.0.19045",
+    "BuildNumber": "19045",
+    "OSArchitecture": "64 位"
+  },
+  "cpu": {
+    "Name": "Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz",
+    "NumberOfCores": 6,
+    "NumberOfLogicalProcessors": 6
+  },
+  "computer": {
+    "Manufacturer": "System manufacturer",
+    "Model": "System Product Name",
+    "TotalPhysicalMemory": 17087614976
+  },
+  "listeners": [
+    {
+      "LocalAddress": "127.0.0.1",
+      "LocalPort": 8793,
+      "OwningProcess": 13668
+    },
+    {
+      "LocalAddress": "0.0.0.0",
+      "LocalPort": 8790,
+      "OwningProcess": 16656
+    },
+    {
+      "LocalAddress": "172.16.3.70",
+      "LocalPort": 8789,
+      "OwningProcess": 9420
+    },
+    {
+      "LocalAddress": "0.0.0.0",
+      "LocalPort": 8788,
+      "OwningProcess": 12360
+    },
+    {
+      "LocalAddress": "0.0.0.0",
+      "LocalPort": 8765,
+      "OwningProcess": 12360
+    }
+  ],
+  "processes": [
+    {
+      "pid": 9420,
+      "name": "node.exe",
+      "executable": "D:\\各软件安装位置\\dsh\\runtime\\node-v24.22.0-win-x64\\node.exe",
+      "commandLine": "\"D:\\各软件安装位置\\dsh\\runtime\\node-v24.22.0-win-x64\\node.exe\" D:\\codex\\01_对话项目\\随行控制台\\shared-background.mjs "
+    },
+    {
+      "pid": 13668,
+      "name": "node.exe",
+      "executable": "D:\\各软件安装位置\\dsh\\runtime\\node-v24.22.0-win-x64\\node.exe",
+      "commandLine": "\"D:\\各软件安装位置\\dsh\\runtime\\node-v24.22.0-win-x64\\node.exe\" live-server.mjs "
+    },
+    {
+      "pid": 16656,
+      "name": "node.exe",
+      "executable": "D:\\各软件安装位置\\dsh\\runtime\\node-v24.22.0-win-x64\\node.exe",
+      "commandLine": "\"D:\\各软件安装位置\\dsh\\runtime\\node-v24.22.0-win-x64\\node.exe\" supervisor.mjs "
+    },
+    {
+      "pid": 12360,
+      "name": "node.exe",
+      "executable": "D:\\各软件安装位置\\dsh\\runtime\\node-v24.22.0-win-x64\\node.exe",
+      "commandLine": "D:\\各软件安装位置\\dsh\\runtime\\node-v24.22.0-win-x64\\node.exe server.mjs"
+    }
+  ],
+  "absentTools": [
+    "xcodebuild",
+    "swift",
+    "adb",
+    "flutter-in-PATH",
+    "cl",
+    "cmake",
+    "ninja",
+    "gh"
+  ]
+}

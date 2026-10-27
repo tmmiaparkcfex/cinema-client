@@ -1,0 +1,18 @@
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+Resolving dependencies...
+Downloading packages...
+  cupertino_icons 1.0.8 (2.0.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  test_api 0.7.12 (0.7.15 available)
+Got dependencies!
+3 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading D:/Codex/work/cinema-client-validate-20261027-2/test/live_api_test.dart
+00:00 +0: live API home, list, search and detail are readable
+2026-10-27T17:14:33.843138 INFO api GET /api/home status=200 ms=7923 bytes=408897
+2026-10-27T17:14:38.154069 INFO api GET /api/list status=200 ms=4271 bytes=34475
+2026-10-27T17:14:41.812530 INFO api GET /api/list status=200 ms=3652 bytes=357419
+2026-10-27T17:14:45.868759 INFO api GET /api/detail status=200 ms=4048 bytes=14298
+Shell: LIVE_API_OK home=20 moviePage=20 tvPage=20 search=1 detailLines=1 detailEntries=16
+2026-10-27T17:14:51.255690 INFO api GET /api/search status=200 ms=5380 bytes=15080
+00:25 +1: All tests passed!

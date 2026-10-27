@@ -1,0 +1,809 @@
+{
+  "ok": true,
+  "playback": "client",
+  "stats": {},
+  "fourK": [
+    {
+      "key": "verified__WyJ0bWRiOnR2OjI5Nzk4MiIsMV0",
+      "name": "无可替代",
+      "year": "2026.0",
+      "mediaType": "tv",
+      "coverage": {
+        "expected": 20,
+        "covered": 20,
+        "standardCovered": 20,
+        "largeCovered": 0,
+        "complete": true,
+        "standardComplete": true,
+        "largeComplete": false
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 20/20 · 大文件 0/20 · 第1季"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOnR2OjMwNDQ1MiIsMV0",
+      "name": "玉簟秋",
+      "year": "2026.0",
+      "mediaType": "tv",
+      "coverage": {
+        "expected": 28,
+        "covered": 28,
+        "standardCovered": 28,
+        "largeCovered": 0,
+        "complete": true,
+        "standardComplete": true,
+        "largeComplete": false
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 28/28 · 大文件 0/28 · 第1季"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjExMTQzIiwwXQ",
+      "name": "太极张三丰",
+      "year": "1993.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjExMjgxIiwwXQ",
+      "name": "月光光心慌慌2",
+      "year": "1981.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOnR2OjMzNjk5MiIsMV0",
+      "name": "最棒的我们",
+      "year": "",
+      "mediaType": "tv",
+      "coverage": {
+        "expected": 12,
+        "covered": 12,
+        "standardCovered": 12,
+        "largeCovered": 0,
+        "complete": true,
+        "standardComplete": true,
+        "largeComplete": false
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 12/12 · 大文件 0/12 · 第1季"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOnR2OjEwNzcyMyIsMV0",
+      "name": "摩天大楼",
+      "year": "2020.0",
+      "mediaType": "tv",
+      "coverage": {
+        "expected": 16,
+        "covered": 16,
+        "standardCovered": 16,
+        "largeCovered": 0,
+        "complete": true,
+        "standardComplete": true,
+        "largeComplete": false
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 16/16 · 大文件 0/16 · 第1季"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOnR2OjExNTAwNCIsMV0",
+      "name": "东城梦魇",
+      "year": "2021.0",
+      "mediaType": "tv",
+      "coverage": {
+        "expected": 7,
+        "covered": 7,
+        "standardCovered": 1,
+        "largeCovered": 6,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": false
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 1/7 · 大文件 6/7 · 第1季"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjgzMTQwNSIsMF0",
+      "name": "不义联盟：人间之神",
+      "year": "2021.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjQ4MjMyMSIsMF0",
+      "name": "天赐灵机",
+      "year": "2021.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjMzMzMzOSIsMF0",
+      "name": "头号玩家",
+      "year": "2018.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjgyNjU0IiwwXQ",
+      "name": "温暖的尸体",
+      "year": "2013.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjUyNDM2OSIsMF0",
+      "name": "纽瓦克众圣",
+      "year": "2021.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjI3NCIsMF0",
+      "name": "沉默的羔羊",
+      "year": "1991.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjU2OTA5NCIsMF0",
+      "name": "蜘蛛侠：纵横宇宙",
+      "year": "2023.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjE0OTI2NDAiLDBd",
+      "name": "大学炸弹客",
+      "year": "2026.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjE2NjA4IiwwXQ",
+      "name": "关键协议",
+      "year": "2005.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjE3MDAiLDBd",
+      "name": "危情十日",
+      "year": "1990.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjQ5NTE3IiwwXQ",
+      "name": "锅匠，裁缝，士兵，间谍",
+      "year": "2011.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjQxOTQzMCIsMF0",
+      "name": "逃出绝命镇",
+      "year": "2017.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjE0MTYwIiwwXQ",
+      "name": "飞屋环游记",
+      "year": "2009.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    }
+  ],
+  "latest": [
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjMxMzM2OSIsMF0",
+      "name": "爱乐之城",
+      "year": "2016.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjYyMDI0OSIsMF0",
+      "name": "罗小黑战记",
+      "year": "2019.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjExMDEzODMiLDBd",
+      "name": "逃出绝命街",
+      "year": "2026.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjE3MjYiLDBd",
+      "name": "钢铁侠",
+      "year": "2008.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjUyMDAyMyIsMF0",
+      "name": "尸体游戏",
+      "year": "2022.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjE0MTYwIiwwXQ",
+      "name": "飞屋环游记",
+      "year": "2009.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjQxOTQzMCIsMF0",
+      "name": "逃出绝命镇",
+      "year": "2017.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjQ5NTE3IiwwXQ",
+      "name": "锅匠，裁缝，士兵，间谍",
+      "year": "2011.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjE3MDAiLDBd",
+      "name": "危情十日",
+      "year": "1990.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjE2NjA4IiwwXQ",
+      "name": "关键协议",
+      "year": "2005.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjE0OTI2NDAiLDBd",
+      "name": "大学炸弹客",
+      "year": "2026.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjU2OTA5NCIsMF0",
+      "name": "蜘蛛侠：纵横宇宙",
+      "year": "2023.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjI3NCIsMF0",
+      "name": "沉默的羔羊",
+      "year": "1991.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjUyNDM2OSIsMF0",
+      "name": "纽瓦克众圣",
+      "year": "2021.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjgyNjU0IiwwXQ",
+      "name": "温暖的尸体",
+      "year": "2013.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjMzMzMzOSIsMF0",
+      "name": "头号玩家",
+      "year": "2018.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOm1vdmllOjQ4MjMyMSIsMF0",
+      "name": "天赐灵机",
+      "year": "2021.0",
+      "mediaType": "movie",
+      "coverage": {
+        "expected": 1,
+        "covered": 1,
+        "standardCovered": 0,
+        "largeCovered": 1,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": true
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 0/1 · 大文件 1/1"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOnR2OjI3NTEzOSIsMV0",
+      "name": "换母疑云",
+      "year": "2026.0",
+      "mediaType": "tv",
+      "coverage": {
+        "expected": 3,
+        "covered": 2,
+        "standardCovered": 2,
+        "largeCovered": 0,
+        "complete": false,
+        "standardComplete": false,
+        "largeComplete": false
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 2/3 · 大文件 0/3 · 第1季"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOnR2OjEwODk3OCIsMV0",
+      "name": "侠探杰克",
+      "year": "2025.0",
+      "mediaType": "tv",
+      "coverage": {
+        "expected": 32,
+        "covered": 32,
+        "standardCovered": 24,
+        "largeCovered": 16,
+        "complete": true,
+        "standardComplete": false,
+        "largeComplete": false
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 24/32 · 大文件 16/32 · 第1季"
+      ],
+      "score": ""
+    },
+    {
+      "key": "verified__WyJ0bWRiOnR2OjMzODg0OCIsMV0",
+      "name": "她的局",
+      "year": "",
+      "mediaType": "tv",
+      "coverage": {
+        "expected": 17,
+        "covered": 16,
+        "standardCovered": 16,
+        "largeCovered": 0,
+        "complete": false,
+        "standardComplete": false,
+        "largeComplete": false
+      },
+      "pics": [],
+      "remarks": [
+        "分辨率实测达标 · 普通 16/17 · 大文件 0/17 · 第1季"
+      ],
+      "score": ""
+    }
+  ]
+}

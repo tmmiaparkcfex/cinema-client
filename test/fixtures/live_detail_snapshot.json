@@ -1,0 +1,943 @@
+{
+  "ok": true,
+  "playback": "client",
+  "item": {
+    "id": "verified__WyJ0bWRiOnR2OjI5Nzk4MiIsMV0",
+    "name": "无可替代",
+    "year": "2026.0",
+    "mediaType": "tv",
+    "pic": "",
+    "content": "",
+    "actor": "",
+    "director": "",
+    "remarks": "分辨率实测达标 · 普通 20/20 · 大文件 0/20 · 第1季",
+    "coverage": {
+      "expected": 20,
+      "covered": 20,
+      "standardCovered": 20,
+      "largeCovered": 0,
+      "complete": true,
+      "standardComplete": true,
+      "largeComplete": false
+    }
+  },
+  "lines": [
+    {
+      "group": "普通主线",
+      "has4k": true,
+      "qualities": [
+        "4k"
+      ],
+      "count": 20,
+      "entries": [
+        {
+          "label": "第1集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 4975474475
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 1,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 14753687,
+              "durationSeconds": 2697.888,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793088205.325
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第2集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5156596090
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 2,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15783501,
+              "durationSeconds": 2613.664,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1792935568.752
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第3集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 4948060084
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 3,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15568885,
+              "durationSeconds": 2542.538,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1792935723.126
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第4集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 4641389007
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 4,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15085706,
+              "durationSeconds": 2461.344,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1792935727.58
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第5集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5018242286
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 5,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 16078093,
+              "durationSeconds": 2496.934,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024159.856
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第6集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5056092580
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 6,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15639006,
+              "durationSeconds": 2586.401,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1792935690.307
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第7集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 1037307126
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 7,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 3254218,
+              "durationSeconds": 2550.062,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024197.875
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第8集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5255997892
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 8,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15750290,
+              "durationSeconds": 2669.664,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1792935537.697
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第9集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 1099594668
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 9,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 3320258,
+              "durationSeconds": 2649.42,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024184.854
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第10集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 4981381777
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 10,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15291505,
+              "durationSeconds": 2606.091,
+              "bitDepth": null
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024169.536
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第11集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5414214072
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 11,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15403137,
+              "durationSeconds": 2812.006,
+              "bitDepth": null
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024124.004
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第12集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 1089546332
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 12,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 3122803,
+              "durationSeconds": 2791.201,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024190.539
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第13集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5344743022
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 13,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15980789,
+              "durationSeconds": 2675.584,
+              "bitDepth": null
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024145.566
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第14集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5248426468
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 14,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15398144,
+              "durationSeconds": 2726.784,
+              "bitDepth": null
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024153.954
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第15集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5407172513
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 15,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15648833,
+              "durationSeconds": 2764.256,
+              "bitDepth": null
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024128.742
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第16集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5666174913
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 16,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 16283422,
+              "durationSeconds": 2783.776,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024106.848
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第17集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5674459567
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 17,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15583695,
+              "durationSeconds": 2913.024,
+              "bitDepth": null
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024093.253
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第18集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5478613795
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 18,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15871207,
+              "durationSeconds": 2761.536,
+              "bitDepth": null
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024115.647
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第19集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 5395900965
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 19,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 15655358,
+              "durationSeconds": 2757.344,
+              "bitDepth": null
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793024136.904
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第20集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 1072916885
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 20,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 3184554,
+              "durationSeconds": 2695.302,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1792935735.593
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        }
+      ]
+    },
+    {
+      "group": "普通备用",
+      "has4k": true,
+      "qualities": [
+        "4k"
+      ],
+      "count": 3,
+      "entries": [
+        {
+          "label": "第18集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 787751918
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 18,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 2148391,
+              "durationSeconds": 2761.526,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793091677.997
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第19集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 789186585
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 19,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 2156032,
+              "durationSeconds": 2757.323,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793091660.452
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第20集",
+          "url": "",
+          "quality": "4k",
+          "isM3u8": false,
+          "resource": {
+            "id": "redacted-resource",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "url": "",
+              "id": "",
+              "password": null
+            },
+            "file": {
+              "id": "",
+              "name": "",
+              "path": "",
+              "sizeBytes": 770130031
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 20,
+            "video": {
+              "width": 3840,
+              "height": 1608,
+              "codec": "hevc",
+              "bitrate": 2152169,
+              "durationSeconds": 2695.285,
+              "bitDepth": 10
+            },
+            "verification": {
+              "level": "L2_probed",
+              "method": "file_probe_v2",
+              "probedAt": 1793091689.092
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        }
+      ]
+    }
+  ]
+}

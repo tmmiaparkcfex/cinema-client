@@ -1,0 +1,9 @@
+* text=auto
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.otf binary
+*.ttf binary
+*.xcframework binary
+*.ipa binary
+docs/evidence/*.log whitespace=-trailing-space

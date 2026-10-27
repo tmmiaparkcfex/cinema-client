@@ -1,0 +1,28 @@
+name: cinema_client
+description: "A native four-screen VOD client for a viewer-owned Quark account."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: 1.0.8
+  flutter_inappwebview: 6.1.5
+  flutter_secure_storage: 11.2.0
+  http: 1.6.0
+  media_kit: 1.2.6
+  media_kit_libs_video: 1.0.7
+  media_kit_video: 2.0.1
+  path_provider: 2.1.6
+  shared_preferences: 2.5.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 6.0.0
+
+flutter:
+  uses-material-design: true
