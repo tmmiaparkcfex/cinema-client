@@ -1,0 +1,14 @@
+00:00 +0: loading D:/codex/work/cinema-client-20261027-codex/test/live_api_test.dart
+00:00 +0: live API home, list, search and detail are readable
+2026-10-27T22:46:01.202949 INFO api GET /api/home status=200 ms=10373 bytes=787521
+2026-10-27T22:46:10.178328 INFO api GET /api/list status=200 ms=8919 bytes=38406
+2026-10-27T22:46:18.878916 INFO api GET /api/list status=200 ms=8693 bytes=707585
+2026-10-27T22:46:28.295512 INFO api GET /api/detail status=200 ms=9397 bytes=14583
+2026-10-27T22:46:37.508426 INFO api GET /api/search status=200 ms=9208 bytes=15425
+2026-10-27T22:46:45.156088 INFO api GET /api/resource status=200 ms=7644 bytes=612
+Shell: LIVE_API_OK home=20 moviePage=20 tvPage=20 search=1 detailLines=2 detailEntries=17 resourceMatched=true
+2026-10-27T22:46:53.301905 INFO api GET /api/search status=200 ms=8144 bytes=15425
+01:02 +1: live duplicate work rows expand into one multi-season detail
+2026-10-27T22:47:02.430577 INFO api GET /api/list status=200 ms=9112 bytes=707585
+  Current TV page has no repeated work IDs to exercise multi-season merging
+01:11 +1 ~1: All tests passed!

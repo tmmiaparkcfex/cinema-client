@@ -8,6 +8,8 @@ import '../core/app_models.dart';
 class SavedTitle {
   const SavedTitle({
     required this.key,
+    this.apiKey,
+    this.workId = '',
     required this.name,
     required this.mediaType,
     required this.poster,
@@ -16,6 +18,8 @@ class SavedTitle {
   });
 
   final String key;
+  final String? apiKey;
+  final String workId;
   final String name;
   final MediaKind mediaType;
   final String? poster;
@@ -23,37 +27,44 @@ class SavedTitle {
   final DateTime savedAt;
 
   VodItem toItem() => VodItem(
-        key: key,
-        name: name,
-        mediaType: mediaType,
-        poster: poster,
-        year: year,
-      );
+    key: apiKey ?? key,
+    workId: workId,
+    name: name,
+    mediaType: mediaType,
+    poster: poster,
+    year: year,
+  );
 
   Map<String, dynamic> toJson() => {
-        'key': key,
-        'name': name,
-        'mediaType': mediaType.name,
-        'poster': poster,
-        'year': year,
-        'savedAt': savedAt.millisecondsSinceEpoch,
-      };
+    'key': key,
+    'apiKey': apiKey,
+    'workId': workId,
+    'name': name,
+    'mediaType': mediaType.name,
+    'poster': poster,
+    'year': year,
+    'savedAt': savedAt.millisecondsSinceEpoch,
+  };
 
   factory SavedTitle.fromJson(Map<String, dynamic> json) => SavedTitle(
-        key: json['key']?.toString() ?? '',
-        name: json['name']?.toString() ?? '未命名作品',
-        mediaType: parseMediaKind(json['mediaType']),
-        poster: json['poster']?.toString(),
-        year: int.tryParse(json['year']?.toString() ?? ''),
-        savedAt: DateTime.fromMillisecondsSinceEpoch(
-          int.tryParse(json['savedAt']?.toString() ?? '') ?? 0,
-        ),
-      );
+    key: json['key']?.toString() ?? '',
+    apiKey: json['apiKey']?.toString(),
+    workId: json['workId']?.toString() ?? '',
+    name: json['name']?.toString() ?? '未命名作品',
+    mediaType: parseMediaKind(json['mediaType']),
+    poster: json['poster']?.toString(),
+    year: int.tryParse(json['year']?.toString() ?? ''),
+    savedAt: DateTime.fromMillisecondsSinceEpoch(
+      int.tryParse(json['savedAt']?.toString() ?? '') ?? 0,
+    ),
+  );
 }
 
 class PlaybackRecord {
   const PlaybackRecord({
     required this.itemKey,
+    this.apiKey,
+    this.workId = '',
     required this.name,
     required this.mediaType,
     required this.poster,
@@ -68,6 +79,8 @@ class PlaybackRecord {
   });
 
   final String itemKey;
+  final String? apiKey;
+  final String workId;
   final String name;
   final MediaKind mediaType;
   final String? poster;
@@ -80,15 +93,18 @@ class PlaybackRecord {
   final DateTime updatedAt;
   final bool completed;
 
-  int get safePositionMs => positionMs.clamp(0, durationMs > 0 ? durationMs : positionMs);
-  double get progress => durationMs <= 0 ? 0 : (positionMs / durationMs).clamp(0, 1);
+  int get safePositionMs =>
+      positionMs.clamp(0, durationMs > 0 ? durationMs : positionMs);
+  double get progress =>
+      durationMs <= 0 ? 0 : (positionMs / durationMs).clamp(0, 1);
 
   VodItem toItem() => VodItem(
-        key: itemKey,
-        name: name,
-        mediaType: mediaType,
-        poster: poster,
-      );
+    key: apiKey ?? itemKey,
+    workId: workId,
+    name: name,
+    mediaType: mediaType,
+    poster: poster,
+  );
 
   String get episodeText {
     if (mediaType != MediaKind.tv || episode == null) return '';
@@ -96,36 +112,40 @@ class PlaybackRecord {
   }
 
   Map<String, dynamic> toJson() => {
-        'itemKey': itemKey,
-        'name': name,
-        'mediaType': mediaType.name,
-        'poster': poster,
-        'season': season,
-        'episode': episode,
-        'positionMs': positionMs,
-        'durationMs': durationMs,
-        'lineGroup': lineGroup,
-        'resourceId': resourceId,
-        'updatedAt': updatedAt.millisecondsSinceEpoch,
-        'completed': completed,
-      };
+    'itemKey': itemKey,
+    'apiKey': apiKey,
+    'workId': workId,
+    'name': name,
+    'mediaType': mediaType.name,
+    'poster': poster,
+    'season': season,
+    'episode': episode,
+    'positionMs': positionMs,
+    'durationMs': durationMs,
+    'lineGroup': lineGroup,
+    'resourceId': resourceId,
+    'updatedAt': updatedAt.millisecondsSinceEpoch,
+    'completed': completed,
+  };
 
   factory PlaybackRecord.fromJson(Map<String, dynamic> json) => PlaybackRecord(
-        itemKey: json['itemKey']?.toString() ?? '',
-        name: json['name']?.toString() ?? '未命名作品',
-        mediaType: parseMediaKind(json['mediaType']),
-        poster: json['poster']?.toString(),
-        season: int.tryParse(json['season']?.toString() ?? ''),
-        episode: int.tryParse(json['episode']?.toString() ?? ''),
-        positionMs: int.tryParse(json['positionMs']?.toString() ?? '') ?? 0,
-        durationMs: int.tryParse(json['durationMs']?.toString() ?? '') ?? 0,
-        lineGroup: json['lineGroup']?.toString() ?? '',
-        resourceId: json['resourceId']?.toString() ?? '',
-        updatedAt: DateTime.fromMillisecondsSinceEpoch(
-          int.tryParse(json['updatedAt']?.toString() ?? '') ?? 0,
-        ),
-        completed: json['completed'] == true,
-      );
+    itemKey: json['itemKey']?.toString() ?? '',
+    apiKey: json['apiKey']?.toString(),
+    workId: json['workId']?.toString() ?? '',
+    name: json['name']?.toString() ?? '未命名作品',
+    mediaType: parseMediaKind(json['mediaType']),
+    poster: json['poster']?.toString(),
+    season: int.tryParse(json['season']?.toString() ?? ''),
+    episode: int.tryParse(json['episode']?.toString() ?? ''),
+    positionMs: int.tryParse(json['positionMs']?.toString() ?? '') ?? 0,
+    durationMs: int.tryParse(json['durationMs']?.toString() ?? '') ?? 0,
+    lineGroup: json['lineGroup']?.toString() ?? '',
+    resourceId: json['resourceId']?.toString() ?? '',
+    updatedAt: DateTime.fromMillisecondsSinceEpoch(
+      int.tryParse(json['updatedAt']?.toString() ?? '') ?? 0,
+    ),
+    completed: json['completed'] == true,
+  );
 }
 
 class LocalStore extends ChangeNotifier {
@@ -156,13 +176,23 @@ class LocalStore extends ChangeNotifier {
   }
 
   PlaybackRecord? recordFor(String itemKey) => _history[itemKey];
+  PlaybackRecord? recordForItem(VodItem item) =>
+      _history[item.identityKey] ?? _history[item.key];
 
   bool isFavorite(String itemKey) => _favorites.containsKey(itemKey);
+  bool isFavoriteItem(VodItem item) =>
+      isFavorite(item.identityKey) || isFavorite(item.key);
 
   Future<void> toggleFavorite(VodItem item) async {
-    if (_favorites.remove(item.key) == null) {
-      _favorites[item.key] = SavedTitle(
-        key: item.key,
+    final removed = _favorites.remove(item.identityKey);
+    final legacy = item.identityKey == item.key
+        ? null
+        : _favorites.remove(item.key);
+    if (removed == null && legacy == null) {
+      _favorites[item.identityKey] = SavedTitle(
+        key: item.identityKey,
+        apiKey: item.key,
+        workId: item.workId,
         name: item.name,
         mediaType: item.mediaType,
         poster: item.poster,
@@ -183,8 +213,11 @@ class LocalStore extends ChangeNotifier {
     bool completed = false,
   }) async {
     if (item.key.isEmpty || resource.id.isEmpty) return;
-    _history[item.key] = PlaybackRecord(
-      itemKey: item.key,
+    if (item.identityKey != item.key) _history.remove(item.key);
+    _history[item.identityKey] = PlaybackRecord(
+      itemKey: item.identityKey,
+      apiKey: resource.catalogKey.isEmpty ? item.key : resource.catalogKey,
+      workId: item.workId,
       name: item.name,
       mediaType: item.mediaType,
       poster: item.poster,

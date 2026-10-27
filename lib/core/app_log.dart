@@ -38,7 +38,8 @@ class AppLog {
   }
 
   static void _write(String level, String tag, String message) {
-    final line = '${DateTime.now().toIso8601String()} $level $tag ${_safeMessage(message)}';
+    final line =
+        '${DateTime.now().toIso8601String()} $level $tag ${_safeMessage(message)}';
     if (kDebugMode) debugPrint(line);
     final file = _file;
     if (file == null) return;
@@ -58,8 +59,16 @@ class AppLog {
     return value
         .replaceAll(RegExp(r'https?://\S+'), '[url]')
         .replaceAll(
-          RegExp(r'cookie[=:]\s*\S+', caseSensitive: false),
+          RegExp(r'cookie\s*[=:]\s*[^\r\n]+', caseSensitive: false),
           'cookie=[redacted]',
+        )
+        .replaceAll(
+          RegExp(r'authorization\s*:\s*[^\r\n]+', caseSensitive: false),
+          'authorization=[redacted]',
+        )
+        .replaceAll(
+          RegExp(r'__(puus|pus|kps|uid)\s*=\s*[^;\s,]+'),
+          'credential=[redacted]',
         )
         .replaceAll(
           RegExp(r'(token|password)=[^&\s]+', caseSensitive: false),

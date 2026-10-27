@@ -1,7 +1,7 @@
 name: cinema_client
 description: "A native four-screen VOD client for a viewer-owned Quark account."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.2.0+2
 
 environment:
   sdk: ^3.13.7
@@ -10,6 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: 1.0.8
+  crypto: 3.0.8
+  file_selector: 1.1.0
   flutter_inappwebview: 6.1.5
   flutter_secure_storage: 11.2.0
   http: 1.6.0
@@ -26,3 +28,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/fonts/OFL-NotoSansSC.txt
+  fonts:
+    - family: Noto Sans SC
+      fonts:
+        - asset: assets/fonts/NotoSansSC.ttf

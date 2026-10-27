@@ -61,10 +61,7 @@ class _AppShellState extends State<AppShell> {
             backgroundColor: CinemaColors.background,
             body: Row(
               children: [
-                _SideNavigation(
-                  index: _index,
-                  onSelect: _select,
-                ),
+                _SideNavigation(index: _index, onSelect: _select),
                 const VerticalDivider(width: 1),
                 Expanded(
                   child: IndexedStack(index: _index, children: pages),
@@ -146,28 +143,42 @@ class _SideNavigation extends StatelessWidget {
             ),
             for (var i = 0; i < _items.length; i++)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
+                ),
                 child: Material(
-                  color: i == index ? const Color(0x1AE50914) : Colors.transparent,
+                  color: i == index
+                      ? const Color(0x1AE50914)
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(7),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(7),
                     onTap: () => onSelect(i),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 13,
+                      ),
                       child: Row(
                         children: [
                           Icon(
                             _items[i].$1,
                             size: 21,
-                            color: i == index ? Colors.white : CinemaColors.muted,
+                            color: i == index
+                                ? Colors.white
+                                : CinemaColors.muted,
                           ),
                           const SizedBox(width: 14),
                           Text(
                             _items[i].$2,
                             style: TextStyle(
-                              color: i == index ? Colors.white : CinemaColors.muted,
-                              fontWeight: i == index ? FontWeight.w700 : FontWeight.w500,
+                              color: i == index
+                                  ? Colors.white
+                                  : CinemaColors.muted,
+                              fontWeight: i == index
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
                               fontSize: 14,
                             ),
                           ),
@@ -192,8 +203,12 @@ class _SideNavigation extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.fromLTRB(24, 12, 24, 24),
               child: Text(
-                '0.1.0 · 开发版\n播放使用观看者自己的账号',
-                style: TextStyle(color: CinemaColors.faint, fontSize: 10, height: 1.5),
+                '0.2.0 · 内测版\n播放使用观看者自己的账号',
+                style: TextStyle(
+                  color: CinemaColors.faint,
+                  fontSize: 10,
+                  height: 1.5,
+                ),
               ),
             ),
           ],

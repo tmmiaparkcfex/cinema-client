@@ -36,7 +36,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _feed = widget.initialFeed;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh(silent: _feed != null));
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _refresh(silent: _feed != null),
+    );
   }
 
   Future<void> _refresh({bool silent = false}) async {
@@ -46,20 +48,41 @@ class _HomeScreenState extends State<HomeScreen> {
       _error = null;
     });
     final services = AppScope.of(context);
+    final apiBase = services.settings.baseUrl;
     try {
       final feed = await services.api.fetchHome();
       // /api/home can currently contain unresolved rows whose mediaType is null.
       // If that leaves too few usable rows, fill from the typed catalog endpoints
       // rather than mislabelling series as movies or scraping filenames locally.
       var merged = feed;
+      if (mounted && services.settings.baseUrl == apiBase) {
+        setState(() => _feed = feed);
+      }
       final resolved = feed.all.where((item) => item.isResolved).length;
-      if (resolved < 8) {
+      final needMovies =
+          resolved < 8 ||
+          !feed.all.any((item) => item.mediaType == MediaKind.movie);
+      final needSeries =
+          resolved < 8 ||
+          !feed.all.any((item) => item.mediaType == MediaKind.tv);
+      if (needMovies || needSeries) {
         final extra = await Future.wait([
-          services.api.fetchList(MediaKind.movie).then((page) => page.items).catchError((Object _) => <VodItem>[]),
-          services.api.fetchList(MediaKind.tv).then((page) => page.items).catchError((Object _) => <VodItem>[]),
+          needMovies
+              ? services.api
+                    .fetchList(MediaKind.movie)
+                    .then((page) => page.items)
+                    .catchError((Object _) => <VodItem>[])
+              : Future.value(<VodItem>[]),
+          needSeries
+              ? services.api
+                    .fetchList(MediaKind.tv)
+                    .then((page) => page.items)
+                    .catchError((Object _) => <VodItem>[])
+              : Future.value(<VodItem>[]),
         ]);
         merged = _mergeHome(feed, [extra[0], extra[1]]);
       }
+      if (!mounted || services.settings.baseUrl != apiBase) return;
       await services.homeCache.write(services.settings, merged);
       if (!mounted) return;
       setState(() {
@@ -96,10 +119,14 @@ class _HomeScreenState extends State<HomeScreen> {
       ...original.latest,
       for (final group in additions) ...group,
     ];
-    final merged = all.where((item) => item.isResolved && seen.add(item.key)).toList(growable: false);
+    final merged = all
+        .where((item) => item.isResolved && seen.add(item.identityKey))
+        .toList(growable: false);
     return HomeFeed(
       fourK: merged,
-      latest: merged.reversed.toList(growable: false),
+      latest: original.latest.any((item) => item.isResolved)
+          ? original.latest
+          : merged,
       stats: original.stats,
     );
   }
@@ -113,19 +140,23 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList(growable: false);
   }
 
-  List<VodItem> get _movies =>
-      _filteredAll.where((item) => item.mediaType == MediaKind.movie).toList(growable: false);
+  List<VodItem> get _movies => _filteredAll
+      .where((item) => item.mediaType == MediaKind.movie)
+      .toList(growable: false);
 
-  List<VodItem> get _series =>
-      _filteredAll.where((item) => item.mediaType == MediaKind.tv).toList(growable: false);
+  List<VodItem> get _series => _filteredAll
+      .where((item) => item.mediaType == MediaKind.tv)
+      .toList(growable: false);
 
   List<VodItem> get _latest {
     final feed = _feed;
     if (feed == null) return const [];
-    return feed.latest
-        .where((item) => item.isResolved)
-        .where((item) => _filter == null || item.mediaType == _filter)
-        .toList(growable: false);
+    return uniqueTitles(
+      feed.latest
+          .where((item) => item.isResolved)
+          .where((item) => _filter == null || item.mediaType == _filter)
+          .toList(growable: false),
+    );
   }
 
   Future<void> _open(VodItem item, {bool autoPlay = false}) async {
@@ -155,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final mediaSize = MediaQuery.sizeOf(context);
     final width = mediaSize.width;
     final wide = width >= 900;
-    final heroHeight = wide ? 520.0 : (mediaSize.height < 700 ? 430.0 : 470.0);
+    final heroHeight = wide ? 590.0 : (mediaSize.height < 700 ? 450.0 : 525.0);
     return Scaffold(
       backgroundColor: CinemaColors.background,
       body: RefreshIndicator(
@@ -220,7 +251,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   SafeArea(
                     bottom: false,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(wide ? 36 : 10, 4, wide ? 36 : 10, 0),
+                      padding: EdgeInsets.fromLTRB(
+                        wide ? 36 : 10,
+                        4,
+                        wide ? 36 : 10,
+                        0,
+                      ),
                       child: Row(
                         children: [
                           if (wide) const _SideBrand(),
@@ -247,7 +283,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           IconButton(
                             tooltip: '我的',
                             onPressed: widget.onOpenProfile,
-                            icon: const Icon(Icons.person_outline_rounded, size: 24),
+                            icon: const Icon(
+                              Icons.person_outline_rounded,
+                              size: 24,
+                            ),
                           ),
                         ],
                       ),
@@ -258,7 +297,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(wide ? 52 : 18, 12, wide ? 52 : 18, 0),
+                padding: EdgeInsets.fromLTRB(
+                  wide ? 52 : 18,
+                  12,
+                  wide ? 52 : 18,
+                  0,
+                ),
                 child: Row(
                   children: [
                     _FilterChip(
@@ -283,7 +327,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       IconButton(
                         tooltip: '刷新失败，点击重试',
                         onPressed: () => _refresh(),
-                        icon: const Icon(Icons.cloud_off_rounded, color: CinemaColors.red, size: 20),
+                        icon: const Icon(
+                          Icons.cloud_off_rounded,
+                          color: CinemaColors.red,
+                          size: 20,
+                        ),
                       ),
                   ],
                 ),
@@ -292,7 +340,12 @@ class _HomeScreenState extends State<HomeScreen> {
             if (_error != null)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(wide ? 52 : 18, 12, wide ? 52 : 18, 0),
+                  padding: EdgeInsets.fromLTRB(
+                    wide ? 52 : 18,
+                    12,
+                    wide ? 52 : 18,
+                    0,
+                  ),
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -306,10 +359,17 @@ class _HomeScreenState extends State<HomeScreen> {
                             _feed == null
                                 ? _error!.userMessage
                                 : '${_error!.userMessage} 正在显示上次缓存。',
-                            style: const TextStyle(color: Color(0xFFFFB9B9), fontSize: 12, height: 1.45),
+                            style: const TextStyle(
+                              color: Color(0xFFFFB9B9),
+                              fontSize: 12,
+                              height: 1.45,
+                            ),
                           ),
                         ),
-                        TextButton(onPressed: () => _refresh(), child: const Text('重试')),
+                        TextButton(
+                          onPressed: () => _refresh(),
+                          child: const Text('重试'),
+                        ),
                       ],
                     ),
                   ),
@@ -334,9 +394,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             final record = history[index];
                             return ContinueCard(
                               record: record,
-                              onTap: () => _open(record.toItem(), autoPlay: true),
+                              onTap: () =>
+                                  _open(record.toItem(), autoPlay: true),
                               onRemove: () async {
-                                await services.store.removeHistoryRecord(record.itemKey);
+                                await services.store.removeHistoryRecord(
+                                  record.itemKey,
+                                );
                               },
                             );
                           },
@@ -393,6 +456,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final meta = <String>[
       if (hero.year != null) '${hero.year}',
       hero.typeLabel,
+      ...hero.genres.take(2),
+      if (hero.runtimeMinutes != null) '${hero.runtimeMinutes} 分钟',
       if (hero.score.isNotEmpty) '评分 ${hero.score}',
     ];
     return Column(
@@ -418,12 +483,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        if (hero.remarks.isNotEmpty)
+        if (hero.overview.isNotEmpty)
           Text(
-            hero.remarks.first,
+            hero.overview,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Color(0xFFD3D6DD), fontSize: 12),
+            style: const TextStyle(
+              color: Color(0xFFDDDFE5),
+              fontSize: 14,
+              height: 1.6,
+            ),
           ),
         const SizedBox(height: 18),
         Wrap(
@@ -435,6 +504,10 @@ class _HomeScreenState extends State<HomeScreen> {
               width: 142,
               child: FilledButton.icon(
                 onPressed: () => _open(hero, autoPlay: true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                ),
                 icon: const Icon(Icons.play_arrow_rounded, size: 23),
                 label: const Text('播放'),
               ),
@@ -444,13 +517,16 @@ class _HomeScreenState extends State<HomeScreen> {
               child: AnimatedBuilder(
                 animation: services.store,
                 builder: (context, _) {
-                  final favorite = services.store.isFavorite(hero.key);
+                  final favorite = services.store.isFavoriteItem(hero);
                   return OutlinedButton.icon(
                     onPressed: () => services.store.toggleFavorite(hero),
                     style: OutlinedButton.styleFrom(
                       backgroundColor: const Color(0x44000000),
                     ),
-                    icon: Icon(favorite ? Icons.check_rounded : Icons.add_rounded, size: 20),
+                    icon: Icon(
+                      favorite ? Icons.check_rounded : Icons.add_rounded,
+                      size: 20,
+                    ),
                     label: Text(favorite ? '已加入片单' : '我的片单'),
                   );
                 },
@@ -473,7 +549,11 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const Text(
             '影院',
-            style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, letterSpacing: -1),
+            style: TextStyle(
+              fontSize: 38,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -1,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -511,9 +591,11 @@ class _PosterSection extends StatelessWidget {
     return _Section(
       title: title,
       horizontalPadding: horizontalPadding,
-      action: onMore == null ? null : TextButton(onPressed: onMore, child: const Text('更多')),
+      action: onMore == null
+          ? null
+          : TextButton(onPressed: onMore, child: const Text('更多')),
       child: SizedBox(
-        height: 250,
+        height: MediaQuery.sizeOf(context).width >= 900 ? 310 : 250,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.zero,
@@ -551,7 +633,13 @@ class _Section extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const Spacer(),
               ?action,
             ],
@@ -616,7 +704,10 @@ class _MetaLabel extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: const Color(0x33FFFFFF)),
       ),
-      child: Text(text, style: const TextStyle(fontSize: 11, color: Color(0xFFE5E7EB))),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 11, color: Color(0xFFE5E7EB)),
+      ),
     );
   }
 }
@@ -628,7 +719,14 @@ class _SideBrand extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Row(
       children: [
-        Text('CINEMA', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, letterSpacing: 2.2)),
+        Text(
+          'CINEMA',
+          style: TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2.2,
+          ),
+        ),
         SizedBox(width: 8),
         Text('影院', style: TextStyle(fontSize: 13, color: CinemaColors.muted)),
       ],

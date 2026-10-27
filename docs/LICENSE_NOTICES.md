@@ -26,9 +26,15 @@
 | path_provider | 2.1.6 | BSD-3-Clause |
 | shared_preferences | 2.5.6 | BSD-3-Clause |
 | cupertino_icons | 1.0.8 | MIT |
+| crypto | 3.0.8 | BSD-3-Clause |
+| file_selector | 1.1.0 | BSD-3-Clause；平台实现各自许可随依赖保留 |
 | package_info_plus / wakelock_plus 等传递依赖 | 见 `pubspec.lock` | 各自许可证 |
 
 Flutter 的 `LicenseRegistry` 在打包时会收集依赖许可证文本；本应用尚未提供独立“开源许可”页面，正式分发前应补上，并随包附带 libmpv/FFmpeg 的许可证与源码获取方式。
+
+## 字幕字体
+
+Noto Sans SC 来自 [Google Fonts 上游](https://github.com/google/fonts/tree/main/ofl/notosanssc)，采用 SIL Open Font License 1.1。字体内容未修改，仅改名为 `assets/fonts/NotoSansSC.ttf`；许可全文、来源和 SHA-256 同目录保存，见 `SOURCE.md` 和 `OFL-NotoSansSC.txt`。
 
 ## 未采用候选
 

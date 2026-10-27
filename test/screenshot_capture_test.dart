@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,6 +69,7 @@ ThemeData _screenshotTheme() {
 }
 
 void main() {
+  FlutterSecureStorage.setMockInitialValues({});
   testWidgets('capture iPhone-sized UI render', (tester) async {
     final fontFile = File(_fontPath);
     if (!fontFile.existsSync()) {
@@ -93,16 +95,20 @@ void main() {
     ) as Map<String, dynamic>;
     final feed = HomeFeed.fromJson(snapshot);
 
-    SharedPreferences.setMockInitialValues({'vod_api_base': 'http://127.0.0.1:8765'});
+    SharedPreferences.setMockInitialValues({
+      'vod_api_base': 'http://127.0.0.1:8765',
+    });
     final prefs = await SharedPreferences.getInstance();
     final settings = AppSettings.load(prefs);
     final api = VodApi(
       settings: settings,
-      client: MockClient((_) async => http.Response.bytes(
-            utf8.encode(jsonEncode(snapshot)),
-            200,
-            headers: {'content-type': 'application/json; charset=utf-8'},
-          )),
+      client: MockClient(
+        (_) async => http.Response.bytes(
+          utf8.encode(jsonEncode(snapshot)),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      ),
     );
     final services = AppServices(
       settings: settings,
@@ -145,7 +151,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
     await _save(tester, boundaryKey, 'home_iphone_testrender.png');
 
-    await tester.drag(find.byType(CustomScrollView).first, const Offset(0, -470));
+    await tester.drag(
+      find.byType(CustomScrollView).first,
+      const Offset(0, -470),
+    );
     await tester.pump(const Duration(milliseconds: 300));
     await _save(tester, boundaryKey, 'home_rows_iphone_testrender.png');
 
@@ -172,9 +181,13 @@ void main() {
     final detailJson = jsonDecode(
       File('test/fixtures/live_detail_snapshot.json').readAsStringSync(),
     ) as Map<String, dynamic>;
-    final item = VodItem.fromDetailJson(detailJson['item'] as Map<String, dynamic>);
+    final item = VodItem.fromDetailJson(
+      detailJson['item'] as Map<String, dynamic>,
+    );
 
-    SharedPreferences.setMockInitialValues({'vod_api_base': 'http://127.0.0.1:8765'});
+    SharedPreferences.setMockInitialValues({
+      'vod_api_base': 'http://127.0.0.1:8765',
+    });
     final prefs = await SharedPreferences.getInstance();
     final settings = AppSettings.load(prefs);
     final api = VodApi(
@@ -250,7 +263,8 @@ void main() {
 }
 
 Future<void> _save(WidgetTester tester, GlobalKey key, String name) async {
-  final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+  final boundary =
+      key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
   final bytes = await tester.runAsync(() async {
     final image = await boundary.toImage(pixelRatio: 3);
     final data = await image.toByteData(format: ui.ImageByteFormat.png);

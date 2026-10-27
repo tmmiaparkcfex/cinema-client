@@ -1,110 +1,58 @@
-# 接续与审核交接
+# 接续事实索引 · 2026-10-27 · 0.2.0+2
 
-## 当前结论
+本文索引事实和证据，接手者仍需独立检查需求、代码和运行结果。
 
-源码已完成第一版 iPhone 优先闭环，真实接口读取和自动化测试通过；**iOS 未编译、无 IPA、未真机播放**。不要把本目录中的 UI 代码、测试通过或工作流文件当作 iPhone 验证结果。
+## 用户目标
 
-## 路径
+真实 Netflix 风格影视客户端；四端为 iPhone、Android 手机、Windows、Android TV/盒子，先跑通 iPhone。真实 vod-web 目录，观看者自己的夸克账号/IP/流量。用户后续完善爬虫资料，客户端现在即接 API。用户已选择 GitHub Actions 编译。
+
+## 位置与版本
 
 | 内容 | 路径 |
 | --- | --- |
-| 正式客户端源码/本 Git 仓库 | `D:\Codex\01_对话项目\Codex手机任务\cinema-client` |
-| ASCII 验证镜像（非正式源码） | `D:\Codex\work\cinema-client-validate-20261027-2` |
-| Flutter SDK 3.47.8 | `D:\Codex\tools\flutter` |
-| Flutter 下载归档 | `D:\Codex\05_缓存临时\flutter_windows_3.47.8-stable.zip` |
-| Pub 缓存 | `D:\Codex\cache\pub` |
-| 生产影视项目（未改） | `D:\各软件安装位置\vod-web` |
-| 生产数据库（未读私有账号，未改） | `D:\各软件安装位置\vod-web\data\vodweb.db` |
+| 正式源码 | `D:\codex\01_对话项目\Codex手机任务\cinema-client` |
+| 本轮英文验证副本 | `D:\Codex\work\cinema-client-20261027-codex` |
+| SDK / Pub 缓存 | `D:\Codex\tools\flutter` / `D:\Codex\cache\pub` |
+| 本轮工作证据 | 同级 `cinema-client-progress-20261027` |
+| 较早审核 | 同级 `cinema-client-audit-20261027`；旧缺陷复现测试不能当成现版结果 |
+| 生产服务 | `D:\各软件安装位置\vod-web`；本轮未修改 |
 
-## 已观察的后台服务（只读快照）
+接手时 HEAD 为 `720f05ac12693041e8ffbc3137d5d764380d9fdc`，已有 6 文件草稿。本轮保留并继续修改；原始 6 文件及哈希在工作证据的 `baseline/`。本轮没有提交/推送 Git，也未执行远程 Actions。
 
-采样 2026-10-27 16:59:05：
+## 已有证据
 
-- `8765`、`8788`：PID 12360，命令 `server.mjs`，是本次只读接口测试使用的服务；
-- `8790`：PID 16656，`supervisor.mjs`；
-- `8793`：PID 13668，`live-server.mjs`（不是影视接口本身）；
-- `8789`：PID 9420，`shared-background.mjs`（随行控制台）；
-- 更早 16:04 快照中 8765/8788 的 PID 为 11664，说明进程在采样之间由外部 watchdog 重启过。该变化不是本客户端操作造成。
+- 分析 0 issue，默认测试 51 通过、3 可选跳过。
+- 真实 API home/list/detail/resource/search 读取及资源匹配通过；多季样本当前页未命中而跳过。
+- 原生 Windows FFI 软件解码通过指定 4K HEVC 10-bit、双音轨、外挂 SRT、Range/请求头、拖动/续播/倍速测试。
+- 实际 Flutter 页面及横屏控件已渲染检查；新增完整资料版型图为虚构作品/原创示意图，仅在外部布局测试注入。
+- 无 IPA、Podfile.lock、iPhone 真机和真实夸克账户验收；其他三端应用未构建。
 
-本次没有启动、停止、重启生产服务，没有执行部署脚本，没有修改生产文件，也没有调用转存、删除或播放接口。最近一次接口只读测试在 16:57–16:58 完成。
+最新结果及日志：[VERIFICATION-20261027-CODEX.md](VERIFICATION-20261027-CODEX.md)。原 `VERIFICATION.md` 留作历史，不代表现版测试数量。
 
-## 启动客户端（有可用设备时）
+## 代码核查入口
 
-```bash
-cd D:\Codex\01_对话项目\Codex手机任务\cinema-client
-flutter config --no-enable-swift-package-manager
-flutter pub get
-flutter analyze
-flutter test
-flutter run -d <device-id> --dart-define=VOD_API_BASE=http://192.168.1.4:8765
-```
+| 文件 | 本轮重点 |
+| --- | --- |
+| `lib/quark/quark_playback_service.dart` | 串行队列、取消、转存前登记、任务恢复、分页快照、所有权检查、无 20 条截断、租约刷新/释放 |
+| `lib/quark/quark_account_store.dart` | Cookie 与随机会话范围同一安全存储值；刷新保留范围，显式登录换范围 |
+| `lib/player/native_player.dart` | 原生 libass 与 Android 字体 |
+| `lib/player/playback_screen.dart` | 原生播放、首次渲染、超时、换集并发、停止后释放、进度/结束/下一集、外挂字幕、焦点 |
+| `lib/data/api_client.dart` | exact workId 补季；当前季可先播放 |
+| `lib/core/app_models.dart`、`lib/data/local_store.dart` | 作品身份、元数据、仅驻内存的目录资源、跨季记录与实际 API key |
+| `test/*` | 清理/取消/身份/季集/隐私/控件/慢元数据回归 |
+| `.github/workflows/ios-unsigned.yml` | 工具链固定、锁依赖、测试/构建、IPA 打包及失败诊断 |
 
-- iPhone 需与 8765 端口服务器同一网络，或改用可访问的 HTTPS 根地址；
-- 接口地址也可在“我的 → 影视接口”修改；
-- 首次播放会要求连接观者自己的夸克账号；
-- 无法用当前 Windows 主机直接产生 iOS 构建。
+## 尚未消除的边界
 
-## iPhone 构建
+- 随机会话范围不是核实过的服务端 UID。显式重登后旧范围残留不由新凭据自动删除。
+- 请求已受理但响应在收到 taskId/fid 前丢失时保留未决登记，不按同名文件猜删。
+- 只删除同范围、具有所有权证据的新 fid，不清空目录。
+- Windows 依赖固定 2023 年内核；实测结果不证明全格式兼容性和维护状态。
+- VideoController 首帧 Future 仅证明该控制器首次渲染；后续换源的逐文件画面更新仍需设备验证。
+- 四端、HDR、功耗、真实账号、同步/投屏/媒体工具等限制见 `KNOWN_ISSUES.md`。
 
-```bash
-flutter config --no-enable-swift-package-manager
-flutter pub get
-flutter build ios --release --no-codesign \
-  --dart-define=VOD_API_BASE=https://your-api.example.com
-```
+## 后台与下一项外部结果
 
-CI：
+接手前只读确认 `127.0.0.1:8790/ctrl/state` 为 `running=true`、PID 12360。本轮只发影视 API GET，没有启动/停止生产服务或爬虫，也没有使用服务端账号转存。最终快照在 `evidence/background-codex-20261027.json`。
 
-1. 将本目录作为一个 GitHub 仓库（远程推送未由本次执行）；
-2. Actions → `Build unsigned iOS IPA` → Run workflow；
-3. 输入接口根地址；
-4. 下载 `cinema-client-ios-unsigned` artifact；
-5. 在个人签名工具中用个人 Apple ID 签名 `CinemaClient-unsigned.ipa`。
-
-目前无 GitHub 远程、无 `gh` 登录、无 Mac，故没有 `.ipa` 与 `Podfile.lock`。详见 `docs/BLOCKERS.md`。
-
-## 已完成/已验证
-
-- 代码：首页、详情、季集、搜索、片单、本地续播、夸克设备内桥接、播放控件、错误恢复。
-- `flutter analyze`：0 issue。
-- 测试：11 passed, 3 optional tests skipped in default suite（真实接口 1、截图捕获 2）。
-- 真实接口：home/list/search/detail 全链路解析通过。
-- 界面测试截图：`docs/screenshots/`（非真机，见该目录 README）。
-- 原始日志：`docs/evidence/*.log`。
-- 环境快照：`docs/evidence/environment-20261027.json`。
-
-## 未完成/阻塞
-
-- iOS 编译、未签名 IPA、个人签名和安装；
-- iPhone 真机播放、4K/HDR、功耗/发热、长时稳定性；
-- 真实观看者夸克账号授权、转存、取链、清理；
-- Android/Windows/Android TV 构建和真机；
-- 跨设备同步、在线字幕、投屏和媒体工具；
-- 后台缺失海报/简介/演员数据的补齐。
-
-逐项见 `docs/KNOWN_ISSUES.md`、`docs/BLOCKERS.md`、`docs/VERIFICATION.md`。
-
-## 审核重点
-
-1. `lib/quark/quark_playback_service.dart`：真实夸克 API 参数、错误分流、专用目录、清理边界、Cookie 更新；未真机验证。
-2. `lib/player/playback_screen.dart`：media_kit 生命周期、直链请求头、超时/缓冲/下一集/进度保存；未真机验证。
-3. `lib/data/api_client.dart`：接口字段解析和错误类型。
-4. `lib/core/app_models.dart`：空字段、季集、资源描述映射。
-5. `ios/Podfile`、`Info.plist`：CocoaPods 与 ATS；无 Podfile.lock，尚未在 macOS 执行。
-6. `.github/workflows/ios-unsigned.yml`：未运行过，首次构建可能需要调整 runner/Xcode/action 标签。
-7. 版权/许可：libmpv 是 LGPL 播放构建；分发前需遵守 LGPL，不代表“MIT 就全部免费”。
-
-## 安全
-
-- 无账号 Cookie、密码、证书、私有播放地址进入 Git。
-- 夸克会话只存设备安全存储。
-- 日志已脱敏。
-- 当前 HTTP 开发配置放宽了 ATS/cleartext，正式部署需收紧（`docs/SECURITY.md`）。
-
-## Git
-
-- 初始功能提交：`dad796e`（`feat: add native cinema client foundation`）。
-- 之后还有平台配置、截图证据和 CocoaPods 构建配置提交；用 `git log --oneline -5` 查看完整提交链。
-- 仓库仅在本地 `main`，没有远程，没有推送。
-- 构建产物、Pub 缓存、Flutter SDK 不在仓库内。
-- `pubspec.lock` 已提交；`Podfile.lock` 需 macOS 首次构建后生成并补入。
+下一项外部结果为用户 Actions 构建日志和签名安装后的设备验收，步骤见 [BUILD.md](BUILD.md)。不要将未验证事项直接记作完成。

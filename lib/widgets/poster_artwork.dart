@@ -32,10 +32,7 @@ class PosterArtwork extends StatelessWidget {
     }
     return ClipRRect(
       borderRadius: radius,
-      child: ColoredBox(
-        color: const Color(0xFF151922),
-        child: child,
-      ),
+      child: ColoredBox(color: const Color(0xFF151922), child: child),
     );
   }
 }
@@ -59,8 +56,12 @@ class _PosterFallback extends StatelessWidget {
     final character = item.name.isEmpty ? '影' : item.name.substring(0, 1);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 180.0;
-        final height = constraints.maxHeight.isFinite ? constraints.maxHeight : 270.0;
+        final width = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : 180.0;
+        final height = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : 270.0;
         return Stack(
           fit: StackFit.expand,
           children: [
@@ -174,7 +175,7 @@ class BackdropArtwork extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final poster = item.poster;
+    final poster = item.backdrop ?? item.poster;
     if (poster != null && poster.startsWith('http')) {
       return Image.network(
         poster,

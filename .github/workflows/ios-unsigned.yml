@@ -19,9 +19,14 @@ jobs:
     timeout-minutes: 45
     env:
       VOD_API_BASE: ${{ inputs.api_base }}
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+      PUB_HOSTED_URL: https://pub.flutter-io.cn
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Prepare build evidence
+        run: mkdir -p build/evidence
 
       - name: Set up Flutter 3.47.8
         uses: subosito/flutter-action@v2
@@ -41,20 +46,25 @@ jobs:
         run: flutter config --no-enable-swift-package-manager
 
       - name: Resolve locked dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Static analysis
-        run: flutter analyze
+        run: |
+          set -o pipefail
+          flutter analyze 2>&1 | tee build/evidence/analyze.log
 
       - name: Unit and widget tests
-        run: flutter test --reporter expanded
+        run: |
+          set -o pipefail
+          flutter test --reporter expanded 2>&1 | tee build/evidence/tests.log
 
       - name: Build unsigned iOS app
         run: |
+          set -o pipefail
           flutter build ios \
             --release \
             --no-codesign \
-            --dart-define=VOD_API_BASE="$VOD_API_BASE"
+            --dart-define=VOD_API_BASE="$VOD_API_BASE" 2>&1 | tee build/evidence/ios-build.log
 
       - name: Package unsigned IPA
         run: |
@@ -67,9 +77,9 @@ jobs:
           (
             cd build/ios/ipa
             zip -qry CinemaClient-unsigned.ipa Payload
+            shasum -a 256 CinemaClient-unsigned.ipa > CinemaClient-unsigned.ipa.sha256
+            du -h CinemaClient-unsigned.ipa
           )
-          shasum -a 256 CinemaClient-unsigned.ipa > CinemaClient-unsigned.ipa.sha256
-          du -h CinemaClient-unsigned.ipa
 
       - name: Upload unsigned IPA and evidence
         uses: actions/upload-artifact@v4
@@ -82,4 +92,15 @@ jobs:
             ios/Podfile.lock
             toolchain.txt
             pubspec.lock
+          retention-days: 14
+
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinema-client-ios-diagnostics
+          if-no-files-found: warn
+          path: |
+            build/evidence/
+            toolchain.txt
           retention-days: 14

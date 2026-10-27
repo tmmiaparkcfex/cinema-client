@@ -1,0 +1,263 @@
+00:00 +0: loading D:/codex/work/cinema-client-20261027-codex/test/api_client_test.dart
+00:00 +0: D:/codex/work/cinema-client-20261027-codex/test/api_client_test.dart: TV detail merges real season descriptors only for the same work ID
+2026-10-27T23:09:27.752107 INFO api GET /api/detail status=200 ms=9 bytes=1617
+2026-10-27T23:09:27.764208 INFO api GET /api/search status=200 ms=1 bytes=901
+00:00 +1: D:/codex/work/cinema-client-20261027-codex/test/api_client_test.dart: season lookup failure preserves selected-season playback and marks missing discovery
+2026-10-27T23:09:27.801975 INFO api GET /api/detail status=200 ms=0 bytes=1617
+2026-10-27T23:09:27.804957 INFO api GET /api/search status=503 ms=1 bytes=2
+2026-10-27T23:09:27.817926 ERROR series-seasons ApiException(ApiFailureKind.http, /api/search, 503, null): HTTP 503
+00:00 +2: D:/codex/work/cinema-client-20261027-codex/test/app_log_test.dart: logs strip the complete cookie header, authorization and private URLs
+00:00 +3: D:/codex/work/cinema-client-20261027-codex/test/app_log_test.dart: logs strip the complete cookie header, authorization and private URLs
+00:00 +4: D:/codex/work/cinema-client-20261027-codex/test/app_log_test.dart: logs strip the complete cookie header, authorization and private URLs
+00:00 +4: D:/codex/work/cinema-client-20261027-codex/test/api_client_test.dart: home parsing keeps only real API metadata and tolerates empty poster
+2026-10-27T23:09:27.831032 INFO api GET /api/home status=200 ms=0 bytes=639
+00:00 +5: D:/codex/work/cinema-client-20261027-codex/test/app_log_test.dart: logs strip the complete cookie header, authorization and private URLs
+00:00 +5: D:/codex/work/cinema-client-20261027-codex/test/api_client_test.dart: list and search use the documented query parameters
+2026-10-27T23:09:27.837020 INFO api GET /api/list status=200 ms=0 bytes=55
+2026-10-27T23:09:27.838017 INFO api GET /api/search status=200 ms=0 bytes=55
+00:00 +6: D:/codex/work/cinema-client-20261027-codex/test/app_log_test.dart: logs strip the complete cookie header, authorization and private URLs
+00:00 +6: D:/codex/work/cinema-client-20261027-codex/test/api_client_test.dart: detail preserves episode and measured resource fields
+2026-10-27T23:09:27.844999 INFO api GET /api/detail status=200 ms=0 bytes=1596
+00:00 +7: D:/codex/work/cinema-client-20261027-codex/test/app_log_test.dart: logs strip the complete cookie header, authorization and private URLs
+2026-10-27T23:09:27.839014 ERROR test cookie=[redacted]
+00:00 +8: D:/codex/work/cinema-client-20261027-codex/test/app_log_test.dart: logs strip the complete cookie header, authorization and private URLs
+authorization=[redacted]
+[url]
+00:00 +9: D:/codex/work/cinema-client-20261027-codex/test/api_client_test.dart: server error is surfaced as an explicit failure
+2026-10-27T23:09:27.854971 INFO api GET /api/home status=503 ms=2 bytes=35
+00:00 +10: D:/codex/work/cinema-client-20261027-codex/test/episode_choice_test.dart: same episode is required when changing lines
+00:00 +11: D:/codex/work/cinema-client-20261027-codex/test/episode_choice_test.dart: next episode skips alternate versions of the current episode
+00:00 +12: D:/codex/work/cinema-client-20261027-codex/test/episode_choice_test.dart: same episode on another line preserves and bounds the switch position
+00:00 +13: D:/codex/work/cinema-client-20261027-codex/test/episode_choice_test.dart: next episode stays inside the selected line and respects order
+00:00 +14: D:/codex/work/cinema-client-20261027-codex/test/episode_choice_test.dart: autoplay does not silently skip a missing episode
+00:00 +15: D:/codex/work/cinema-client-20261027-codex/test/episode_choice_test.dart: next episode can use another available line and cross a verified season ending
+00:00 +16: D:/codex/work/cinema-client-20261027-codex/test/episode_choice_test.dart: line switch finds the same episode
+00:00 +17: D:/codex/work/cinema-client-20261027-codex/test/episode_choice_test.dart: cached home does not retain resource or share data
+00:00 +18: D:/codex/work/cinema-client-20261027-codex/test/live_api_test.dart: live API smoke is opt-in
+  Skip: Set --dart-define=LIVE_VOD_API=http://host:port
+00:01 +18 ~1: D:/codex/work/cinema-client-20261027-codex/test/local_store_test.dart: seasons share one favorite and one resume record without losing API lookup IDs
+00:01 +19 ~1: D:/codex/work/cinema-client-20261027-codex/test/local_store_test.dart: favorites and progress survive a new store instance
+00:01 +20 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:01 +21 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:01 +22 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:01 +23 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:01 +23 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: rejected login cannot replace an existing saved viewer session
+2026-10-27T23:09:29.524293 INFO quark GET file/sort status=401 code=31001
+2026-10-27T23:09:29.541248 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.543242 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.546234 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.549226 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.581140 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:29.609066 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:29.610063 INFO quark-playback lease-ready
+2026-10-27T23:09:29.612058 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:29.638597 INFO quark-playback temp-file-released
+00:01 +24 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:01 +24 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: validated login stores its rotated cookie before preparing playback
+2026-10-27T23:09:29.645577 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.647543 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.648541 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.649538 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.650536 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.660510 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:29.668488 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:29.668488 INFO quark-playback lease-ready
+2026-10-27T23:09:29.670483 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:29.678460 INFO quark-playback temp-file-released
+00:01 +25 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:01 +25 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: clean install obtains a lease and deletes only the newly created file
+2026-10-27T23:09:29.686440 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.687437 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.688435 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.690429 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.699405 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:29.708382 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:29.708382 INFO quark-playback lease-ready
+2026-10-27T23:09:29.711373 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:29.718355 INFO quark-playback temp-file-released
+00:02 +26 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:02 +26 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: damaged ledger is preserved and cannot block first playback: 
+2026-10-27T23:09:29.728328 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.730323 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.731320 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.732318 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.736307 ERROR quark-ledger FormatException: empty ledger
+2026-10-27T23:09:29.746279 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:29.753261 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:29.753261 INFO quark-playback lease-ready
+2026-10-27T23:09:29.755255 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:29.762236 INFO quark-playback temp-file-released
+00:02 +27 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:02 +27 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: damaged ledger is preserved and cannot block first playback: {broken
+2026-10-27T23:09:29.778193 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.779191 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.779191 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.780188 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.782183 ERROR quark-ledger FormatException: Unexpected character (at character 2)
+{broken
+ ^
+
+2026-10-27T23:09:29.791159 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:29.797143 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:29.797143 INFO quark-playback lease-ready
+2026-10-27T23:09:29.799138 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:29.804124 INFO quark-playback temp-file-released
+00:02 +28 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:02 +28 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: damaged ledger is preserved and cannot block first playback: {}
+2026-10-27T23:09:29.810108 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.811106 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.812103 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.813101 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.814098 ERROR quark-ledger FormatException: ledger is not a list
+2026-10-27T23:09:29.821078 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:29.827619 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:29.827619 INFO quark-playback lease-ready
+2026-10-27T23:09:29.829614 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:29.834601 INFO quark-playback temp-file-released
+00:02 +29 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:02 +29 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: reads exact saved fid from task response without claiming a same-name existing file
+2026-10-27T23:09:29.840156 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.841154 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.842150 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.843147 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.849131 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:29.856113 INFO quark GET task status=200 code=0
+2026-10-27T23:09:29.863094 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:29.864091 INFO quark-playback lease-ready
+2026-10-27T23:09:29.865089 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:29.873068 INFO quark-playback temp-file-released
+00:02 +30 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:02 +30 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: rejects a save result identifying a preexisting file and never deletes it
+2026-10-27T23:09:29.879051 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.880048 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.881046 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.881046 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.888027 INFO quark POST share/sharepage/save status=200 code=0
+00:02 +31 ~1: D:/codex/work/cinema-client-20261027-codex/test/playback_controls_test.dart: landscape iPhone controls fit, activate playback, and seek
+00:02 +31 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: cancelled queued request releases the queue so retry can acquire
+2026-10-27T23:09:29.897003 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.898001 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.898001 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.898998 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.904981 INFO quark POST share/sharepage/save status=200 code=0
+00:02 +32 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: cancelled queued request releases the queue so retry can acquire
+2026-10-27T23:09:29.911963 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:29.911963 INFO quark-playback lease-ready
+2026-10-27T23:09:29.912961 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:29.918946 INFO quark-playback temp-file-released
+00:02 +33 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: cancel during share lookup never submits a save
+2026-10-27T23:09:29.924126 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.925173 INFO quark GET share/sharepage/detail status=200 code=0
+00:02 +34 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: cancel after save response cleans the exact new file before completing
+2026-10-27T23:09:29.929457 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.930719 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.931249 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.931756 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.937738 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:29.943722 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:29.950704 INFO quark-playback temp-file-released
+00:02 +35 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: submitted task survives cancellation and is recovered after restart
+2026-10-27T23:09:29.955690 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.957685 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.957685 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.958682 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.965664 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:29.974640 INFO quark GET task status=200 code=0
+2026-10-27T23:09:29.980624 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:29.985610 INFO quark-playback temp-file-released
+00:02 +36 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: missing task result stays tracked and never falls back to a filename
+2026-10-27T23:09:29.991594 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:29.992592 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:29.993589 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.993589 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:29.999573 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:30.013535 INFO quark GET task status=200 code=0
+2026-10-27T23:09:30.015530 INFO quark GET task status=200 code=0
+00:02 +37 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: manual cleanup keeps active playback and retries failed exit cleanup
+2026-10-27T23:09:30.019520 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:30.020517 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:30.021514 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.021514 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.029493 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:30.035477 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:30.036475 INFO quark-playback lease-ready
+2026-10-27T23:09:30.038470 INFO quark POST file/delete status=503 code=500
+2026-10-27T23:09:30.039668 ERROR quark-playback QuarkException(QuarkFailureKind.cleanupFailed, code=500, status=503, stage=cleanup)
+2026-10-27T23:09:30.042663 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:30.048648 INFO quark-playback temp-file-released
+00:02 +38 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: concurrent release calls share one deletion
+2026-10-27T23:09:30.053634 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:30.054631 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:30.055629 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.056626 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.063607 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:30.074580 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:30.074580 INFO quark-playback lease-ready
+2026-10-27T23:09:30.076573 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:30.082556 INFO quark-playback temp-file-released
+00:02 +39 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: expired URL refresh reuses the saved file without another transfer
+2026-10-27T23:09:30.088542 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:30.090536 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:30.091533 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.092531 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.097516 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:30.104498 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:30.104498 INFO quark-playback lease-ready
+2026-10-27T23:09:30.105495 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:30.106492 INFO quark POST file/delete status=200 code=0
+2026-10-27T23:09:30.113474 INFO quark-playback temp-file-released
+00:02 +40 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: effective folder page size is honored before claiming a save result
+2026-10-27T23:09:30.122450 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:30.123447 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:30.124445 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.124445 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.125442 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.131426 INFO quark POST share/sharepage/save status=200 code=0
+00:02 +41 ~1: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: all 21 outstanding files remain tracked and startup can clean every one
+2026-10-27T23:09:30.136412 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:30.137410 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:30.137410 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.138407 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.143393 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:30.149377 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:30.149377 INFO quark-playback lease-ready
+2026-10-27T23:09:30.150375 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:30.151372 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:30.151372 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.158354 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:30.164337 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:30.165335 INFO quark-playback lease-ready
+2026-10-27T23:09:30.166333 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:30.166333 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:30.167330 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.173314 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:30.179298 INFO quark POST file/download status=200 code=0
+2026-10-27T23:09:30.179298 INFO quark-playback lease-ready
+2026-10-27T23:09:30.180295 INFO quark POST share/sharepage/token status=200 code=0
+2026-10-27T23:09:30.180295 INFO quark GET share/sharepage/detail status=200 code=0
+2026-10-27T23:09:30.181292 INFO quark GET file/sort status=200 code=0
+2026-10-27T23:09:30.187143 INFO quark POST share/sharepage/save status=200 code=0
+2026-10-27T23:09:30.192129 INFO quark POST file/download status=200 code=0
+00:02 +41 ~2: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: all 21 outstanding files remain tracked and startup can clean every one
+00:02 +41 ~3: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: all 21 outstanding files remain tracked and startup can clean every one
+00:02 +42 ~3: D:/codex/work/cinema-client-20261027-codex/test/quark_playback_service_test.dart: switching sessions reloads the folder and cannot clean the earlier session
+00:02 +43 ~3: D:/codex/work/cinema-client-20261027-codex/test/subtitle_files_test.dart: subtitle import preserves exact bytes, contains paths, and cleans only owned copies
+00:02 +44 ~3: D:/codex/work/cinema-client-20261027-codex/test/subtitle_files_test.dart: subtitle import preserves exact bytes, contains paths, and cleans only owned copies
+00:02 +45 ~3: D:/codex/work/cinema-client-20261027-codex/test/subtitle_files_test.dart: unsupported or empty subtitles are rejected before writing a file
+00:03 +46 ~3: D:/codex/work/cinema-client-20261027-codex/test/widget_test.dart: playback authentication starts before slow metadata finishes (warm=true)
+2026-10-27T23:09:31.724105 INFO api GET /api/detail status=200 ms=282 bytes=1617
+2026-10-27T23:09:31.729089 INFO api GET /api/search status=200 ms=0 bytes=1617
+2026-10-27T23:09:31.730087 ERROR series-seasons ApiException(ApiFailureKind.protocol, /api/search, null, null): 季列表格式无效
+00:04 +47 ~3: D:/codex/work/cinema-client-20261027-codex/test/widget_test.dart: playback authentication starts before slow metadata finishes (warm=false)
+2026-10-27T23:09:31.833826 INFO api GET /api/detail status=200 ms=0 bytes=1617
+2026-10-27T23:09:31.902080 INFO api GET /api/search status=200 ms=67 bytes=26
+00:04 +48 ~3: D:/codex/work/cinema-client-20261027-codex/test/widget_test.dart: a home feed full of series still loads the real movie category
+2026-10-27T23:09:31.996647 INFO api GET /api/home status=200 ms=1 bytes=1011
+2026-10-27T23:09:31.999471 INFO api GET /api/list status=200 ms=1 bytes=92
+00:04 +49 ~3: D:/codex/work/cinema-client-20261027-codex/test/widget_test.dart: home renders real list content and capability-neutral missing metadata
+2026-10-27T23:09:32.609281 INFO api GET /api/home status=200 ms=5 bytes=639
+2026-10-27T23:09:32.610306 INFO api GET /api/list status=200 ms=1 bytes=639
+2026-10-27T23:09:32.610306 INFO api GET /api/list status=200 ms=1 bytes=639
+00:05 +50 ~3: D:/codex/work/cinema-client-20261027-codex/test/widget_test.dart: detail scroll viewport fills an iPhone-sized screen
+2026-10-27T23:09:32.774990 INFO api GET /api/detail status=200 ms=0 bytes=1596
+00:05 +51 ~3: All tests passed!

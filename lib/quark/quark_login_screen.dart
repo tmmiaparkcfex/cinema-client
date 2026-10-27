@@ -26,8 +26,13 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
     });
     try {
       final cookies = <String, String>{};
-      for (final url in const ['https://pan.quark.cn/', 'https://drive-pc.quark.cn/']) {
-        final values = await CookieManager.instance().getCookies(url: WebUri(url));
+      for (final url in const [
+        'https://pan.quark.cn/',
+        'https://drive-pc.quark.cn/',
+      ]) {
+        final values = await CookieManager.instance().getCookies(
+          url: WebUri(url),
+        );
         for (final cookie in values) {
           if (cookie.name.trim().isNotEmpty && cookie.value != null) {
             cookies[cookie.name.trim()] = cookie.value.toString();
@@ -38,11 +43,10 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
         setState(() => _message = '还没有读取到登录状态。请先在页面中完成夸克登录。');
         return;
       }
-      final cookieHeader =
-          cookies.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
-      await widget.playbackService.accountStore.saveCookie(cookieHeader);
-      await widget.playbackService.reloadAccount();
-      await widget.playbackService.validateAccount();
+      final cookieHeader = cookies.entries
+          .map((entry) => '${entry.key}=${entry.value}')
+          .join('; ');
+      await widget.playbackService.connectCookie(cookieHeader);
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on QuarkException catch (error) {
@@ -74,7 +78,11 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
             child: const Text(
               '登录在你的设备内完成，会话只保存在系统安全存储中。密码和 Cookie 不会发送给影视接口或开发者。',
-              style: TextStyle(color: Color(0xFFC9CDD6), height: 1.45, fontSize: 13),
+              style: TextStyle(
+                color: Color(0xFFC9CDD6),
+                height: 1.45,
+                fontSize: 13,
+              ),
             ),
           ),
           if (_loading) const LinearProgressIndicator(minHeight: 2),
@@ -90,7 +98,9 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
             ),
           Expanded(
             child: InAppWebView(
-              initialUrlRequest: URLRequest(url: WebUri('https://pan.quark.cn/')),
+              initialUrlRequest: URLRequest(
+                url: WebUri('https://pan.quark.cn/'),
+              ),
               initialSettings: InAppWebViewSettings(
                 javaScriptEnabled: true,
                 thirdPartyCookiesEnabled: true,

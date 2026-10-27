@@ -1,0 +1,2 @@
+media_kit: NativeReferenceHolder: Allocated 2330000701040
+{"passed":true,"environment":"Windows native FFI; headless; software decode","sample":"synthetic MKV / 3840x2160 / HEVC 10-bit / two AAC audio tracks","engine":"mpv v0.36.0-403-g652a1dd907","videoCodec":"hevc ((null))","decodedPixelFormat":"yuv420p10","audioSwitch":true,"externalSubtitleLoaded":true,"seekMs":5417,"resumeMs":3000,"speed":1.5,"authorizedRequests":6,"rangeRequests":6,"iphoneTested":false,"gpuRenderingTested":false,"hdrTested":false}

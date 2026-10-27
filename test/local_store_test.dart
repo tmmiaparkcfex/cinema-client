@@ -6,6 +6,54 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('seasons share one favorite and one resume record without losing API lookup IDs', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final store = LocalStore.load(prefs);
+    const first = VodItem(
+      key: 'season-1',
+      workId: 'tmdb:tv:2',
+      name: 'show',
+      mediaType: MediaKind.tv,
+    );
+    const second = VodItem(
+      key: 'season-2',
+      workId: 'tmdb:tv:2',
+      name: 'show',
+      mediaType: MediaKind.tv,
+    );
+    await store.toggleFavorite(first);
+    expect(store.isFavoriteItem(second), true);
+    final resource = MediaResource.fromJson({
+      'id': 'season-2-episode-1',
+      'season': 2,
+      'episode': 1,
+      'catalogKey': 'season-2',
+    });
+    await store.saveProgress(
+      item: first,
+      resource: resource,
+      position: const Duration(seconds: 20),
+      duration: const Duration(minutes: 40),
+      lineGroup: 'A',
+    );
+    expect(store.history.single.toItem().key, 'season-2');
+    await store.saveProgress(
+      item: second,
+      resource: resource,
+      position: const Duration(seconds: 50),
+      duration: const Duration(minutes: 40),
+      lineGroup: 'B',
+    );
+    final loaded = LocalStore.load(prefs);
+    expect(loaded.history, hasLength(1));
+    expect(loaded.recordForItem(first)?.positionMs, 50000);
+    expect(loaded.history.single.toItem().key, 'season-2');
+    expect(loaded.favorites.single.toItem().key, 'season-1');
+    await loaded.toggleFavorite(second);
+    expect(loaded.isFavoriteItem(first), false);
+  });
+
   test('favorites and progress survive a new store instance', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();

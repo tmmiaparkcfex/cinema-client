@@ -6,7 +6,7 @@ abstract final class CinemaColors {
   static const elevatedHigh = Color(0xFF181C24);
   static const text = Color(0xFFF4F5F7);
   static const muted = Color(0xFFA4AAB6);
-  static const faint = Color(0xFF676E7B);
+  static const faint = Color(0xFF8C94A3);
   static const red = Color(0xFFE50914);
   static const border = Color(0xFF272C36);
 }
@@ -15,6 +15,7 @@ ThemeData buildCinemaTheme() {
   const fallback = <String>[
     'PingFang SC',
     'Microsoft YaHei',
+    'Noto Sans SC',
     'Noto Sans CJK SC',
     'sans-serif',
   ];

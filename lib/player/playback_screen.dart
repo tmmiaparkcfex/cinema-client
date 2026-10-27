@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,16 +15,20 @@ import '../core/app_theme.dart';
 import '../core/episode_choice.dart';
 import '../quark/quark_login_screen.dart';
 import '../quark/quark_playback_service.dart';
+import 'subtitle_files.dart';
+import 'native_player.dart';
 
 class PlaybackScreen extends StatefulWidget {
   const PlaybackScreen({
     super.key,
     required this.detail,
     required this.initialChoice,
+    this.updatedDetail,
   });
 
   final VodDetail detail;
   final EpisodeChoice initialChoice;
+  final Future<VodDetail>? updatedDetail;
 
   @override
   State<PlaybackScreen> createState() => _PlaybackScreenState();
@@ -32,6 +38,8 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     with WidgetsBindingObserver {
   late AppServices _services;
   late EpisodeChoice _choice;
+  late VodDetail _detail;
+  SubtitleFiles? _subtitleFiles;
   Player? _player;
   VideoController? _videoController;
   QuarkPlaybackLease? _lease;
@@ -45,6 +53,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   bool _controlsVisible = true;
   bool _needsAccount = false;
   bool _ended = false;
+  bool _mediaReady = false;
   String _stage = '正在准备播放';
   String? _errorTitle;
   String? _errorDetail;
@@ -61,6 +70,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   Timer? _prepareTimer;
   Timer? _nextTimer;
   int _generation = 0;
+  QuarkPlaybackCancellation? _cancellation;
   EpisodeChoice? _nextChoice;
   int _nextCountdown = 0;
   bool _savingProgress = false;
@@ -71,8 +81,34 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   @override
   void initState() {
     super.initState();
+    _detail = widget.detail;
     _choice = widget.initialChoice;
     WidgetsBinding.instance.addObserver(this);
+    widget.updatedDetail
+        ?.then<void>((updated) {
+          if (_disposed ||
+              !mounted ||
+              updated.item.identityKey != _detail.item.identityKey) {
+            return;
+          }
+          final selected = EpisodeChoice.choiceForResource(
+            updated,
+            _resource?.id ?? '',
+          );
+          setState(() {
+            _detail = updated;
+            if (selected != null) _choice = selected;
+          });
+          if (_ended &&
+              _player?.state.completed == true &&
+              EpisodeChoice.nextEpisode(updated, _choice) != null) {
+            _ended = false;
+            unawaited(_handleCompleted());
+          }
+        })
+        .catchError((Object error) {
+          AppLog.error('player-detail-update', error);
+        });
   }
 
   @override
@@ -88,7 +124,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
 
   void _enterPlayerMode() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android)) {
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.android)) {
       SystemChrome.setPreferredOrientations(const [
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
@@ -98,7 +136,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
 
   void _leavePlayerMode() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android)) {
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.android)) {
       SystemChrome.setPreferredOrientations(const [
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
@@ -113,8 +153,13 @@ class _PlaybackScreenState extends State<PlaybackScreen>
 
   Future<void> _ensurePlayer() async {
     if (_player != null) return;
-    final player = Player();
-    final controller = VideoController(player);
+    final player = createNativePlayer();
+    final controller = VideoController(
+      player,
+      configuration: const VideoControllerConfiguration(
+        enableHardwareAcceleration: true,
+      ),
+    );
     _player = player;
     _videoController = controller;
     _subscriptions.addAll([
@@ -164,16 +209,31 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     ]);
   }
 
-  Future<void> _startPlayback() async {
+  Future<void> _startPlayback({
+    Duration? resumeAt,
+    bool refreshLease = false,
+  }) async {
+    if (_disposed || !mounted) return;
     final resource = _resource;
     if (resource == null) {
-      _showError(
-        '线路缺少资源描述',
-        '接口没有返回这条线路的文件信息。请切换线路，或在后台补齐资源描述后再试。',
-      );
+      _showError('线路缺少资源描述', '接口没有返回这条线路的文件信息。请切换线路，或在后台补齐资源描述后再试。');
       return;
     }
-    if (!await _services.quark.hasAccount) {
+    _cancellation?.cancel();
+    final cancellation = QuarkPlaybackCancellation();
+    _cancellation = cancellation;
+    final generation = ++_generation;
+    _cancelOverlays();
+    bool hasAccount;
+    try {
+      hasAccount = await _services.quark.hasAccount;
+    } catch (error) {
+      if (_disposed || generation != _generation) return;
+      _showError('无法读取登录状态', '系统安全存储暂时不可用，请退出播放后重新连接夸克账号。');
+      return;
+    }
+    if (_disposed || generation != _generation) return;
+    if (!hasAccount) {
       _setStateIfMounted(() {
         _loading = false;
         _needsAccount = true;
@@ -183,12 +243,13 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       return;
     }
 
-    final generation = ++_generation;
-    _cancelOverlays();
-    await _releaseLease();
+    _mediaReady = false;
     if (_player != null) {
       await _player!.stop();
     }
+    if (_disposed || generation != _generation) return;
+    if (!refreshLease) await _releaseLease();
+    if (_disposed || generation != _generation) return;
     _setStateIfMounted(() {
       _loading = true;
       _buffering = true;
@@ -201,18 +262,29 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     });
     _prepareTimer?.cancel();
     _prepareTimer = Timer(const Duration(seconds: 75), () {
-      if (!mounted || !_loading) return;
+      if (!mounted || !_loading || generation != _generation) return;
+      cancellation.cancel();
       _generation++;
-      _showError(
-        '准备播放超时',
-        '在规定时间内没有完成账号校验、文件定位和地址获取。本次等待已结束，请检查网络后重试。',
-      );
+      _showError('准备播放超时', '在规定时间内没有完成账号校验、文件定位和地址获取。本次等待已结束，请检查网络后重试。');
     });
 
     try {
       await _ensurePlayer();
-      final lease = await _services.quark.acquire(
+      QuarkPlaybackLease? lease = refreshLease ? _lease : null;
+      if (lease != null) {
+        _setStateIfMounted(() => _stage = '正在刷新播放地址');
+        try {
+          cancellation.throwIfCancelled();
+          await lease.refresh();
+        } on QuarkException catch (error) {
+          if (error.kind != QuarkFailureKind.fileNotFound) rethrow;
+          await _releaseLease();
+          lease = null;
+        }
+      }
+      lease ??= await _services.quark.acquire(
         resource,
+        cancellation: cancellation,
         onStage: (stage) {
           if (mounted && generation == _generation) {
             setState(() => _stage = stage);
@@ -220,14 +292,24 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         },
       );
       if (_disposed || generation != _generation) {
-        await lease.release();
+        if (!identical(_lease, lease)) await lease.release();
         return;
       }
       _lease = lease;
-      final record = _services.store.recordFor(widget.detail.item.key);
-      final resume = record?.resourceId == resource.id && !record!.completed
-          ? Duration(milliseconds: record.safePositionMs)
-          : Duration.zero;
+      final record = _services.store.recordForItem(_detail.item);
+      final storedMatches =
+          record != null &&
+          !record.completed &&
+          (!_detail.isSeries ||
+              ((record.season ?? 1) == (resource.season ?? 1) &&
+                  record.episode == resource.episode));
+      final resume = EpisodeChoice.resumeWithinResource(
+        resumeAt ??
+            (storedMatches
+                ? Duration(milliseconds: record.safePositionMs)
+                : Duration.zero),
+        resource,
+      );
       _stage = '正在起播';
       _setStateIfMounted(() {});
       await _player!.open(
@@ -239,39 +321,51 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         play: true,
       );
       if (_disposed || generation != _generation) {
-        await lease.release();
+        if (!identical(_lease, lease)) await lease.release();
+        return;
+      }
+      await Future.any<void>([
+        _videoController!.waitUntilFirstFrameRendered,
+        cancellation.whenCancelled.then((_) => cancellation.throwIfCancelled()),
+      ]).timeout(const Duration(seconds: 40));
+      if (_disposed || generation != _generation) {
+        if (!identical(_lease, lease)) await lease.release();
         return;
       }
       _prepareTimer?.cancel();
+      _mediaReady = true;
       _setStateIfMounted(() {
         _loading = false;
-        _buffering = true;
+        _buffering = _player!.state.buffering;
         _ended = false;
         _errorTitle = null;
         _controlsVisible = true;
       });
       _startBufferWatchdog();
       _armHideControls();
+    } on TimeoutException {
+      if (_disposed || generation != _generation) return;
+      _showError('起播超时', '播放地址已取得，但仍未显示画面。请检查网络或切换线路后重试。');
     } on QuarkException catch (error) {
-      _prepareTimer?.cancel();
       AppLog.error('playback-acquire', error);
       if (_disposed || generation != _generation) return;
+      _prepareTimer?.cancel();
       _setStateIfMounted(() {
         _loading = false;
         _buffering = false;
-        _needsAccount = error.kind == QuarkFailureKind.authRequired ||
+        _needsAccount =
+            error.kind == QuarkFailureKind.authRequired ||
             error.kind == QuarkFailureKind.authExpired;
-        _errorTitle = error.kind == QuarkFailureKind.authRequired ? '连接你的夸克账号' : '暂时无法起播';
+        _errorTitle = error.kind == QuarkFailureKind.authRequired
+            ? '连接你的夸克账号'
+            : '暂时无法起播';
         _errorDetail = error.userMessage;
       });
     } catch (error) {
-      _prepareTimer?.cancel();
       AppLog.error('playback-acquire', error);
       if (_disposed || generation != _generation) return;
-      _showError(
-        '暂时无法起播',
-        '播放准备过程失败。请稍后重试；反复失败时请切换线路。',
-      );
+      _prepareTimer?.cancel();
+      _showError('暂时无法起播', '播放准备过程失败。请稍后重试；反复失败时请切换线路。');
     }
   }
 
@@ -294,34 +388,48 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   void _handlePlaybackError() {
     if (_disposed) return;
     _bufferTimer?.cancel();
-    _showError(
-      '播放已中断',
-      '播放地址可能已失效，或当前网络中断。点击“重新获取地址”会重新使用你的账号获取新地址，并从当前进度继续。',
-    );
+    _showError('播放已中断', '播放地址可能已失效，或当前网络中断。点击“重新获取地址”会重新使用你的账号获取新地址，并从当前进度继续。');
   }
 
   void _startBufferWatchdog() {
     _bufferTimer?.cancel();
+    if (!_buffering) return;
     _bufferTimer = Timer(const Duration(seconds: 40), () {
-      if (!mounted || _loading || _errorTitle != null) return;
-      _showError(
-        '加载超时',
-        '连续缓冲超过 40 秒。本次等待已停止，请检查网络或切换线路；不会无限加载。',
-      );
+      if (!mounted ||
+          _loading ||
+          !_buffering ||
+          !_playing ||
+          _errorTitle != null) {
+        return;
+      }
+      _showError('加载超时', '连续缓冲超过 40 秒。本次等待已停止，请检查网络或切换线路；不会无限加载。');
       unawaited(_player?.pause());
     });
   }
 
   Future<void> _cancelLoading() async {
+    _cancellation?.cancel();
     _generation++;
     _prepareTimer?.cancel();
     _bufferTimer?.cancel();
+    final lease = _lease;
+    _lease = null;
+    final player = _player;
     _setStateIfMounted(() {
       _loading = false;
       _buffering = false;
       _errorTitle = '已取消加载';
       _errorDetail = '本次播放准备已取消。如果资源已经转存，会在后台清理。';
     });
+    try {
+      await player?.stop();
+    } finally {
+      try {
+        await lease?.release();
+      } catch (error) {
+        AppLog.error('playback-release', error);
+      }
+    }
   }
 
   Future<void> _releaseLease() async {
@@ -347,25 +455,36 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   }
 
   Future<void> _retryPlayback() async {
-    await _startPlayback();
+    final position = _player?.state.position ?? _position;
+    await _saveProgress();
+    if (_disposed) return;
+    await _startPlayback(resumeAt: position, refreshLease: _lease != null);
   }
 
   Future<void> _saveProgress({bool completed = false}) async {
     final player = _player;
     final resource = _resource;
-    if (player == null || resource == null || resource.id.isEmpty || _savingProgress) return;
-    final duration = _duration.inMilliseconds > 0 ? _duration : player.state.duration;
+    if (!_mediaReady ||
+        player == null ||
+        resource == null ||
+        resource.id.isEmpty ||
+        _savingProgress) {
+      return;
+    }
+    final duration = _duration.inMilliseconds > 0
+        ? _duration
+        : player.state.duration;
     final position = player.state.position;
     if (duration.inMilliseconds <= 0 && position.inMilliseconds <= 0) return;
     _savingProgress = true;
     try {
       await _services.store.saveProgress(
-        item: widget.detail.item,
+        item: _detail.item,
         resource: resource,
         position: position,
         duration: duration,
         lineGroup: _choice.line.group,
-        completed: completed,
+        completed: completed || player.state.completed,
       );
     } finally {
       _savingProgress = false;
@@ -373,10 +492,16 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   }
 
   Future<void> _handleCompleted() async {
-    if (_disposed || _loading || _ended || _nextChoice != null) return;
+    if (_disposed ||
+        !_mediaReady ||
+        _loading ||
+        _ended ||
+        _nextChoice != null) {
+      return;
+    }
     await _saveProgress(completed: true);
     if (_disposed) return;
-    final next = EpisodeChoice.nextEpisode(widget.detail, _choice);
+    final next = EpisodeChoice.nextEpisode(_detail, _choice);
     if (next == null) {
       _hideControlsTimer?.cancel();
       _setStateIfMounted(() {
@@ -392,6 +517,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   Future<void> _replay() async {
     final player = _player;
     if (player == null) return;
+    _cancelOverlays();
     await player.seek(Duration.zero);
     await player.play();
     _setStateIfMounted(() {
@@ -442,8 +568,13 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   }
 
   Future<void> _switchChoice(EpisodeChoice choice) async {
-    await _saveProgress();
+    final sameEpisode = EpisodeChoice.isSameEpisode(_choice, choice);
+    final position = sameEpisode
+        ? (_player?.state.position ?? _position)
+        : Duration.zero;
+    await _saveProgress(completed: _player?.state.completed == true);
     if (_disposed) return;
+    _mediaReady = false;
     _setStateIfMounted(() {
       _choice = choice;
       _position = Duration.zero;
@@ -452,14 +583,16 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       _errorTitle = null;
       _errorDetail = null;
     });
-    await _startPlayback();
+    await _startPlayback(resumeAt: position);
   }
 
   Future<void> _seekRelative(int seconds) async {
     final player = _player;
     if (player == null) return;
-    final targetMs = (_position.inMilliseconds + seconds * 1000)
-        .clamp(0, _duration.inMilliseconds > 0 ? _duration.inMilliseconds : 1 << 62);
+    final targetMs = (_position.inMilliseconds + seconds * 1000).clamp(
+      0,
+      _duration.inMilliseconds > 0 ? _duration.inMilliseconds : 1 << 62,
+    );
     await player.seek(Duration(milliseconds: targetMs));
     _showControlsTemporarily();
   }
@@ -489,6 +622,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   Future<void> _togglePlay() async {
     final player = _player;
     if (player == null) return;
+    if (player.state.completed) {
+      await _replay();
+      return;
+    }
     if (_playing) {
       await player.pause();
     } else {
@@ -580,20 +717,35 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('音轨', style: TextStyle(fontWeight: FontWeight.w700)),
+                    const Text(
+                      '音轨',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     const SizedBox(height: 6),
-                    if (_tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').isEmpty)
+                    if (_tracks.audio
+                        .where((t) => t.id != 'auto' && t.id != 'no')
+                        .isEmpty)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 10),
-                        child: Text('没有可切换的内嵌音轨', style: TextStyle(color: CinemaColors.faint)),
+                        child: Text(
+                          '没有可切换的内嵌音轨',
+                          style: TextStyle(color: CinemaColors.faint),
+                        ),
                       ),
-                    for (final audio in _tracks.audio.where((t) => t.id != 'auto' && t.id != 'no'))
+                    for (final audio in _tracks.audio.where(
+                      (t) => t.id != 'auto' && t.id != 'no',
+                    ))
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text(_trackLabel(audio.title, audio.language, audio.codec)),
+                        title: Text(
+                          _trackLabel(audio.title, audio.language, audio.codec),
+                        ),
                         subtitle: Text(_audioDetail(audio)),
                         trailing: _track.audio.id == audio.id
-                            ? const Icon(Icons.check_rounded, color: CinemaColors.red)
+                            ? const Icon(
+                                Icons.check_rounded,
+                                color: CinemaColors.red,
+                              )
                             : null,
                         onTap: () async {
                           await _player?.setAudioTrack(audio);
@@ -601,34 +753,58 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                         },
                       ),
                     const Divider(height: 24),
-                    const Text('字幕', style: TextStyle(fontWeight: FontWeight.w700)),
+                    const Text(
+                      '字幕',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     const SizedBox(height: 6),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('关闭字幕'),
                       trailing: _track.subtitle.id == 'no'
-                          ? const Icon(Icons.check_rounded, color: CinemaColors.red)
+                          ? const Icon(
+                              Icons.check_rounded,
+                              color: CinemaColors.red,
+                            )
                           : null,
                       onTap: () async {
                         await _player?.setSubtitleTrack(SubtitleTrack.no());
                         setSheetState(() {});
                       },
                     ),
-                    if (_tracks.subtitle.where((t) => t.id != 'auto' && t.id != 'no').isEmpty)
+                    if (_tracks.subtitle
+                        .where((t) => t.id != 'auto' && t.id != 'no')
+                        .isEmpty)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 10),
-                        child: Text('没有检测到内嵌字幕', style: TextStyle(color: CinemaColors.faint)),
+                        child: Text(
+                          '没有检测到内嵌字幕',
+                          style: TextStyle(color: CinemaColors.faint),
+                        ),
                       ),
-                    for (final subtitle in _tracks.subtitle.where((t) => t.id != 'auto' && t.id != 'no'))
+                    for (final subtitle in _tracks.subtitle.where(
+                      (t) => t.id != 'auto' && t.id != 'no',
+                    ))
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text(_trackLabel(subtitle.title, subtitle.language, subtitle.codec)),
-                        subtitle: Text([
-                          if (subtitle.codec != null) subtitle.codec!,
-                          if (subtitle.image == true) '图形字幕',
-                        ].join(' · ')),
+                        title: Text(
+                          _trackLabel(
+                            subtitle.title,
+                            subtitle.language,
+                            subtitle.codec,
+                          ),
+                        ),
+                        subtitle: Text(
+                          [
+                            if (subtitle.codec != null) subtitle.codec!,
+                            if (subtitle.image == true) '图形字幕',
+                          ].join(' · '),
+                        ),
                         trailing: _track.subtitle.id == subtitle.id
-                            ? const Icon(Icons.check_rounded, color: CinemaColors.red)
+                            ? const Icon(
+                                Icons.check_rounded,
+                                color: CinemaColors.red,
+                              )
                             : null,
                         onTap: () async {
                           await _player?.setSubtitleTrack(subtitle);
@@ -636,9 +812,13 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                         },
                       ),
                     const SizedBox(height: 12),
-                    const Text(
-                      '字幕样式、在线字幕搜索和外挂字幕加载尚未接入；当前只显示片源内嵌字幕。',
-                      style: TextStyle(color: CinemaColors.faint, fontSize: 12, height: 1.4),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.file_open_outlined),
+                      label: const Text('导入外挂字幕'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _importSubtitle();
+                      },
                     ),
                   ],
                 ),
@@ -651,8 +831,52 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     if (mounted) _showControlsTemporarily();
   }
 
+  Future<void> _importSubtitle() async {
+    final generation = _generation;
+    try {
+      const type = XTypeGroup(
+        label: '字幕',
+        extensions: SubtitleFiles.extensions,
+        uniformTypeIdentifiers: ['public.data'],
+      );
+      final file = await openFile(acceptedTypeGroups: [type]);
+      if (file == null || _disposed || generation != _generation) return;
+      if (await file.length() > SubtitleFiles.maxBytes) {
+        throw const FormatException('字幕文件超过 16 MB。');
+      }
+      final bytes = await file.readAsBytes();
+      if (_disposed || generation != _generation) return;
+      final subtitles = _subtitleFiles ??= SubtitleFiles(
+        Directory('${_services.quark.supportDirectory.path}/subtitles'),
+      );
+      final imported = await subtitles.importFile(file.name, bytes);
+      if (_disposed) {
+        await subtitles.dispose();
+        return;
+      }
+      if (generation != _generation) return;
+      await _player?.setSubtitleTrack(
+        SubtitleTrack.uri(imported.path, title: file.name),
+      );
+      _showControlsTemporarily();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error is FormatException ? error.message : '字幕导入失败，请检查文件后重试。',
+          ),
+        ),
+      );
+    }
+  }
+
   String _trackLabel(String? title, String? language, String? codec) {
-    final values = [title, language, codec].whereType<String>().where((v) => v.trim().isNotEmpty);
+    final values = [
+      title,
+      language,
+      codec,
+    ].whereType<String>().where((v) => v.trim().isNotEmpty);
     return values.isEmpty ? '未命名轨道' : values.join(' · ');
   }
 
@@ -684,7 +908,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
               return ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(
-                  selected ? Icons.play_arrow_rounded : Icons.play_arrow_outlined,
+                  selected
+                      ? Icons.play_arrow_rounded
+                      : Icons.play_arrow_outlined,
                   color: selected ? CinemaColors.red : CinemaColors.muted,
                 ),
                 title: Text(choice.episodeLabel),
@@ -694,7 +920,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                   overflow: TextOverflow.ellipsis,
                 ),
                 trailing: selected
-                    ? const Text('当前播放', style: TextStyle(color: CinemaColors.red, fontSize: 12))
+                    ? const Text(
+                        '当前播放',
+                        style: TextStyle(color: CinemaColors.red, fontSize: 12),
+                      )
                     : null,
                 onTap: () {
                   Navigator.of(context).pop();
@@ -718,7 +947,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         title: '切换线路',
         child: Column(
           children: [
-            for (final line in widget.detail.playableLines)
+            for (final line in _detail.playableLines)
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(line.group),
@@ -727,9 +956,19 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                     ? const Icon(Icons.check_rounded, color: CinemaColors.red)
                     : null,
                 onTap: () {
-                  final target = EpisodeChoice.sameEpisodeInLine(widget.detail, line, _choice);
+                  final target = EpisodeChoice.sameEpisodeInLine(
+                    _detail,
+                    line,
+                    _choice,
+                  );
                   Navigator.of(context).pop();
-                  if (target != null && target.resource?.id != _resource?.id) {
+                  if (target == null) {
+                    ScaffoldMessenger.of(this.context).showSnackBar(
+                      const SnackBar(content: Text('这条线路没有当前集，请选择其他线路。')),
+                    );
+                    return;
+                  }
+                  if (target.resource?.id != _resource?.id) {
                     _switchChoice(target);
                   }
                 },
@@ -743,14 +982,19 @@ class _PlaybackScreenState extends State<PlaybackScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      _nextTimer?.cancel();
       unawaited(_saveProgress());
+    } else if (state == AppLifecycleState.resumed && _nextChoice != null) {
+      _showNextPrompt(_nextChoice!);
     }
   }
 
   @override
   void dispose() {
     _disposed = true;
+    _cancellation?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _generation++;
     _cancelOverlays();
@@ -758,11 +1002,21 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     for (final sub in _subscriptions) {
       unawaited(sub.cancel());
     }
-    unawaited(_releaseLease());
+    final lease = _lease;
+    _lease = null;
     final player = _player;
-    if (player != null) {
-      unawaited(player.dispose());
-    }
+    unawaited(() async {
+      try {
+        await player?.dispose();
+      } finally {
+        await _subtitleFiles?.dispose();
+        try {
+          await lease?.release();
+        } catch (error) {
+          AppLog.error('playback-release', error);
+        }
+      }
+    }());
     _leavePlayerMode();
     super.dispose();
   }
@@ -781,15 +1035,27 @@ class _PlaybackScreenState extends State<PlaybackScreen>
           autofocus: true,
           onKeyEvent: (node, event) {
             if (event is! KeyDownEvent) return KeyEventResult.ignored;
-            if (event.logicalKey == LogicalKeyboardKey.space) {
+            if (event.logicalKey == LogicalKeyboardKey.space &&
+                node.hasPrimaryFocus) {
               unawaited(_togglePlay());
               return KeyEventResult.handled;
             }
-            if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+            if ((event.logicalKey == LogicalKeyboardKey.select ||
+                    event.logicalKey == LogicalKeyboardKey.enter) &&
+                node.hasPrimaryFocus) {
+              _showControlsTemporarily();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) FocusScope.of(context).nextFocus();
+              });
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowLeft &&
+                node.hasPrimaryFocus) {
               unawaited(_seekRelative(-10));
               return KeyEventResult.handled;
             }
-            if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            if (event.logicalKey == LogicalKeyboardKey.arrowRight &&
+                node.hasPrimaryFocus) {
               unawaited(_seekRelative(10));
               return KeyEventResult.handled;
             }
@@ -841,7 +1107,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                               fontSize: compact ? 22 : 28,
                               height: 1.35,
                               color: Colors.white,
-                              backgroundColor: Colors.black.withValues(alpha: 0.66),
+                              backgroundColor: Colors.black.withValues(
+                                alpha: 0.66,
+                              ),
                             ),
                             padding: const EdgeInsets.fromLTRB(20, 0, 20, 104),
                           ),
@@ -852,11 +1120,13 @@ class _PlaybackScreenState extends State<PlaybackScreen>
               if (_loading) _buildLoading(compact),
               if (_errorTitle != null) _buildError(compact),
               if (!_loading && _errorTitle == null && _buffering)
-                const Center(child: CircularProgressIndicator(color: Colors.white)),
+                const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
               if (!_loading && _errorTitle == null)
-                _ControlsOverlay(
+                PlaybackControls(
                   visible: _controlsVisible,
-                  title: widget.detail.item.name,
+                  title: _detail.item.name,
                   subtitle: _choice.fullLabel,
                   position: _dragPositionMs == null
                       ? _position
@@ -880,17 +1150,20 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                     _hideControlsTimer?.cancel();
                     setState(() => _dragPositionMs = value);
                   },
-                  onSeekChanged: (value) => setState(() => _dragPositionMs = value),
+                  onSeekChanged: (value) =>
+                      setState(() => _dragPositionMs = value),
                   onSeekEnd: (value) async {
                     await _player?.seek(Duration(milliseconds: value.round()));
                     _setStateIfMounted(() => _dragPositionMs = null);
                     _showControlsTemporarily();
                   },
                   onRate: _openRatePanel,
-                  onEpisodes: widget.detail.isSeries ? _openEpisodesPanel : null,
+                  onEpisodes: _detail.isSeries ? _openEpisodesPanel : null,
                   onTracks: _openTrackPanel,
                   onFit: _openFitPanel,
-                  onLines: widget.detail.playableLines.length > 1 ? _openLinePanel : null,
+                  onLines: _detail.playableLines.length > 1
+                      ? _openLinePanel
+                      : null,
                 ),
               if (_nextChoice != null)
                 _NextEpisodePrompt(
@@ -901,8 +1174,8 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 ),
               if (_ended)
                 _EndedPrompt(
-                  isSeries: widget.detail.isSeries,
-                  canSwitchLine: widget.detail.playableLines.length > 1,
+                  isSeries: _detail.isSeries,
+                  canSwitchLine: _detail.playableLines.length > 1,
                   onReplay: _replay,
                   onSwitchLine: _openLinePanel,
                   onExit: () => Navigator.of(context).maybePop(),
@@ -941,10 +1214,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
               style: TextStyle(color: CinemaColors.faint, fontSize: 12),
             ),
             const SizedBox(height: 20),
-            TextButton(
-              onPressed: _cancelLoading,
-              child: const Text('取消加载'),
-            ),
+            TextButton(onPressed: _cancelLoading, child: const Text('取消加载')),
           ],
         ),
       ),
@@ -964,7 +1234,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    _needsAccount ? Icons.lock_outline_rounded : Icons.error_outline_rounded,
+                    _needsAccount
+                        ? Icons.lock_outline_rounded
+                        : Icons.error_outline_rounded,
                     size: 42,
                     color: CinemaColors.muted,
                   ),
@@ -981,7 +1253,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                   Text(
                     _errorDetail ?? '',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: CinemaColors.muted, height: 1.5),
+                    style: const TextStyle(
+                      color: CinemaColors.muted,
+                      height: 1.5,
+                    ),
                   ),
                   const SizedBox(height: 22),
                   Wrap(
@@ -1000,7 +1275,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                           child: const Text('重新获取地址'),
                         ),
                       if (!_needsAccount &&
-                          widget.detail.playableLines.length > 1 &&
+                          _detail.playableLines.length > 1 &&
                           _errorTitle != '本集已播完')
                         OutlinedButton(
                           onPressed: _openLinePanel,
@@ -1022,8 +1297,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   }
 }
 
-class _ControlsOverlay extends StatelessWidget {
-  const _ControlsOverlay({
+class PlaybackControls extends StatelessWidget {
+  const PlaybackControls({
+    super.key,
     required this.visible,
     required this.title,
     required this.subtitle,
@@ -1074,205 +1350,238 @@ class _ControlsOverlay extends StatelessWidget {
     final h = seconds ~/ 3600;
     final m = (seconds % 3600) ~/ 60;
     final s = seconds % 60;
-    if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    if (h > 0) {
+      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final max = duration.inMilliseconds > 0 ? duration.inMilliseconds.toDouble() : 1.0;
+    final max = duration.inMilliseconds > 0
+        ? duration.inMilliseconds.toDouble()
+        : 1.0;
     final value = position.inMilliseconds.clamp(0, max.round()).toDouble();
     return IgnorePointer(
       ignoring: !visible,
-      child: AnimatedOpacity(
-        opacity: visible ? 1 : 0,
-        duration: const Duration(milliseconds: 180),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onToggleControls,
-                child: const SizedBox.expand(),
+      child: ExcludeFocus(
+        excluding: !visible,
+        child: AnimatedOpacity(
+          opacity: visible ? 1 : 0,
+          duration: const Duration(milliseconds: 180),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onToggleControls,
+                  child: const SizedBox.expand(),
+                ),
               ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xCC000000), Colors.transparent],
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xCC000000), Colors.transparent],
+                    ),
+                  ),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        compact ? 12 : 24,
+                        8,
+                        compact ? 12 : 24,
+                        30,
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            tooltip: '返回',
+                            onPressed: onBack,
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (subtitle.isNotEmpty)
+                                  Text(
+                                    subtitle,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: CinemaColors.muted,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (rate != 1)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0x55E50914),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text('$rate×'),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(compact ? 12 : 24, 8, compact ? 12 : 24, 30),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          tooltip: '返回',
-                          onPressed: onBack,
-                          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              if (subtitle.isNotEmpty)
+              ),
+              Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _CenterControl(
+                      icon: Icons.replay_10_rounded,
+                      label: '后退 10 秒',
+                      onTap: () => onSeekRelative(-10),
+                      size: compact ? 46 : 56,
+                    ),
+                    SizedBox(width: compact ? 26 : 44),
+                    _CenterControl(
+                      icon: playing
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                      label: playing ? '暂停' : '播放',
+                      onTap: onTogglePlay,
+                      size: compact ? 68 : 82,
+                      emphasized: true,
+                    ),
+                    SizedBox(width: compact ? 26 : 44),
+                    _CenterControl(
+                      icon: Icons.forward_10_rounded,
+                      label: '前进 10 秒',
+                      onTap: () => onSeekRelative(10),
+                      size: compact ? 46 : 56,
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Color(0xE6000000), Colors.transparent],
+                    ),
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        compact ? 14 : 26,
+                        32,
+                        compact ? 14 : 26,
+                        10,
+                      ),
+                      child: Column(
+                        children: [
+                          SliderTheme(
+                            data: SliderThemeData(
+                              trackShape: const RoundedRectSliderTrackShape(),
+                              secondaryActiveTrackColor: Colors.white30,
+                              activeTickMarkColor: Colors.transparent,
+                              inactiveTickMarkColor: Colors.transparent,
+                            ),
+                            child: Slider(
+                              value: value.clamp(0, max),
+                              max: max,
+                              secondaryTrackValue: buffer.inMilliseconds
+                                  .clamp(0, max.round())
+                                  .toDouble(),
+                              onChangeStart: onSeekStart,
+                              onChanged: onSeekChanged,
+                              onChangeEnd: onSeekEnd,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: Row(
+                              children: [
                                 Text(
-                                  subtitle,
+                                  _format(position),
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  _format(duration),
                                   style: const TextStyle(
                                     fontSize: 11,
                                     color: CinemaColors.muted,
                                   ),
                                 ),
-                            ],
-                          ),
-                        ),
-                        if (rate != 1)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0x55E50914),
-                              borderRadius: BorderRadius.circular(4),
+                              ],
                             ),
-                            child: Text('$rate×'),
                           ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _CenterControl(
-                    icon: Icons.replay_10_rounded,
-                    label: '后退 10 秒',
-                    onTap: () => onSeekRelative(-10),
-                    size: compact ? 46 : 56,
-                  ),
-                  SizedBox(width: compact ? 26 : 44),
-                  _CenterControl(
-                    icon: playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    label: playing ? '暂停' : '播放',
-                    onTap: onTogglePlay,
-                    size: compact ? 68 : 82,
-                    emphasized: true,
-                  ),
-                  SizedBox(width: compact ? 26 : 44),
-                  _CenterControl(
-                    icon: Icons.forward_10_rounded,
-                    label: '前进 10 秒',
-                    onTap: () => onSeekRelative(10),
-                    size: compact ? 46 : 56,
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [Color(0xE6000000), Colors.transparent],
-                  ),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(compact ? 14 : 26, 32, compact ? 14 : 26, 10),
-                    child: Column(
-                      children: [
-                        SliderTheme(
-                          data: SliderThemeData(
-                            trackShape: const RoundedRectSliderTrackShape(),
-                            secondaryActiveTrackColor: Colors.white30,
-                            activeTickMarkColor: Colors.transparent,
-                            inactiveTickMarkColor: Colors.transparent,
-                          ),
-                          child: Slider(
-                            value: value.clamp(0, max),
-                            max: max,
-                            secondaryTrackValue: buffer.inMilliseconds.clamp(0, max.round()).toDouble(),
-                            onChangeStart: onSeekStart,
-                            onChanged: onSeekChanged,
-                            onChangeEnd: onSeekEnd,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: Row(
+                          const SizedBox(height: 2),
+                          Row(
                             children: [
-                              Text(_format(position), style: const TextStyle(fontSize: 11)),
-                              const Spacer(),
-                              Text(
-                                _format(duration),
-                                style: const TextStyle(fontSize: 11, color: CinemaColors.muted),
+                              _ControlAction(
+                                icon: Icons.speed_rounded,
+                                label: rate == 1 ? '倍速' : '$rate×',
+                                onTap: onRate,
                               ),
+                              if (onEpisodes != null)
+                                _ControlAction(
+                                  icon: Icons.playlist_play_rounded,
+                                  label: '选集',
+                                  onTap: onEpisodes!,
+                                ),
+                              _ControlAction(
+                                icon: Icons.subtitles_outlined,
+                                label: '音轨与字幕',
+                                onTap: onTracks,
+                              ),
+                              _ControlAction(
+                                icon: Icons.aspect_ratio_rounded,
+                                label: '画面',
+                                onTap: onFit,
+                              ),
+                              if (onLines != null)
+                                _ControlAction(
+                                  icon: Icons.alt_route_rounded,
+                                  label: '线路',
+                                  onTap: onLines!,
+                                ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            _ControlAction(
-                              icon: Icons.speed_rounded,
-                              label: rate == 1 ? '倍速' : '$rate×',
-                              onTap: onRate,
-                            ),
-                            if (onEpisodes != null)
-                              _ControlAction(
-                                icon: Icons.playlist_play_rounded,
-                                label: '选集',
-                                onTap: onEpisodes!,
-                              ),
-                            _ControlAction(
-                              icon: Icons.subtitles_outlined,
-                              label: '音轨与字幕',
-                              onTap: onTracks,
-                            ),
-                            _ControlAction(
-                              icon: Icons.aspect_ratio_rounded,
-                              label: '画面',
-                              onTap: onFit,
-                            ),
-                            if (onLines != null)
-                              _ControlAction(
-                                icon: Icons.alt_route_rounded,
-                                label: '线路',
-                                onTap: onLines!,
-                              ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1304,7 +1613,12 @@ class _ControlAction extends StatelessWidget {
           children: [
             Icon(icon, size: 20),
             const SizedBox(height: 4),
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11),
+            ),
           ],
         ),
       ),
@@ -1334,6 +1648,7 @@ class _CenterControl extends StatelessWidget {
       label: label,
       child: InkResponse(
         onTap: onTap,
+        autofocus: emphasized,
         radius: size * 0.65,
         child: Container(
           width: size,
@@ -1341,7 +1656,9 @@ class _CenterControl extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: emphasized ? const Color(0x55FFFFFF) : Colors.transparent,
-            border: emphasized ? Border.all(color: const Color(0x99FFFFFF)) : null,
+            border: emphasized
+                ? Border.all(color: const Color(0x99FFFFFF))
+                : null,
           ),
           child: Icon(icon, size: emphasized ? size * 0.5 : size * 0.55),
         ),
@@ -1379,9 +1696,21 @@ class _NextEpisodePrompt extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('即将播放 $title', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+                Text(
+                  '即将播放 $title',
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 6),
-                Text('$countdown 秒后自动开始', style: const TextStyle(color: CinemaColors.muted, fontSize: 12)),
+                Text(
+                  '$countdown 秒后自动开始',
+                  style: const TextStyle(
+                    color: CinemaColors.muted,
+                    fontSize: 12,
+                  ),
+                ),
                 const SizedBox(height: 14),
                 Row(
                   children: [
@@ -1430,12 +1759,19 @@ class _EndedPrompt extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_circle_outline_rounded, color: CinemaColors.muted, size: 34),
+              const Icon(
+                Icons.check_circle_outline_rounded,
+                color: CinemaColors.muted,
+                size: 34,
+              ),
               const SizedBox(height: 12),
               Text(
                 isSeries ? '当前线路的剧集已播放完毕' : '影片已播放完毕',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
@@ -1449,7 +1785,11 @@ class _EndedPrompt extends StatelessWidget {
                 alignment: WrapAlignment.center,
                 children: [
                   FilledButton(onPressed: onReplay, child: const Text('重新播放')),
-                  if (canSwitchLine) OutlinedButton(onPressed: onSwitchLine, child: const Text('切换线路')),
+                  if (canSwitchLine)
+                    OutlinedButton(
+                      onPressed: onSwitchLine,
+                      child: const Text('切换线路'),
+                    ),
                   TextButton(onPressed: onExit, child: const Text('退出')),
                 ],
               ),
@@ -1472,7 +1812,12 @@ class _Panel extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          12,
+          20,
+          20 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1489,7 +1834,13 @@ class _Panel extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 14),
               child,
             ],

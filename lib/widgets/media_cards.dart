@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/app_models.dart';
 import '../core/app_theme.dart';
@@ -35,7 +36,18 @@ class _MediaCardState extends State<MediaCard> {
       child: Semantics(
         button: true,
         label: '${widget.item.name}，${widget.item.isTv ? '电视剧' : '电影'}',
-        child: Focus(
+        child: FocusableActionDetector(
+          shortcuts: const {
+            SingleActivator(LogicalKeyboardKey.select): ActivateIntent(),
+          },
+          actions: {
+            ActivateIntent: CallbackAction<ActivateIntent>(
+              onInvoke: (_) {
+                widget.onTap();
+                return null;
+              },
+            ),
+          },
           onFocusChange: (value) => setState(() => _focused = value),
           child: GestureDetector(
             onTap: widget.onTap,
@@ -93,11 +105,17 @@ class _MediaCardState extends State<MediaCard> {
                     widget.item.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    [if (widget.item.year != null) '${widget.item.year}', widget.item.typeLabel].join(' · '),
+                    [
+                      if (widget.item.year != null) '${widget.item.year}',
+                      widget.item.typeLabel,
+                    ].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -177,9 +195,12 @@ class ContinueCard extends StatelessWidget {
                         record.completed
                             ? '${record.episodeText} 已播完'
                             : record.episodeText.isEmpty
-                                ? '${(record.progress * 100).round()}%'
-                                : '${record.episodeText} · ${(record.progress * 100).round()}%',
-                        style: const TextStyle(color: CinemaColors.muted, fontSize: 12),
+                            ? '${(record.progress * 100).round()}%'
+                            : '${record.episodeText} · ${(record.progress * 100).round()}%',
+                        style: const TextStyle(
+                          color: CinemaColors.muted,
+                          fontSize: 12,
+                        ),
                       ),
                       const Spacer(),
                       const Text(

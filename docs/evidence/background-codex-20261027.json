@@ -1,0 +1,7 @@
+{
+  "SampleTime": "2026-10-27T23:59:30.0824732+08:00",
+  "Endpoint": "http://127.0.0.1:8790/ctrl/state",
+  "Running": true,
+  "Pid": 12360,
+  "Access": "read-only GET; no service start or stop"
+}

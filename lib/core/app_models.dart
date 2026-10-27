@@ -77,12 +77,12 @@ class Coverage {
   }
 
   Map<String, dynamic> toJson() => {
-        'expected': expected,
-        'covered': covered,
-        'standardCovered': standardCovered,
-        'largeCovered': largeCovered,
-        'complete': complete,
-      };
+    'expected': expected,
+    'covered': covered,
+    'standardCovered': standardCovered,
+    'largeCovered': largeCovered,
+    'complete': complete,
+  };
 }
 
 class VodItem {
@@ -90,8 +90,13 @@ class VodItem {
     required this.key,
     required this.name,
     required this.mediaType,
+    this.workId = '',
+    this.catalogLines = const [],
     this.year,
     this.poster,
+    this.backdrop,
+    this.genres = const [],
+    this.runtimeMinutes,
     this.overview = '',
     this.remarks = const [],
     this.score = '',
@@ -104,10 +109,16 @@ class VodItem {
   });
 
   final String key;
+  final String workId;
+  final List<MediaLine> catalogLines;
+  String get identityKey => workId.isEmpty ? key : workId;
   final String name;
   final MediaKind mediaType;
   final int? year;
   final String? poster;
+  final String? backdrop;
+  final List<String> genres;
+  final int? runtimeMinutes;
   final String overview;
   final List<String> remarks;
   final String score;
@@ -122,10 +133,10 @@ class VodItem {
   bool get isResolved => mediaType != MediaKind.unknown;
 
   String get typeLabel => switch (mediaType) {
-        MediaKind.tv => '电视剧',
-        MediaKind.movie => '电影',
-        MediaKind.unknown => '类型待补齐',
-      };
+    MediaKind.tv => '电视剧',
+    MediaKind.movie => '电影',
+    MediaKind.unknown => '类型待补齐',
+  };
 
   factory VodItem.fromCatalogJson(Map<String, dynamic> json) {
     final pictures = _stringList(json['pics']);
@@ -134,25 +145,54 @@ class VodItem {
         : pictures.first;
     return VodItem(
       key: _firstText(json, const ['key', 'id', 'vod_id']) ?? '',
+      workId: _firstText(json, const ['workId', 'work_id']) ?? '',
+      catalogLines: [
+        for (final source in _mapList(json['sources']))
+          for (final line in _mapList(source['lines']))
+            MediaLine.fromJson({
+              ...line,
+              'entries': line['preview'] ?? line['entries'],
+            }, catalogKey: _firstText(json, const ['key', 'id', 'vod_id'])),
+      ],
       name: _firstText(json, const ['name', 'vod_name']) ?? '未命名作品',
       mediaType: parseMediaKind(json['mediaType'] ?? json['type_name']),
       year: _intValue(json['year'] ?? json['vod_year']),
       poster: poster,
-      overview: _firstText(json, const ['content', 'overview', 'vod_content']) ?? '',
+      backdrop: _firstText(json, const [
+        'backdrop',
+        'backdropUrl',
+        'background',
+      ]),
+      genres: _stringList(json['genres']),
+      runtimeMinutes: _intValue(json['runtimeMinutes']),
+      overview:
+          _firstText(json, const ['content', 'overview', 'vod_content']) ?? '',
       remarks: _stringList(json['remarks']),
       score: _firstText(json, const ['score', 'vod_score']) ?? '',
+      actors: _firstText(json, const ['actor', 'actors']) ?? '',
+      directors: _firstText(json, const ['director', 'directors']) ?? '',
       updatedAt: _firstText(json, const ['updated', 'vod_time']) ?? '',
-      coverage: json['coverage'] == null ? null : Coverage.fromJson(json['coverage']),
+      coverage: json['coverage'] == null
+          ? null
+          : Coverage.fromJson(json['coverage']),
     );
   }
 
   factory VodItem.fromDetailJson(Map<String, dynamic> json) {
     return VodItem(
       key: _firstText(json, const ['id', 'key']) ?? '',
+      workId: _firstText(json, const ['workId', 'work_id']) ?? '',
       name: _firstText(json, const ['name', 'vod_name']) ?? '未命名作品',
       mediaType: parseMediaKind(json['mediaType'] ?? json['type_name']),
       year: _intValue(json['year'] ?? json['vod_year']),
       poster: _firstText(json, const ['pic', 'poster', 'vod_pic']),
+      backdrop: _firstText(json, const [
+        'backdrop',
+        'backdropUrl',
+        'background',
+      ]),
+      genres: _stringList(json['genres']),
+      runtimeMinutes: _intValue(json['runtimeMinutes']),
       overview: _firstText(json, const ['content', 'blurb', 'overview']) ?? '',
       remarks: _stringList(json['remarks']),
       score: _firstText(json, const ['score', 'vod_score']) ?? '',
@@ -161,16 +201,22 @@ class VodItem {
       area: _firstText(json, const ['area']) ?? '',
       language: _firstText(json, const ['lang', 'language']) ?? '',
       updatedAt: _firstText(json, const ['updated', 'vod_time']) ?? '',
-      coverage: json['coverage'] == null ? null : Coverage.fromJson(json['coverage']),
+      coverage: json['coverage'] == null
+          ? null
+          : Coverage.fromJson(json['coverage']),
     );
   }
 
   VodItem copyWith({
     String? key,
+    String? workId,
     String? name,
     MediaKind? mediaType,
     int? year,
     String? poster,
+    String? backdrop,
+    List<String>? genres,
+    int? runtimeMinutes,
     String? overview,
     List<String>? remarks,
     String? score,
@@ -183,10 +229,15 @@ class VodItem {
   }) {
     return VodItem(
       key: key ?? this.key,
+      workId: workId ?? this.workId,
+      catalogLines: catalogLines,
       name: name ?? this.name,
       mediaType: mediaType ?? this.mediaType,
       year: year ?? this.year,
       poster: poster ?? this.poster,
+      backdrop: backdrop ?? this.backdrop,
+      genres: genres ?? this.genres,
+      runtimeMinutes: runtimeMinutes ?? this.runtimeMinutes,
       overview: overview ?? this.overview,
       remarks: remarks ?? this.remarks,
       score: score ?? this.score,
@@ -200,17 +251,23 @@ class VodItem {
   }
 
   Map<String, dynamic> toCacheJson() => {
-        'key': key,
-        'name': name,
-        'mediaType': mediaType.name,
-        'year': year,
-        'poster': poster,
-        'overview': overview,
-        'remarks': remarks,
-        'score': score,
-        'updatedAt': updatedAt,
-        'coverage': coverage?.toJson(),
-      };
+    'key': key,
+    'workId': workId,
+    'name': name,
+    'mediaType': mediaType.name,
+    'year': year,
+    'poster': poster,
+    'backdrop': backdrop,
+    'genres': genres,
+    'runtimeMinutes': runtimeMinutes,
+    'actors': actors,
+    'directors': directors,
+    'overview': overview,
+    'remarks': remarks,
+    'score': score,
+    'updatedAt': updatedAt,
+    'coverage': coverage?.toJson(),
+  };
 
   factory VodItem.fromCacheJson(Map<String, dynamic> json) =>
       VodItem.fromCatalogJson(Map<String, dynamic>.from(json));
@@ -227,6 +284,7 @@ class MediaResource {
     required this.filePath,
     required this.sizeBytes,
     required this.tier,
+    this.catalogKey = '',
     this.season,
     this.episode,
     this.width,
@@ -239,6 +297,7 @@ class MediaResource {
   });
 
   final String id;
+  final String catalogKey;
   final String shareUrl;
   final String shareId;
   final String sharePassword;
@@ -288,6 +347,7 @@ class MediaResource {
     }
     return MediaResource(
       id: _firstText(json, const ['id']) ?? '',
+      catalogKey: _firstText(json, const ['catalogKey']) ?? '',
       shareUrl: shareUrl,
       shareId: shareId,
       sharePassword: _firstText(share, const ['password']) ?? '',
@@ -330,6 +390,7 @@ class PlayEntry {
   factory PlayEntry.fromJson(
     Map<String, dynamic> json, {
     required String group,
+    String? catalogKey,
   }) {
     return PlayEntry(
       label: _firstText(json, const ['label']) ?? '正片',
@@ -338,7 +399,11 @@ class PlayEntry {
       quality: _firstText(json, const ['quality']),
       resource: json['resource'] == null
           ? null
-          : MediaResource.fromJson(_map(json['resource'])),
+          : MediaResource.fromJson({
+              ..._map(json['resource']),
+              'catalogKey':
+                  catalogKey ?? _map(json['resource'])['catalogKey'] ?? '',
+            }),
     );
   }
 }
@@ -356,24 +421,34 @@ class MediaLine {
   final bool has4k;
   final List<String> qualities;
 
-  factory MediaLine.fromJson(Map<String, dynamic> json) {
+  factory MediaLine.fromJson(Map<String, dynamic> json, {String? catalogKey}) {
     final group = _firstText(json, const ['group']) ?? '默认线路';
     return MediaLine(
       group: group,
       has4k: json['has4k'] == true,
       qualities: _stringList(json['qualities']),
       entries: _mapList(json['entries'])
-          .map((entry) => PlayEntry.fromJson(entry, group: group))
+          .map(
+            (entry) =>
+                PlayEntry.fromJson(entry, group: group, catalogKey: catalogKey),
+          )
           .toList(growable: false),
     );
   }
 }
 
 class VodDetail {
-  const VodDetail({required this.item, required this.lines});
+  const VodDetail({
+    required this.item,
+    required this.lines,
+    this.seasonsLoaded = true,
+    this.episodeCounts = const {},
+  });
 
   final VodItem item;
   final List<MediaLine> lines;
+  final bool seasonsLoaded;
+  final Map<int, int> episodeCounts;
 
   List<PlayEntry> get allEntries =>
       lines.expand((line) => line.entries).toList(growable: false);
@@ -387,10 +462,11 @@ class VodDetail {
 
   factory VodDetail.fromJson(Map<String, dynamic> json) {
     final itemJson = _map(json['item']);
+    final item = VodItem.fromDetailJson(itemJson);
     return VodDetail(
-      item: VodItem.fromDetailJson(itemJson),
+      item: item,
       lines: _mapList(json['lines'])
-          .map(MediaLine.fromJson)
+          .map((line) => MediaLine.fromJson(line, catalogKey: item.key))
           .toList(growable: false),
     );
   }
@@ -409,7 +485,10 @@ class HomeFeed {
   final Map<String, dynamic> stats;
   final bool fromCache;
 
-  factory HomeFeed.fromJson(Map<String, dynamic> json, {bool fromCache = false}) {
+  factory HomeFeed.fromJson(
+    Map<String, dynamic> json, {
+    bool fromCache = false,
+  }) {
     return HomeFeed(
       fourK: _mapList(json['fourK'])
           .map(VodItem.fromCatalogJson)
@@ -425,17 +504,21 @@ class HomeFeed {
   }
 
   Map<String, dynamic> toCacheJson() => {
-        'fourK': fourK.map((item) => item.toCacheJson()).toList(),
-        'latest': latest.map((item) => item.toCacheJson()).toList(),
-        'stats': stats,
-      };
+    'fourK': fourK.map((item) => item.toCacheJson()).toList(),
+    'latest': latest.map((item) => item.toCacheJson()).toList(),
+    'stats': stats,
+  };
 
   List<VodItem> get all {
-    final seen = <String>{};
-    return [...fourK, ...latest]
-        .where((item) => seen.add(item.key))
-        .toList(growable: false);
+    return uniqueTitles([...fourK, ...latest]);
   }
+}
+
+List<VodItem> uniqueTitles(Iterable<VodItem> items) {
+  final seen = <String>{};
+  return items
+      .where((item) => seen.add(item.identityKey))
+      .toList(growable: false);
 }
 
 class CatalogPage {

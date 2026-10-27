@@ -24,8 +24,8 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _searched = false;
   int _page = 1;
   int _pageCount = 1;
-  int _total = 0;
   String _query = '';
+  int _requestGeneration = 0;
 
   @override
   void dispose() {
@@ -37,6 +37,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _search({int page = 1, bool append = false}) async {
     final query = _controller.text.trim();
     if (query.isEmpty) return;
+    final generation = ++_requestGeneration;
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _loading = true;
@@ -49,34 +50,40 @@ class _SearchScreenState extends State<SearchScreen> {
     });
     try {
       final value = await AppScope.of(context).api.search(query, page: page);
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
-        _items.addAll(value.items);
+        final merged = uniqueTitles([..._items, ...value.items]);
+        _items
+          ..clear()
+          ..addAll(merged);
         _page = value.page;
         _pageCount = value.pageCount;
-        _total = value.total;
         _loading = false;
       });
     } on ApiException catch (error) {
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
         _error = error;
         _loading = false;
       });
     } catch (error) {
       AppLog.error('search', error);
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
-        _error = ApiException(ApiFailureKind.protocol, error.toString(), endpoint: '/api/search');
+        _error = ApiException(
+          ApiFailureKind.protocol,
+          error.toString(),
+          endpoint: '/api/search',
+        );
         _loading = false;
       });
     }
   }
 
   void _open(VodItem item) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => DetailScreen(item: item)),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => DetailScreen(item: item)));
   }
 
   @override
@@ -88,13 +95,24 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(wide ? 52 : 18, wide ? 28 : 10, wide ? 52 : 18, 12),
+              padding: EdgeInsets.fromLTRB(
+                wide ? 52 : 18,
+                wide ? 28 : 10,
+                wide ? 52 : 18,
+                12,
+              ),
               child: Row(
                 children: [
                   if (wide)
                     const Padding(
                       padding: EdgeInsets.only(right: 22),
-                      child: Text('搜索', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+                      child: Text(
+                        '搜索',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                   Expanded(
                     child: TextField(
@@ -173,7 +191,7 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              '“$_query” · $_total 个结果',
+              '“$_query” · 已加载 ${_items.length} 部作品',
               style: const TextStyle(color: CinemaColors.muted, fontSize: 12),
             ),
           ),
@@ -233,7 +251,10 @@ class _SearchMessage extends StatelessWidget {
           children: [
             Icon(icon, color: CinemaColors.faint, size: 44),
             const SizedBox(height: 14),
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 8),
             Text(
               message,

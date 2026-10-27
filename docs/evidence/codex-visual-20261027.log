@@ -1,0 +1,10 @@
+00:00 +0: loading D:/codex/01_对话项目/Codex手机任务/cinema-client-progress-20261027/catalog_visual_test.dart
+00:00 +0: production home and detail show populated metadata at phone and desktop sizes
+2026-10-27T23:10:11.357031 INFO api GET /api/home status=200 ms=32 bytes=4961
+2026-10-27T23:10:11.364013 INFO api GET /api/list status=200 ms=1 bytes=2499
+2026-10-27T23:10:11.366007 INFO api GET /api/list status=200 ms=2 bytes=2499
+2026-10-27T23:10:12.483421 INFO api GET /api/home status=200 ms=1 bytes=4961
+2026-10-27T23:10:12.485387 INFO api GET /api/list status=200 ms=0 bytes=2499
+2026-10-27T23:10:12.485387 INFO api GET /api/list status=200 ms=0 bytes=2499
+2026-10-27T23:10:13.965491 INFO api GET /api/detail status=200 ms=1 bytes=2977
+00:05 +1: All tests passed!
