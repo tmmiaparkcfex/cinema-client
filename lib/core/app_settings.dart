@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const String defaultVodApiBase = String.fromEnvironment(
   'VOD_API_BASE',
-  defaultValue: 'http://192.168.1.4:8765',
+  defaultValue: 'http://172.16.3.70:8790',
 );
 
 class AppSettings extends ChangeNotifier {

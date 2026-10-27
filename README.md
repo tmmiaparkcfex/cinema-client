@@ -26,7 +26,7 @@
 
 成功后下载 `cinema-client-ios-unsigned`，其中的 `CinemaClient-unsigned.ipa` 仍需自行签名安装；失败则下载 `cinema-client-ios-diagnostics`。操作见 [构建与安装](docs/BUILD.md)。
 
-不要在 iPhone 填 `127.0.0.1`；它代表手机本身。当前开发默认地址是 `http://192.168.1.4:8765`，也可在“我的 → 影视接口”修改。
+不要在 iPhone 填 `127.0.0.1`；它代表手机本身。当前源码及后续 Actions 的默认地址为 `http://172.16.3.70:8790`，用户已在 iPhone 确认此入口可显示电影与电视剧。已安装的首个 IPA 默认是 `http://192.168.1.4:8765`，可直接在“我的 → 影视接口”修改并保存；不需要重装。已有手动配置优先于构建默认值。
 
 ## 本地验证
 
@@ -37,7 +37,7 @@ flutter config --no-enable-swift-package-manager
 flutter pub get --enforce-lockfile
 flutter analyze
 flutter test
-flutter run -d <device-id> --dart-define=VOD_API_BASE=http://192.168.1.4:8765
+flutter run -d <device-id> --dart-define=VOD_API_BASE=http://172.16.3.70:8790
 ```
 
 本机中文路径会触发分析器 URI 错误，因此使用逐文件哈希一致的英文验证副本 `D:\Codex\work\cinema-client-20261027-codex`；正式源码仍是本目录。SDK、Pub 缓存和本轮产物均在 D 盘。

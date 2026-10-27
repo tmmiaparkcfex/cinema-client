@@ -7,7 +7,7 @@
 1. 将 `cinema-client` 内的文件放到 GitHub 仓库根目录。根目录应有 `pubspec.yaml`、`lib/`、`ios/`、`assets/` 和 `.github/workflows/ios-unsigned.yml`。不要只上传源码 ZIP，也不要漏掉隐藏的 `.github`。
 2. 提交所有本轮源码、测试、字体和锁文件；检查版本为 **0.2.0+2**。
 3. 打开 **Actions → Build unsigned iOS IPA → Run workflow**。
-4. `api_base` 填影视接口根地址，例如 `http://192.168.1.4:8765`，或手机能访问的 HTTPS 根地址。不要填分享或详情地址。
+4. `api_base` 默认填 `http://172.16.3.70:8790`，这是用户已在 iPhone 验证可用的入口；也可填写手机能访问的其他根地址。不要填分享或详情地址。
 5. 流程安装 Flutter、关闭 Swift Package Manager、解析锁定依赖、分析、测试、无签名 iOS 编译及打包。
 6. 成功后下载 `cinema-client-ios-unsigned`；失败后下载 `cinema-client-ios-diagnostics`，检查 `ios-build.log`、`analyze.log`、`tests.log` 和 `toolchain.txt`。
 
@@ -27,6 +27,8 @@
 未签名 IPA 不能直接安装。使用你自己的签名工具和账号重签安装，凭据只在该工具中处理。Bundle ID 当前是开发标识 `com.example.cinemaClient`，按签名环境设置唯一标识。
 
 手机与 API 需网络可达。局域网地址不能直接从外网访问；iPhone 上的 `127.0.0.1` 不是你的电脑。
+
+2026-10-28 实机反馈：首个 IPA 的 `192.168.1.4:8765` 从手机访问超时；手机设置改为 `http://172.16.3.70:8790` 后，用户确认电影/电视剧正常显示。8790 的 `/api/*` 会转发到现有影视服务。源码与后续 Actions 默认值已同步；首个 IPA 本身未重新打包，已有设置可直接修改。172.16.3.70 是私网地址，需要相应网络/组网路由可达。
 
 安装后的首轮验收：
 
