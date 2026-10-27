@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../core/app_log.dart';
+import 'quark_login_page.dart';
 import 'quark_playback_service.dart';
 
 class QuarkLoginScreen extends StatefulWidget {
@@ -14,6 +15,7 @@ class QuarkLoginScreen extends StatefulWidget {
 }
 
 class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
+  InAppWebViewController? _controller;
   bool _checking = false;
   bool _loading = true;
   String? _message;
@@ -39,6 +41,7 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
           }
         }
       }
+      if (!mounted) return;
       if (cookies.isEmpty) {
         setState(() => _message = '还没有读取到登录状态。请先在页面中完成夸克登录。');
         return;
@@ -69,6 +72,17 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
       appBar: AppBar(
         title: const Text('连接夸克账号'),
         backgroundColor: const Color(0xFF07080B),
+        actions: [
+          IconButton(
+            tooltip: '重新加载登录页',
+            onPressed: _checking
+                ? null
+                : () => _controller?.loadUrl(
+                    urlRequest: URLRequest(url: WebUri(quarkWebLoginUrl)),
+                  ),
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -77,7 +91,7 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
             color: const Color(0xFF12151B),
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
             child: const Text(
-              '登录在你的设备内完成，会话只保存在系统安全存储中。密码和 Cookie 不会发送给影视接口或开发者。',
+              '在下方夸克网页中使用手机号和验证码登录，完成后点击底部验证。会话只保存在本机安全存储，密码和 Cookie 不发送给影视接口或开发者。',
               style: TextStyle(
                 color: Color(0xFFC9CDD6),
                 height: 1.45,
@@ -98,22 +112,37 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
             ),
           Expanded(
             child: InAppWebView(
-              initialUrlRequest: URLRequest(
-                url: WebUri('https://pan.quark.cn/'),
-              ),
+              initialUrlRequest: URLRequest(url: WebUri(quarkWebLoginUrl)),
               initialSettings: InAppWebViewSettings(
                 javaScriptEnabled: true,
+                userAgent: quarkWebLoginUserAgent,
+                preferredContentMode: UserPreferredContentMode.DESKTOP,
+                sharedCookiesEnabled: true,
                 thirdPartyCookiesEnabled: true,
                 useHybridComposition: true,
                 transparentBackground: false,
               ),
+              onWebViewCreated: (controller) => _controller = controller,
               onLoadStart: (_, _) {
-                if (mounted) setState(() => _loading = true);
+                if (mounted) {
+                  setState(() {
+                    _loading = true;
+                    _message = null;
+                  });
+                }
               },
-              onLoadStop: (_, _) {
+              onLoadStop: (controller, _) async {
                 if (mounted) setState(() => _loading = false);
+                try {
+                  await controller.evaluateJavascript(
+                    source: quarkWebLoginLayoutScript,
+                  );
+                } catch (error) {
+                  AppLog.error('quark-login-layout', error);
+                }
               },
-              onReceivedError: (_, _, error) {
+              onReceivedError: (_, request, error) {
+                if (request.isForMainFrame == false) return;
                 AppLog.info('quark-login-web', 'page error ${error.type}');
                 if (mounted) {
                   setState(() {
@@ -131,12 +160,12 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _checking ? null : _captureSession,
+                  onPressed: _checking || _loading ? null : _captureSession,
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFFE50914),
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
-                  child: Text(_checking ? '正在验证登录状态…' : '我已完成登录'),
+                  child: Text(_checking ? '正在验证登录状态…' : '验证登录并连接'),
                 ),
               ),
             ),

@@ -203,7 +203,7 @@ class _SideNavigation extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.fromLTRB(24, 12, 24, 24),
               child: Text(
-                '0.2.0 · 内测版\n播放使用观看者自己的账号',
+                '0.2.1 · 内测版\n播放使用观看者自己的账号',
                 style: TextStyle(
                   color: CinemaColors.faint,
                   fontSize: 10,

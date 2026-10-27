@@ -1,11 +1,11 @@
-# 构建与安装 · 0.2.0+2
+# 构建与安装 · 0.2.1+3
 
 ## iPhone：GitHub Actions
 
 用户已选择 Actions。本机 Windows 无需为此安装 Xcode 或登录 GitHub CLI。
 
 1. 将 `cinema-client` 内的文件放到 GitHub 仓库根目录。根目录应有 `pubspec.yaml`、`lib/`、`ios/`、`assets/` 和 `.github/workflows/ios-unsigned.yml`。不要只上传源码 ZIP，也不要漏掉隐藏的 `.github`。
-2. 提交所有本轮源码、测试、字体和锁文件；检查版本为 **0.2.0+2**。
+2. 提交所有本轮源码、测试、字体和锁文件；检查版本为 **0.2.1+3**。
 3. 打开 **Actions → Build unsigned iOS IPA → Run workflow**。
 4. `api_base` 默认填 `http://172.16.3.70:8790`，这是用户已在 iPhone 验证可用的入口；也可填写手机能访问的其他根地址。不要填分享或详情地址。
 5. 流程安装 Flutter、关闭 Swift Package Manager、解析锁定依赖、分析、测试、无签名 iOS 编译及打包。

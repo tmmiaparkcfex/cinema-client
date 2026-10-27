@@ -1,7 +1,7 @@
 name: cinema_client
 description: "A native four-screen VOD client for a viewer-owned Quark account."
 publish_to: 'none'
-version: 0.2.0+2
+version: 0.2.1+3
 
 environment:
   sdk: ^3.13.7

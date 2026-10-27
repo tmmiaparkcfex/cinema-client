@@ -58,6 +58,26 @@ jobs:
           set -o pipefail
           flutter test --reporter expanded 2>&1 | tee build/evidence/tests.log
 
+      - name: Test native iOS HttpOnly cookie bridge
+        # Exercise the real iOS cookie plugin before producing the release IPA.
+        # The fixture uses no real account and is deleted after the test.
+        run: |
+          set -euo pipefail
+          flutter precache --ios
+          (cd ios && pod install)
+          xcrun simctl list devices available -j > build/evidence/simulators.json
+          SIMULATOR_ID=$(python3 -c 'import json; d=json.load(open("build/evidence/simulators.json")); print(next(x["udid"] for group in d["devices"].values() for x in group if x.get("isAvailable") and x["name"].startswith("iPhone")))')
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          NATIVE_TEST_DEFINES=$(printf '%s' 'VOD_API_BASE=http://127.0.0.1:9' | base64)
+          xcodebuild test \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Debug \
+            -destination "id=$SIMULATOR_ID" \
+            -only-testing:RunnerTests/RunnerTests/testHttpOnlyCookieBridgeAcrossQuarkHosts \
+            CODE_SIGNING_ALLOWED=NO FLUTTER_BUILD_MODE=debug "DART_DEFINES=$NATIVE_TEST_DEFINES" \
+            2>&1 | tee build/evidence/ios-cookie-test.log
+
       - name: Build unsigned iOS app
         run: |
           set -o pipefail
