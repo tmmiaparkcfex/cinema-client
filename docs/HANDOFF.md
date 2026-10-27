@@ -17,7 +17,7 @@
 | 较早审核 | 同级 `cinema-client-audit-20261027`；旧缺陷复现测试不能当成现版结果 |
 | 生产服务 | `D:\各软件安装位置\vod-web`；本轮未修改 |
 
-接手时 HEAD 为 `720f05ac12693041e8ffbc3137d5d764380d9fdc`，已有 6 文件草稿。本轮保留并继续修改；原始 6 文件及哈希在工作证据的 `baseline/`。本轮没有提交/推送 Git，也未执行远程 Actions。
+接手时 HEAD 为 `720f05ac12693041e8ffbc3137d5d764380d9fdc`，已有 6 文件草稿。本轮保留并继续修改；原始 6 文件及哈希在工作证据的 `baseline/`。源码后提交为 `deb84e1dea358de376e6cfa4a0068ee9d6ec868b`，已推送至 `https://github.com/tmmiaparkcfex/cinema-client`；用户于 2026-10-28 明确授权仓库公开。
 
 ## 已有证据
 
@@ -25,7 +25,8 @@
 - 真实 API home/list/detail/resource/search 读取及资源匹配通过；多季样本当前页未命中而跳过。
 - 原生 Windows FFI 软件解码通过指定 4K HEVC 10-bit、双音轨、外挂 SRT、Range/请求头、拖动/续播/倍速测试。
 - 实际 Flutter 页面及横屏控件已渲染检查；新增完整资料版型图为虚构作品/原创示意图，仅在外部布局测试注入。
-- 无 IPA、Podfile.lock、iPhone 真机和真实夸克账户验收；其他三端应用未构建。
+- 2026-10-28 Actions 已成功生成 IPA；本机下载/哈希/arm64 原生框架及字体检查通过，Podfile.lock 已补回源码。
+- 尚未个人签名、安装、iPhone 真机和真实夸克账户验收；其他三端应用未构建。
 
 最新结果及日志：[VERIFICATION-20261027-CODEX.md](VERIFICATION-20261027-CODEX.md)。原 `VERIFICATION.md` 留作历史，不代表现版测试数量。
 
@@ -55,4 +56,4 @@
 
 接手前只读确认 `127.0.0.1:8790/ctrl/state` 为 `running=true`、PID 12360。本轮只发影视 API GET，没有启动/停止生产服务或爬虫，也没有使用服务端账号转存。最终快照在 `evidence/background-codex-20261027.json`。
 
-下一项外部结果为用户 Actions 构建日志和签名安装后的设备验收，步骤见 [BUILD.md](BUILD.md)。不要将未验证事项直接记作完成。
+Actions 实际结果与包位置见 [IOS_BUILD-20261028.md](IOS_BUILD-20261028.md)。下一项外部结果是个人签名安装后的设备验收，步骤见 [BUILD.md](BUILD.md)。不要将未验证事项直接记作完成。

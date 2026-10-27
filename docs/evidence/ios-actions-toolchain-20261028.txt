@@ -1,0 +1,45 @@
+Flutter 3.47.8 • channel stable • https://github.com/flutter/flutter.git
+Framework • revision 737ba8f885 (5 days ago) • 2026-10-22 21:37:31 -0700
+Engine • hash dfd2e6cb7d319db05e3bf1503f3e2ac60f6288a2 (revision cf636b1dfb) (4 days ago) • 2026-10-23 02:13:38.000Z
+Tools • Dart 3.13.7 • DevTools 2.60.0
+Xcode 26.3
+Build version 17C529
+1.17.0
+[✓] Flutter (Channel stable, 3.47.8, on macOS 15.7.9 24G830 darwin-arm64, locale en-US) [28.1s]
+    • Flutter version 3.47.8 on channel stable at /Users/runner/hostedtoolcache/flutter/stable-3.47.8-arm64/flutter
+    • Upstream repository https://github.com/flutter/flutter.git
+    • Framework revision 737ba8f885 (5 days ago), 2026-10-22 21:37:31 -0700
+    • Engine revision cf636b1dfb
+    • Dart version 3.13.7
+    • DevTools version 2.60.0
+    • Pub download mirror https://pub.flutter-io.cn
+    • Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, enable-record-use, enable-swift-package-manager, omit-legacy-version-file, enable-lldb-debugging, enable-uiscene-migration
+
+[!] Android toolchain - develop for Android devices (Android SDK version 37.0.0) [33.3s]
+    • Android SDK at /Users/runner/Library/Android/sdk
+    • Emulator version 37.1.11.0 (build_id 15917651) (CL:N/A)
+    • Platform android-37.2-beta2, build-tools 37.0.0
+    • ANDROID_HOME = /Users/runner/Library/Android/sdk
+    • ANDROID_SDK_ROOT = /Users/runner/Library/Android/sdk
+    • Java binary at: /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-101.0/arm64/Contents/Home/bin/java
+      This JDK is specified by the JAVA_HOME environment variable.
+      To manually set the JDK path, use: `flutter config --jdk-dir="path/to/jdk"`.
+    • Java version OpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)
+    ! Some Android licenses not accepted. To resolve this, run: flutter doctor --android-licenses
+
+[✓] Xcode - develop for iOS and macOS (Xcode 26.3) [34.8s]
+    • Xcode at /Applications/Xcode_26.3.app/Contents/Developer
+    • Build 17C529
+    • CocoaPods version 1.17.0
+
+[✓] Chrome - develop for the web [13ms]
+    • Chrome at /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+
+[✓] Connected device (2 available) [12.8s]
+    • macOS (desktop) • macos  • darwin-arm64   • macOS 15.7.9 24G830 darwin-arm64
+    • Chrome (web)    • chrome • web-javascript • Google Chrome 152.0.7977.83
+
+[✓] Network resources [581ms]
+    • All expected network resources are available.
+
+! Doctor found issues in 1 category.

@@ -2,6 +2,8 @@
 
 本记录是本轮状态依据；原 `VERIFICATION.md` 及旧日志保留为历史。测试通过、真实接口读取、设备播放分别记载，不能互相替代。
 
+2026-10-28 后续：iOS Actions 已编译成功并生成 IPA，实际结果见 [IOS_BUILD-20261028.md](IOS_BUILD-20261028.md)。以下本地测试与原生 Windows 证据保留原采样时间。
+
 ## 源码一致性与环境
 
 正式源码：`D:\codex\01_对话项目\Codex手机任务\cinema-client`。英文验证副本：`D:\Codex\work\cinema-client-20261027-codex`。验证前逐文件比对 SHA-256，依赖由锁文件解析，以避开本机分析器的中文路径 URI 故障。Flutter 3.47.8 / Dart 3.13.7，SDK/缓存/本轮产物均在 D 盘。未提交/推送远程，也未执行 Actions。
@@ -60,10 +62,10 @@ home/list/detail/search/resource 均 200；资源描述 id/fileId/shareId 与详
 
 ## 仍待完成
 
-- Actions、CocoaPods、iOS 链接、IPA、签名安装和真实观看者账户全链路。
+- Actions、CocoaPods、iOS 链接和 IPA 已于次日验证；仍待个人签名安装和真实观看者账户全链路。
 - iPhone/GPU/硬解/HDR、生命周期、网络切换、长期稳定性、发热和耗电。
 - Android/Windows/TV 应用构建与设备操作。
 - 真实账号上的风控/空间/转存/清理恢复。
 - 在线字幕、投屏、跨设备同步等功能，见 `KNOWN_ISSUES.md`。
 
-当前可提交 Actions 编译及进行真机联调，不能表述为完整四端产品已交付。
+后续已完成 iOS 编译，当前可签名安装并进行真机联调，不能表述为完整四端产品已交付。

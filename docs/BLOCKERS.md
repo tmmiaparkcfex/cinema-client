@@ -1,6 +1,6 @@
 # 尚待外部环境验证
 
-用户已经选择 **GitHub Actions**。本轮已准备源码和工作流；Windows 本机无 Xcode，也未执行远程 Actions，因此没有 IPA 或 `Podfile.lock`。操作及诊断见 [BUILD.md](BUILD.md)，不需要重复询问构建环境。
+用户已经选择 **GitHub Actions**，并于 2026-10-28 授权仓库公开。iOS 云端构建已成功，IPA 已下载校验，`Podfile.lock` 已补回；此前“没有构建环境/没有 IPA”的阻塞已解除。实际证据见 [IOS_BUILD-20261028.md](IOS_BUILD-20261028.md)。
 
 未签名 IPA 需用户在自己的签名工具中重签安装。iPhone 型号/iOS、真实夸克授权、转存和 CDN 播放尚无结果；密码、Cookie 和签名凭据无需交给源码或聊天。
 

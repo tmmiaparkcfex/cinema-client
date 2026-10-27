@@ -1,0 +1,77 @@
+PODS:
+  - file_selector_ios (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+  - flutter_inappwebview_ios (0.0.1):
+    - Flutter
+    - flutter_inappwebview_ios/Core (= 0.0.1)
+    - OrderedSet (~> 6.0.3)
+  - flutter_inappwebview_ios/Core (0.0.1):
+    - Flutter
+    - OrderedSet (~> 6.0.3)
+  - flutter_secure_storage_darwin (10.0.0):
+    - Flutter
+    - FlutterMacOS
+  - media_kit_libs_ios_video (1.0.4):
+    - Flutter
+  - media_kit_video (0.0.1):
+    - Flutter
+  - OrderedSet (6.0.3)
+  - package_info_plus (0.4.5):
+    - Flutter
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
+  - wakelock_plus (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - file_selector_ios (from `.symlinks/plugins/file_selector_ios/ios`)
+  - Flutter (from `Flutter`)
+  - flutter_inappwebview_ios (from `.symlinks/plugins/flutter_inappwebview_ios/ios`)
+  - flutter_secure_storage_darwin (from `.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
+  - media_kit_libs_ios_video (from `.symlinks/plugins/media_kit_libs_ios_video/ios`)
+  - media_kit_video (from `.symlinks/plugins/media_kit_video/ios`)
+  - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
+  - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
+  - wakelock_plus (from `.symlinks/plugins/wakelock_plus/ios`)
+
+SPEC REPOS:
+  trunk:
+    - OrderedSet
+
+EXTERNAL SOURCES:
+  file_selector_ios:
+    :path: ".symlinks/plugins/file_selector_ios/ios"
+  Flutter:
+    :path: Flutter
+  flutter_inappwebview_ios:
+    :path: ".symlinks/plugins/flutter_inappwebview_ios/ios"
+  flutter_secure_storage_darwin:
+    :path: ".symlinks/plugins/flutter_secure_storage_darwin/darwin"
+  media_kit_libs_ios_video:
+    :path: ".symlinks/plugins/media_kit_libs_ios_video/ios"
+  media_kit_video:
+    :path: ".symlinks/plugins/media_kit_video/ios"
+  package_info_plus:
+    :path: ".symlinks/plugins/package_info_plus/ios"
+  shared_preferences_foundation:
+    :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
+  wakelock_plus:
+    :path: ".symlinks/plugins/wakelock_plus/ios"
+
+SPEC CHECKSUMS:
+  file_selector_ios: 8e1d792478f6af248b8b601e3e0f02eb74a19c02
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
+  flutter_inappwebview_ios: 6f63631e2c62a7c350263b13fa5427aedefe81d4
+  flutter_secure_storage_darwin: 79a377dfb00a246ccab2c64fe79d4d78c89e0fbc
+  media_kit_libs_ios_video: a5fe24bc7875ccd6378a0978c13185e1344651c1
+  media_kit_video: 5da63f157170e5bf303bf85453b7ef6971218a2e
+  OrderedSet: e539b66b644ff081c73a262d24ad552a69be3a94
+  package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
+  shared_preferences_foundation: 9a36184bb1299692bf7b972bd6c60ab373084504
+  wakelock_plus: 4d70a9769dc8dad95ca6131e70c46b2d5a5de261
+
+PODFILE CHECKSUM: 736037256deb1e63d1df9c34b817312bde01b6af
+
+COCOAPODS: 1.17.0

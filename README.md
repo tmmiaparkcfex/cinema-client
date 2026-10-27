@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-本轮修复播放、取消、转存登记、会话切换、清理和季集归并，接入真实目录并完善 Netflix 风格界面。**可提交 GitHub Actions 进行首次 iOS 编译；尚未产生 IPA，也未完成 iPhone 真机验收。**
+本轮修复播放、取消、转存登记、会话切换、清理和季集归并，接入真实目录并完善 Netflix 风格界面。**2026-10-28 已通过 GitHub Actions 编译并生成未签名 iPhone IPA，下载和哈希校验完成；尚未签名安装或真机验收。** 详见 [实际构建记录](docs/IOS_BUILD-20261028.md)。
 
 | 内容 | 已有证据 |
 | --- | --- |
@@ -15,7 +15,8 @@
 | ASS/图形字幕 | 已启用原生 libass，随包提供中文字体；实际设备渲染待验收 |
 | 静态分析 / 默认测试 | 0 issue / 51 通过、3 个可选跳过 |
 | 界面版型 | 实际 Flutter 页面与控件已测试渲染；不是设备截图 |
-| iOS / Android / Windows / TV 安装包 | 尚未构建；共享代码不能证明四端完成 |
+| iOS 安装包 | Actions Release 成功；未签名 IPA 已下载并校验，原生 Mpv/FFmpeg/Ass 已入包 |
+| Android / Windows / TV 应用产物 | 尚未构建；共享代码不能证明四端完成 |
 
 详见 [本轮验证](docs/VERIFICATION-20261027-CODEX.md) 和 [支持范围](docs/KNOWN_ISSUES.md)。
 

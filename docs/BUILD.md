@@ -11,7 +11,7 @@
 5. 流程安装 Flutter、关闭 Swift Package Manager、解析锁定依赖、分析、测试、无签名 iOS 编译及打包。
 6. 成功后下载 `cinema-client-ios-unsigned`；失败后下载 `cinema-client-ios-diagnostics`，检查 `ios-build.log`、`analyze.log`、`tests.log` 和 `toolchain.txt`。
 
-工作流固定 macOS 15、Xcode 26.3、Flutter 3.47.8，最低 iOS 15，使用 CocoaPods。本轮完成本地源码验证和工作流检查，**没有执行远程 Actions**。
+工作流固定 macOS 15、Xcode 26.3、Flutter 3.47.8，最低 iOS 15，使用 CocoaPods。**2026-10-28 已实际执行成功并生成未签名 IPA**，51 项云端测试通过，见 [构建记录](IOS_BUILD-20261028.md)。仓库现按用户授权公开。
 
 | 成功产物 | 用途 |
 | --- | --- |
@@ -20,7 +20,7 @@
 | `Podfile.lock` | 首次 macOS 构建的 Pod 版本，审核后补入源码 |
 | `pubspec.lock`、`toolchain.txt` | 实际依赖与工具链记录 |
 
-目前没有 `Podfile.lock`；不人为编造。首次真实编译仍可能暴露本机无法发现的原生插件/链接问题，应根据实际日志修正。
+`ios/Podfile.lock` 已从本次实际成功构建补回源码；后续依赖或工具链改变时，仍应依据真实构建结果验证。
 
 ## 签名和真机
 
