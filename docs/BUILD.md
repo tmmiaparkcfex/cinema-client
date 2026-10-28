@@ -8,10 +8,12 @@
 2. 提交所有本轮源码、测试、字体和锁文件；检查版本为 **0.2.1+3**。
 3. 打开 **Actions → Build unsigned iOS IPA → Run workflow**。
 4. `api_base` 默认填 `http://172.16.3.70:8790`，这是用户已在 iPhone 验证可用的入口；也可填写手机能访问的其他根地址。不要填分享或详情地址。
-5. 流程安装 Flutter、关闭 Swift Package Manager、解析锁定依赖、分析、测试、无签名 iOS 编译及打包。
+5. 流程安装 Flutter、关闭 Swift Package Manager、解析锁定依赖、分析、Dart 测试、iOS 26.2 模拟器原生 HttpOnly Cookie 测试、无签名 iOS 编译及打包。
 6. 成功后下载 `cinema-client-ios-unsigned`；失败后下载 `cinema-client-ios-diagnostics`，检查 `ios-build.log`、`analyze.log`、`tests.log` 和 `toolchain.txt`。
 
 工作流固定 macOS 15、Xcode 26.3、Flutter 3.47.8，最低 iOS 15，使用 CocoaPods。**2026-10-28 已实际执行成功并生成未签名 IPA**，51 项云端测试通过，见 [构建记录](IOS_BUILD-20261028.md)。仓库现按用户授权公开。
+
+**最新 0.2.1 (3)** 的编译、原生 Cookie 测试与下载校验已成功，见 [0.2.1 实际记录](IOS_BUILD-0.2.1-20261028.md)。该模拟器版本只用于测试，未提高正式应用的最低 iOS 版本。
 
 | 成功产物 | 用途 |
 | --- | --- |

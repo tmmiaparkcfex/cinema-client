@@ -1,0 +1,83 @@
+{
+  "ipa": "D:\\codex\\01_对话项目\\Codex手机任务\\cinema-client-build-20261028\\0.2.1\\unsigned\\build\\ios\\ipa\\CinemaClient-unsigned.ipa",
+  "bytes": 26748761,
+  "sha256": "ce8644bea7656bb32093dcc8d9b4204212f81b110a3c8d1d7107b38f7d657e1e",
+  "matchesWorkflowChecksum": true,
+  "version": "0.2.1",
+  "build": "3",
+  "bundleId": "com.example.cinemaClient",
+  "minimumOS": "15.0",
+  "runner": {
+    "cpuType": "0x100000c",
+    "arm64": true,
+    "fileType": 2,
+    "build": {
+      "platform": 2,
+      "minimumOS": "15.0.0",
+      "sdk": "26.2.0",
+      "declaration": "LC_BUILD_VERSION"
+    }
+  },
+  "app": {
+    "cpuType": "0x100000c",
+    "arm64": true,
+    "fileType": 6,
+    "build": {
+      "platform": 2,
+      "minimumOS": "15.0.0",
+      "sdk": "15.0.0",
+      "declaration": "LC_BUILD_VERSION"
+    },
+    "container": "FAT, one arm64 slice"
+  },
+  "nativeMediaEngines": [
+    {
+      "path": "Payload/Runner.app/Frameworks/Mpv.framework/Mpv",
+      "cpuType": "0x100000c",
+      "arm64": true,
+      "fileType": 6,
+      "build": {
+        "platform": 2,
+        "minimumOS": "9.0.0",
+        "sdk": "16.4.0",
+        "declaration": "LC_VERSION_MIN_IPHONEOS"
+      }
+    }
+  ],
+  "frameworks": [
+    "App.framework",
+    "Ass.framework",
+    "Avcodec.framework",
+    "Avfilter.framework",
+    "Avformat.framework",
+    "Avutil.framework",
+    "Dav1d.framework",
+    "Flutter.framework",
+    "Freetype.framework",
+    "Fribidi.framework",
+    "Harfbuzz.framework",
+    "Mbedcrypto.framework",
+    "Mbedtls.framework",
+    "Mbedx509.framework",
+    "Mpv.framework",
+    "OrderedSet.framework",
+    "Png16.framework",
+    "Swresample.framework",
+    "Swscale.framework",
+    "Uchardet.framework",
+    "Xml2.framework",
+    "file_selector_ios.framework",
+    "flutter_inappwebview_ios.framework",
+    "flutter_secure_storage_darwin.framework",
+    "media_kit_libs_ios_video.framework",
+    "media_kit_video.framework",
+    "objective_c.framework",
+    "package_info_plus.framework",
+    "shared_preferences_foundation.framework",
+    "wakelock_plus.framework"
+  ],
+  "expectedApiInReleaseAot": "http://172.16.3.70:8790",
+  "subtitleFontMatchesSource": true,
+  "requiresPersonalSigning": true,
+  "iphoneRuntimeTested": false
+}

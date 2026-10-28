@@ -1,0 +1,6 @@
+Test Case '-[RunnerTests.RunnerTests testHttpOnlyCookieBridgeAcrossQuarkHosts]' started.
+Test Case '-[RunnerTests.RunnerTests testHttpOnlyCookieBridgeAcrossQuarkHosts]' passed (10.015 seconds).
+	 Executed 1 test, with 0 failures (0 unexpected) in 10.015 (10.019) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 10.015 (10.019) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 10.015 (10.022) seconds
+** TEST SUCCEEDED **
