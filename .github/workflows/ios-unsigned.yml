@@ -66,7 +66,10 @@ jobs:
           flutter precache --ios
           (cd ios && pod install)
           xcrun simctl list devices available -j > build/evidence/simulators.json
-          SIMULATOR_ID=$(python3 -c 'import json; d=json.load(open("build/evidence/simulators.json")); print(next(x["udid"] for group in d["devices"].values() for x in group if x.get("isAvailable") and x["name"].startswith("iPhone")))')
+          # Match Xcode 26.3's iOS 26.2 SDK. iOS 18.5 has a known
+          # libswiftWebKit loading bug for older deployment targets.
+          SIMULATOR_ID=$(python3 -c 'import json; d=json.load(open("build/evidence/simulators.json")); print(next(x["udid"] for runtime,group in d["devices"].items() if runtime.endswith("iOS-26-2") for x in group if x.get("isAvailable") and x["name"].startswith("iPhone")))')
+          echo "Native Cookie test: iOS 26.2 / $SIMULATOR_ID"
           xcrun simctl bootstatus "$SIMULATOR_ID" -b
           NATIVE_TEST_DEFINES=$(printf '%s' 'VOD_API_BASE=http://127.0.0.1:9' | base64)
           xcodebuild test \
@@ -77,8 +80,6 @@ jobs:
             -parallel-testing-enabled NO \
             -resultBundlePath "$PWD/build/evidence/ios-cookie-tests.xcresult" \
             -only-testing:RunnerTests/RunnerTests/testHttpOnlyCookieBridgeAcrossQuarkHosts \
-            TEST_HOST= BUNDLE_LOADER= \
-            'LD_RUNPATH_SEARCH_PATHS=$(inherited) $(BUILT_PRODUCTS_DIR)/Runner.app/Frameworks $(PLATFORM_DIR)/Developer/Library/Frameworks' \
             CODE_SIGNING_ALLOWED=NO FLUTTER_BUILD_MODE=debug "DART_DEFINES=$NATIVE_TEST_DEFINES" \
             2>&1 | tee build/evidence/ios-cookie-test.log
 
@@ -88,6 +89,7 @@ jobs:
           RESULT="$PWD/build/evidence/ios-cookie-tests.xcresult"
           if test -d "$RESULT"; then
             xcrun xcresulttool get test-results summary --path "$RESULT" > build/evidence/ios-cookie-test-summary.json || true
+            cat build/evidence/ios-cookie-test-summary.json
             xcrun xcresulttool export diagnostics --path "$RESULT" --output-path build/evidence/ios-cookie-diagnostics || true
           fi
 
