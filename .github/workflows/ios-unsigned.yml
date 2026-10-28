@@ -74,9 +74,22 @@ jobs:
             -scheme Runner \
             -configuration Debug \
             -destination "id=$SIMULATOR_ID" \
+            -parallel-testing-enabled NO \
+            -resultBundlePath "$PWD/build/evidence/ios-cookie-tests.xcresult" \
             -only-testing:RunnerTests/RunnerTests/testHttpOnlyCookieBridgeAcrossQuarkHosts \
+            TEST_HOST= BUNDLE_LOADER= \
+            'LD_RUNPATH_SEARCH_PATHS=$(inherited) $(BUILT_PRODUCTS_DIR)/Runner.app/Frameworks $(PLATFORM_DIR)/Developer/Library/Frameworks' \
             CODE_SIGNING_ALLOWED=NO FLUTTER_BUILD_MODE=debug "DART_DEFINES=$NATIVE_TEST_DEFINES" \
             2>&1 | tee build/evidence/ios-cookie-test.log
+
+      - name: Record native cookie test result
+        if: always()
+        run: |
+          RESULT="$PWD/build/evidence/ios-cookie-tests.xcresult"
+          if test -d "$RESULT"; then
+            xcrun xcresulttool get test-results summary --path "$RESULT" > build/evidence/ios-cookie-test-summary.json || true
+            xcrun xcresulttool export diagnostics --path "$RESULT" --output-path build/evidence/ios-cookie-diagnostics || true
+          fi
 
       - name: Build unsigned iOS app
         run: |
