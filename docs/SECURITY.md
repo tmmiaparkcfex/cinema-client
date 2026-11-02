@@ -5,8 +5,8 @@
 - 夸克账号登录在设备内 WebView 完成；应用不让用户把密码/Cookie 发到聊天或影视接口。
 - 登录后的 Cookie 使用 `flutter_secure_storage` 存入 iOS Keychain / Android Keystore。
 - Cookie 只在以下位置使用：
-  - `drive-pc.quark.cn` 的夸克 API 请求；
-  - 交给 libmpv 的直链请求头。
+  - `drive-pc.quark.cn` 与 `drive-social-api.quark.cn` 的夸克 API 请求；
+  - 设备内取流层向夸克 CDN 发送的直链请求头；跨来源重定向会移除 Cookie 和 Authorization。
 - Cookie 不进入影视接口、同步服务、Git、日志、测试夹具或错误消息。
 - 应用没有开发者夸克公共账号。
 
@@ -25,6 +25,7 @@
 - Android 当前 `usesCleartextTraffic=true`，原因同上；正式生产应使用 HTTPS 并移除全局明文许可。
 - iOS 会请求本地网络权限，文案明确只连接用户填写的接口，不扫描其他设备。
 - 夸克 API 和直链均为 HTTPS。
+- libmpv 通过仅绑定 `127.0.0.1` 的随机路径读取设备内取流层。上游使用 1 MiB 有界 Range，最多四个连接，逐段校验范围、总长度与字节数；播放退出时关闭监听与连接。该本机地址不接受外部传入的目标 URL，也不向局域网开放。
 - 影视接口如果是 HTTP，观看记录/目录可能被同一网络窃听；应用界面会显示风险提示。
 
 ## 临时文件

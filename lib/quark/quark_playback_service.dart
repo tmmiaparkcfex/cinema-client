@@ -31,6 +31,8 @@ class QuarkException implements Exception {
     this.code,
     this.statusCode,
     this.stage,
+    this.requiredBytes,
+    this.availableBytes,
   });
 
   final QuarkFailureKind kind;
@@ -38,6 +40,8 @@ class QuarkException implements Exception {
   final int? code;
   final int? statusCode;
   final String? stage;
+  final int? requiredBytes;
+  final int? availableBytes;
 
   String get userMessage {
     switch (kind) {
@@ -52,7 +56,12 @@ class QuarkException implements Exception {
       case QuarkFailureKind.fileNotFound:
         return '分享目录中没有找到这条资源，可能已被分享者移动或删除，请切换线路。';
       case QuarkFailureKind.quota:
-        return '你的夸克账号空间不足，无法完成本应用临时转存。请清理空间或改用普通线路。';
+        if (requiredBytes != null && availableBytes != null) {
+          final needed = (requiredBytes! / 1000000000).toStringAsFixed(2);
+          final free = (availableBytes! / 1000000000).toStringAsFixed(2);
+          return '这条资源需要 $needed GB 网盘空间，你的夸克账号剩余 $free GB。快传起播前仍需转存，请选择更小的版本或先释放网盘空间。';
+        }
+        return '你的夸克账号空间不足，无法完成临时转存。请选择更小的版本或先释放网盘空间。';
       case QuarkFailureKind.network:
         return '连接夸克服务失败，请检查网络后重试。';
       case QuarkFailureKind.protocol:
@@ -388,7 +397,12 @@ class QuarkPlaybackService {
       final kind = switch (code) {
         41010 || 41011 || 41012 => QuarkFailureKind.shareInvalid,
         21001 => QuarkFailureKind.fileNotFound,
-        _ when RegExp(r'空间|容量|quota', caseSensitive: false).hasMatch(message) =>
+        32003 => QuarkFailureKind.quota,
+        _
+            when RegExp(
+              r'空间|容量|quota|capacity\s*(limit|insufficient)|insufficient\s*(space|storage)',
+              caseSensitive: false,
+            ).hasMatch(message) =>
           QuarkFailureKind.quota,
         _ => fallback,
       };
@@ -513,6 +527,9 @@ class QuarkPlaybackService {
       stoken: stoken,
       cancellation: cancellation,
     );
+
+    onStage?.call('正在检查网盘剩余空间');
+    await _checkCapacity(shareFile.size, cancellation);
 
     onStage?.call('正在准备应用专用目录');
     cancellation?.throwIfCancelled();
@@ -722,6 +739,37 @@ class QuarkPlaybackService {
     return id;
   }
 
+  Future<void> _checkCapacity(
+    int requiredBytes,
+    QuarkPlaybackCancellation? cancellation,
+  ) async {
+    if (requiredBytes <= 0) return;
+    cancellation?.throwIfCancelled();
+    final response = await _request('GET', 'member');
+    cancellation?.throwIfCancelled();
+    _ensureSuccess(response, stage: 'capacity');
+    final total = int.tryParse(
+      response.data['total_capacity']?.toString() ?? '',
+    );
+    final used = int.tryParse(response.data['use_capacity']?.toString() ?? '');
+    if (total == null || used == null || total < 0 || used < 0) {
+      // An unavailable preflight must not misclassify a resource. The save task
+      // still reports Quark's authoritative capacity result below.
+      AppLog.info('quark-playback', 'capacity-fields-unavailable');
+      return;
+    }
+    final free = max(0, total - used);
+    if (requiredBytes > free) {
+      throw QuarkException(
+        QuarkFailureKind.quota,
+        'resource exceeds remaining capacity',
+        stage: 'capacity',
+        requiredBytes: requiredBytes,
+        availableBytes: free,
+      );
+    }
+  }
+
   Future<_SavedFile> _saveToStaging({
     required MediaResource resource,
     required String stoken,
@@ -794,12 +842,15 @@ class QuarkPlaybackService {
           'task',
           params: {'task_id': taskId, 'retry_index': '$attempt'},
         );
+        final status = task.data['status'];
+        if (task.status >= 200 && task.status < 300 && status == 3) {
+          await _forgetOperation(operationId, accountId);
+        }
         _ensureSuccess(
           task,
           fallback: QuarkFailureKind.saveFailed,
           stage: 'save-task',
         );
-        final status = task.data['status'];
         if (status == 2) {
           fid = _extractSavedFid(task.data);
           if (fid == null) {
@@ -1194,21 +1245,17 @@ class QuarkPlaybackService {
       'task',
       params: {'task_id': taskId, 'retry_index': '0'},
     );
+    if (response.status >= 200 &&
+        response.status < 300 &&
+        response.data['status'] == 3) {
+      await _forgetOperation(operationId, _accountId);
+      return;
+    }
     _ensureSuccess(
       response,
       fallback: QuarkFailureKind.cleanupFailed,
       stage: 'cleanup-task',
     );
-    if (response.data['status'] == 3) {
-      await _ledgerMutate(
-        (rows) => rows.removeWhere(
-          (row) =>
-              row['operationId'] == operationId &&
-              row['accountId'] == _accountId,
-        ),
-      );
-      return;
-    }
     if (response.data['status'] != 2) return;
     final fid = _extractSavedFid(response.data);
     if (fid == null || fid == entry['sharedFid'] || before.contains(fid)) {
@@ -1343,6 +1390,15 @@ class QuarkPlaybackService {
       );
     });
   }
+
+  Future<void> _forgetOperation(String operationId, String accountId) =>
+      _ledgerMutate(
+        (entries) => entries.removeWhere(
+          (entry) =>
+              entry['operationId'] == operationId &&
+              entry['accountId'] == accountId,
+        ),
+      );
 
   void close() => _client.close();
 }

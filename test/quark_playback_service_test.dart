@@ -80,6 +80,9 @@ class Harness {
     final overridden = await intercept?.call(request);
     if (overridden != null) return overridden;
     final path = request.url.path;
+    if (path.endsWith('/member')) {
+      return ok({'total_capacity': 1000000000000, 'use_capacity': 0});
+    }
     if (path.endsWith('/share/sharepage/token')) {
       return ok({'stoken': 'synthetic-token'});
     }
@@ -173,6 +176,86 @@ void main() {
     );
   });
   tearDown(() => h.service.close());
+
+  test(
+    'reports required and remaining capacity before creating or saving files',
+    () async {
+      h.intercept = (request) async => request.url.path.endsWith('/member')
+          ? ok({'total_capacity': 900, 'use_capacity': 0})
+          : null;
+      await expectLater(
+        h.service.acquire(resource()),
+        throwsA(
+          isA<QuarkException>()
+              .having((e) => e.kind, 'kind', QuarkFailureKind.quota)
+              .having((e) => e.requiredBytes, 'required bytes', 1024)
+              .having((e) => e.availableBytes, 'available bytes', 900),
+        ),
+      );
+      expect(h.saves, 0);
+      expect(h.deleted, isEmpty);
+      expect(await h.ledger.exists(), false);
+    },
+  );
+
+  test('recognizes Quark English capacity failure and forgets the terminal save task', () async {
+    h.intercept = (request) async {
+      if (request.url.path.endsWith('/share/sharepage/save')) {
+        return ok({'task_id': 'quota-task'});
+      }
+      if (request.url.path.endsWith('/task')) {
+        return http.Response(
+          jsonEncode({
+            'code': 32003,
+            'message': 'capacity limit[{0}]',
+            'data': {'status': 3},
+          }),
+          200,
+        );
+      }
+      return null;
+    };
+    await expectLater(
+      h.service.acquire(resource()),
+      throwsA(
+        isA<QuarkException>().having(
+          (e) => e.kind,
+          'kind',
+          QuarkFailureKind.quota,
+        ),
+      ),
+    );
+    expect(await h.rows(), isEmpty);
+    expect(h.deleted, isEmpty);
+    expect(h.files, {'preexisting-file'});
+  });
+
+  test('startup recovery drops a definitively failed capacity task without deleting files', () async {
+    await h.ledger.writeAsString(
+      jsonEncode([
+        {
+          'operationId': 'quota-operation',
+          'accountId': h.account.scope,
+          'status': 'pending-save-task',
+          'taskId': 'quota-task',
+          'beforeFids': ['preexisting-file'],
+        },
+      ]),
+    );
+    h.intercept = (request) async => request.url.path.endsWith('/task')
+        ? http.Response(
+            jsonEncode({
+              'code': 32003,
+              'message': 'capacity limit[{0}]',
+              'data': {'status': 3},
+            }),
+            200,
+          )
+        : null;
+    await h.service.cleanupStale();
+    expect(await h.rows(), isEmpty);
+    expect(h.deleted, isEmpty);
+  });
 
   test('does not attach the viewer Cookie to a non-Quark CDN URL', () async {
     h.intercept = (r) async => r.url.path.endsWith('/file/download')

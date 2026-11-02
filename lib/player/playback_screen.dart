@@ -17,6 +17,7 @@ import '../quark/quark_login_screen.dart';
 import '../quark/quark_playback_service.dart';
 import 'subtitle_files.dart';
 import 'native_player.dart';
+import 'range_playback_source.dart';
 
 class PlaybackScreen extends StatefulWidget {
   const PlaybackScreen({
@@ -43,6 +44,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   Player? _player;
   VideoController? _videoController;
   QuarkPlaybackLease? _lease;
+  RangePlaybackSource? _rangeSource;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
 
   bool _started = false;
@@ -250,6 +252,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     if (_player != null) {
       await _player!.stop();
     }
+    await _closeRangeSource();
     if (_disposed || generation != _generation) return;
     if (!refreshLease) await _releaseLease();
     if (_disposed || generation != _generation) return;
@@ -315,12 +318,18 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       );
       _stage = '正在起播';
       _setStateIfMounted(() {});
+      final source = await RangePlaybackSource.open(
+        uri: lease.mediaUri,
+        headers: lease.headers,
+        length: resource.sizeBytes,
+      );
+      if (_disposed || generation != _generation) {
+        await source.close();
+        return;
+      }
+      _rangeSource = source;
       await _player!.open(
-        Media(
-          lease.mediaUri.toString(),
-          httpHeaders: lease.headers,
-          start: resume,
-        ),
+        Media(source.uri.toString(), start: resume),
         play: true,
       );
       await _applySubtitleSettings();
@@ -378,6 +387,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     _bufferTimer?.cancel();
     _nextTimer?.cancel();
     unawaited(_player?.pause());
+    unawaited(_closeRangeSource());
     _setStateIfMounted(() {
       _loading = false;
       _buffering = false;
@@ -428,6 +438,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     try {
       await player?.stop();
     } finally {
+      await _closeRangeSource();
       try {
         await lease?.release();
       } catch (error) {
@@ -437,6 +448,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   }
 
   Future<void> _releaseLease() async {
+    await _closeRangeSource();
     final lease = _lease;
     _lease = null;
     if (lease == null) return;
@@ -445,6 +457,12 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     } catch (error) {
       AppLog.error('playback-release', error);
     }
+  }
+
+  Future<void> _closeRangeSource() async {
+    final source = _rangeSource;
+    _rangeSource = null;
+    await source?.close();
   }
 
   Future<void> _connectAccount() async {
@@ -1127,10 +1145,13 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     final lease = _lease;
     _lease = null;
     final player = _player;
+    final source = _rangeSource;
+    _rangeSource = null;
     unawaited(() async {
       try {
         await player?.dispose();
       } finally {
+        await source?.close();
         await _subtitleFiles?.dispose();
         try {
           await lease?.release();
