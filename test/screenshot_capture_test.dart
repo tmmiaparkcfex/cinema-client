@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -14,6 +15,7 @@ import 'package:cinema_client/quark/quark_playback_service.dart';
 import 'package:cinema_client/screens/app_shell.dart';
 import 'package:cinema_client/screens/detail_screen.dart';
 import 'package:cinema_client/quark/quark_login_screen.dart';
+import 'package:cinema_client/player/playback_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -26,7 +28,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _capture = bool.fromEnvironment('CAPTURE_SCREENSHOTS');
 const _fontPath = String.fromEnvironment(
   'SCREENSHOT_FONT',
-  defaultValue: 'C:/Windows/Fonts/Deng.ttf',
+  defaultValue: 'assets/fonts/NotoSansSC.ttf',
 );
 const _iconFontPath = String.fromEnvironment(
   'SCREENSHOT_ICON_FONT',
@@ -36,6 +38,54 @@ const _output = String.fromEnvironment(
   'SCREENSHOT_OUTPUT',
   defaultValue: 'D:/Codex/01_对话项目/Codex手机任务/cinema-client/docs/screenshots',
 );
+
+const _imageDirectory = String.fromEnvironment('SCREENSHOT_IMAGE_DIR');
+
+// Render cached artwork without live-network timers in the widget test zone.
+class _ImageClient implements HttpClient {
+  _ImageClient(this.images);
+  final Map<String, List<int>> images;
+  @override
+  Future<HttpClientRequest> getUrl(Uri url) async =>
+      _ImageRequest(images[url.toString()]);
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _ImageRequest implements HttpClientRequest {
+  _ImageRequest(this.bytes);
+  final List<int>? bytes;
+  @override
+  Future<HttpClientResponse> close() async => _ImageResponse(bytes);
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _ImageResponse extends Stream<List<int>> implements HttpClientResponse {
+  _ImageResponse(this.bytes);
+  final List<int>? bytes;
+  @override
+  int get statusCode => bytes == null ? 404 : 200;
+  @override
+  int get contentLength => bytes?.length ?? 0;
+  @override
+  HttpClientResponseCompressionState get compressionState =>
+      HttpClientResponseCompressionState.notCompressed;
+  @override
+  StreamSubscription<List<int>> listen(
+    void Function(List<int>)? onData, {
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) => Stream<List<int>>.value(bytes ?? const []).listen(
+    onData,
+    onError: onError,
+    onDone: onDone,
+    cancelOnError: cancelOnError,
+  );
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class _MemoryHomeCache extends HomeCache {
   _MemoryHomeCache() : super(Directory('unused'));
@@ -70,6 +120,24 @@ ThemeData _screenshotTheme() {
 }
 
 void main() {
+  if (_capture) {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final images = <String, List<int>>{};
+    final manifestFile = File('$_imageDirectory/manifest.json');
+    if (_imageDirectory.isNotEmpty && manifestFile.existsSync()) {
+      final manifest = jsonDecode(manifestFile.readAsStringSync()) as Map;
+      for (final entry in manifest.entries) {
+        final image = File('$_imageDirectory/${entry.value}');
+        if (image.existsSync()) {
+          images[entry.key as String] = image.readAsBytesSync();
+        }
+      }
+    }
+    setUp(
+      () => debugNetworkImageHttpClientProvider = () => _ImageClient(images),
+    );
+    tearDown(() => debugNetworkImageHttpClientProvider = null);
+  }
   FlutterSecureStorage.setMockInitialValues({});
   testWidgets('capture iPhone-sized UI render', (tester) async {
     final fontFile = File(_fontPath);
@@ -160,6 +228,7 @@ void main() {
     await _save(tester, boundaryKey, 'home_rows_iphone_testrender.png');
 
     api.close();
+    debugNetworkImageHttpClientProvider = null;
   }, skip: !_capture);
 
   testWidgets('capture iPhone-sized detail render', (tester) async {
@@ -194,6 +263,9 @@ void main() {
     final api = VodApi(
       settings: settings,
       client: MockClient((request) async {
+        if (request.url.path == '/api/search') {
+          return http.Response('{"ok":true,"items":[],"pagecount":1}', 200);
+        }
         if (request.url.path == '/api/detail') {
           return http.Response.bytes(
             utf8.encode(jsonEncode(detailJson)),
@@ -270,6 +342,7 @@ void main() {
       RepaintBoundary(
         key: boundaryKey,
         child: MaterialApp(
+          debugShowCheckedModeBanner: false,
           theme: _screenshotTheme(),
           home: QuarkLoginScreen(playbackService: services.quark),
         ),
@@ -277,11 +350,56 @@ void main() {
     );
     await tester.pump();
     await _save(tester, boundaryKey, 'cookie_iphone_testrender.png');
+    await tester.binding.setSurfaceSize(const Size(844, 390));
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: boundaryKey,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: _screenshotTheme(),
+          home: Scaffold(
+            backgroundColor: Colors.black,
+            body: PlaybackControls(
+              visible: true,
+              title: item.name,
+              subtitle: '第1季 第1集 · 原画',
+              position: const Duration(minutes: 12),
+              duration: const Duration(minutes: 47),
+              buffer: const Duration(minutes: 15),
+              playing: false,
+              rate: 1,
+              compact: false,
+              onBack: () {},
+              onToggleControls: () {},
+              onTogglePlay: () async {},
+              onSeekRelative: (_) async {},
+              onSeekStart: (_) {},
+              onSeekChanged: (_) {},
+              onSeekEnd: (_) {},
+              onRate: () {},
+              onEpisodes: () {},
+              onTracks: () {},
+              onFit: () {},
+              onLines: () {},
+              onInfo: () {},
+              onLock: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await _save(tester, boundaryKey, 'player_controls_iphone_testrender.png');
     api.close();
+    debugNetworkImageHttpClientProvider = null;
   }, skip: !_capture);
 }
 
 Future<void> _save(WidgetTester tester, GlobalKey key, String name) async {
+  await tester.runAsync(
+    () => Future<void>.delayed(const Duration(milliseconds: 100)),
+  );
+  await tester.pump();
   final boundary =
       key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
   final bytes = await tester.runAsync(() async {

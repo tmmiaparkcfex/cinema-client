@@ -28,6 +28,7 @@ class _DetailScreenState extends State<DetailScreen> {
   String? _group;
   int? _season;
   bool _autoPlayHandled = false;
+  bool _expandedOverview = false;
   int _loadGeneration = 0;
   Future<VodDetail>? _detailsUpdate;
   final _loadedEpisodeKeys = <String>{};
@@ -453,36 +454,41 @@ class _DetailScreenState extends State<DetailScreen> {
         : record.episodeText.isEmpty
         ? '继续播放'
         : '继续播放 ${record.episodeText}';
-    return Wrap(
-      spacing: 12,
-      runSpacing: 10,
+    return Row(
       children: [
-        SizedBox(
-          width: 240,
-          height: 48,
-          child: FilledButton.icon(
-            onPressed: detail.playableLines.isEmpty ? null : _playDefault,
-            style: FilledButton.styleFrom(
-              backgroundColor: CinemaColors.accent,
-              foregroundColor: Colors.white,
+        Expanded(
+          child: SizedBox(
+            height: 48,
+            child: FilledButton.icon(
+              onPressed: detail.playableLines.isEmpty ? null : _playDefault,
+              style: FilledButton.styleFrom(
+                backgroundColor: CinemaColors.accent,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.play_arrow_rounded, size: 25),
+              label: Text(
+                buttonLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            icon: const Icon(Icons.play_arrow_rounded, size: 25),
-            label: Text(buttonLabel),
           ),
         ),
+        const SizedBox(width: 12),
         SizedBox(
+          width: 48,
           height: 48,
           child: AnimatedBuilder(
             animation: store,
             builder: (context, _) {
               final favorite = store.isFavoriteItem(detail.item);
-              return OutlinedButton.icon(
+              return IconButton.outlined(
                 onPressed: _toggleFavorite,
+                tooltip: favorite ? '从片单移除' : '加入片单',
                 icon: Icon(
                   favorite ? Icons.check_rounded : Icons.add_rounded,
                   size: 20,
                 ),
-                label: Text(favorite ? '已加入片单' : '我的片单'),
               );
             },
           ),
@@ -502,6 +508,10 @@ class _DetailScreenState extends State<DetailScreen> {
         const SizedBox(height: 8),
         Text(
           item.overview.isEmpty ? '简介暂未提供，等待片库资料补齐。' : item.overview,
+          maxLines: _expandedOverview ? null : 3,
+          overflow: _expandedOverview
+              ? TextOverflow.visible
+              : TextOverflow.ellipsis,
           style: TextStyle(
             color: item.overview.isEmpty
                 ? CinemaColors.faint
@@ -510,6 +520,13 @@ class _DetailScreenState extends State<DetailScreen> {
             fontSize: 14,
           ),
         ),
+        if (item.overview.length > 100)
+          TextButton(
+            style: TextButton.styleFrom(padding: EdgeInsets.zero),
+            onPressed: () =>
+                setState(() => _expandedOverview = !_expandedOverview),
+            child: Text(_expandedOverview ? '收起简介' : '展开简介'),
+          ),
       ],
     );
   }
@@ -555,6 +572,10 @@ class _DetailScreenState extends State<DetailScreen> {
                                   person.portrait!,
                                   fit: BoxFit.cover,
                                   cacheWidth: 240,
+                                  frameBuilder: (_, child, frame, _) =>
+                                      frame == null
+                                      ? _photoPlaceholder(Icons.person_outline)
+                                      : child,
                                   errorBuilder: (_, _, _) => const ColoredBox(
                                     color: CinemaColors.elevatedHigh,
                                     child: Icon(
@@ -840,6 +861,11 @@ class _ChoicePill extends StatelessWidget {
   }
 }
 
+Widget _photoPlaceholder(IconData icon) => ColoredBox(
+  color: CinemaColors.elevatedHigh,
+  child: Icon(icon, color: CinemaColors.faint),
+);
+
 class _EpisodeTile extends StatelessWidget {
   const _EpisodeTile({
     required this.choice,
@@ -884,6 +910,9 @@ class _EpisodeTile extends StatelessWidget {
                             info!.still,
                             fit: BoxFit.cover,
                             cacheWidth: 320,
+                            frameBuilder: (_, child, frame, _) => frame == null
+                                ? _photoPlaceholder(Icons.movie_outlined)
+                                : child,
                             errorBuilder: (_, _, _) => const ColoredBox(
                               color: CinemaColors.elevatedHigh,
                               child: Icon(
@@ -1036,4 +1065,3 @@ class _ErrorBody extends StatelessWidget {
     );
   }
 }
-

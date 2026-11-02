@@ -124,7 +124,7 @@ class Harness {
       expect(jsonDecode(request.body)['token'], 'synthetic-fast-token');
       expect(jsonDecode(request.body)['speedup_session'], '');
       return ok([
-        {'download_url': 'https://example.invalid/native-video'},
+        {'download_url': 'https://video.quark.cn/native-video'},
       ]);
     }
     if (path.endsWith('/msg/batch_send')) {
@@ -173,6 +173,62 @@ void main() {
     );
   });
   tearDown(() => h.service.close());
+
+  test('does not attach the viewer Cookie to a non-Quark CDN URL', () async {
+    h.intercept = (r) async => r.url.path.endsWith('/file/download')
+        ? ok([
+            {'download_url': 'https://cdn.example.invalid/video'},
+          ])
+        : null;
+    final lease = await h.service.acquire(resource());
+    expect(lease.headers.containsKey('Cookie'), false);
+    await lease.release();
+  });
+
+  test(
+    'keeps cleanup ownership until an asynchronous deletion succeeds',
+    () async {
+      final lease = await h.service.acquire(resource());
+      h.intercept = (r) async {
+        if (r.url.path.endsWith('/file/delete')) {
+          return ok({'task_id': 'delete-task'});
+        }
+        if (r.url.path.endsWith('/task')) return ok({'status': 3});
+        return null;
+      };
+      await expectLater(lease.release(), throwsA(isA<QuarkException>()));
+      expect(await h.rows(), hasLength(1));
+      h.intercept = (r) async {
+        if (r.url.path.endsWith('/file/delete')) {
+          return ok({'task_id': 'delete-task'});
+        }
+        if (r.url.path.endsWith('/task')) return ok({'status': 2});
+        return null;
+      };
+      await lease.release();
+      expect(await h.rows(), isEmpty);
+    },
+  );
+
+  test('uses the exact parent folder supplied by vod-web before scanning the share root', () async {
+    final located = MediaResource.fromJson({
+      'id': 'parent-sample',
+      'share': {'id': 'synthetic-share'},
+      'file': {
+        'id': 'shared-file',
+        'name': 'movie.mkv',
+        'sizeBytes': 1024,
+        'parentId': 'known-parent',
+      },
+    });
+    final lease = await h.service.acquire(located);
+    final lookups = h.requests.where(
+      (r) => r.url.path.endsWith('/share/sharepage/detail'),
+    );
+    expect(lookups, hasLength(1));
+    expect(lookups.single.url.queryParameters['pdir_fid'], 'known-parent');
+    await lease.release();
+  });
 
   test('fast-transfer failure cleans the saved file without plain-download fallback', () async {
     h.intercept = (r) async =>

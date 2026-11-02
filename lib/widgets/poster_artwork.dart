@@ -26,8 +26,7 @@ class PosterArtwork extends StatelessWidget {
         fit: BoxFit.cover,
         cacheWidth: 600,
         errorBuilder: (_, _, _) => fallback,
-        loadingBuilder: (context, image, progress) =>
-            progress == null ? image : fallback,
+        frameBuilder: (_, child, frame, _) => frame == null ? fallback : child,
       );
     }
     return ClipRRect(
@@ -181,8 +180,8 @@ class BackdropArtwork extends StatelessWidget {
         poster,
         fit: BoxFit.cover,
         errorBuilder: (_, _, _) => _backdropFallback(),
-        loadingBuilder: (context, image, progress) =>
-            progress == null ? image : _backdropFallback(),
+        frameBuilder: (_, child, frame, _) =>
+            frame == null ? _backdropFallback() : child,
       );
     }
     return _backdropFallback();

@@ -307,6 +307,7 @@ class MediaResource {
     required this.sizeBytes,
     required this.tier,
     this.catalogKey = '',
+    this.parentId,
     this.season,
     this.episode,
     this.width,
@@ -320,6 +321,7 @@ class MediaResource {
 
   final String id;
   final String catalogKey;
+  final String? parentId;
   final String shareUrl;
   final String shareId;
   final String sharePassword;
@@ -374,6 +376,7 @@ class MediaResource {
       shareId: shareId,
       sharePassword: _firstText(share, const ['password']) ?? '',
       fileId: _firstText(file, const ['id']) ?? '',
+      parentId: _firstText(file, const ['parentId']),
       fileName: _firstText(file, const ['name']) ?? '未知文件',
       filePath: _firstText(file, const ['path']) ?? '',
       sizeBytes: _intValue(file['sizeBytes']) ?? 0,

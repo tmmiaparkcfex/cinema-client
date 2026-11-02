@@ -271,6 +271,13 @@ class QuarkPlaybackService {
     if (jsonBody) 'Content-Type': 'application/json',
   };
 
+  Map<String, String> _streamHeaders(Uri uri) => {
+    'Referer': 'https://pan.quark.cn/',
+    'User-Agent': _desktopUserAgent,
+    if (uri.host == 'quark.cn' || uri.host.endsWith('.quark.cn'))
+      'Cookie': _cookie,
+  };
+
   Future<_QuarkResponse> _request(
     String method,
     String endpoint, {
@@ -541,11 +548,7 @@ class QuarkPlaybackService {
       _activeFiles.add('${leaseFile.accountId}:${leaseFile.fid}');
       return QuarkPlaybackLease(
         mediaUri: url,
-        headers: {
-          'Referer': 'https://pan.quark.cn/',
-          'User-Agent': _desktopUserAgent,
-          'Cookie': _cookie,
-        },
+        headers: _streamHeaders(url),
         savedFid: leaseFile.fid,
         release: () => _exclusive(() async {
           _activeFiles.remove('${leaseFile.accountId}:${leaseFile.fid}');
@@ -564,14 +567,7 @@ class QuarkPlaybackService {
             leaseFile.fid,
             resource.fileName,
           );
-          return (
-            uri: refreshed,
-            headers: {
-              'Referer': 'https://pan.quark.cn/',
-              'User-Agent': _desktopUserAgent,
-              'Cookie': _cookie,
-            },
-          );
+          return (uri: refreshed, headers: _streamHeaders(refreshed));
         }),
       );
     } catch (error) {
@@ -593,8 +589,11 @@ class QuarkPlaybackService {
     required String stoken,
     QuarkPlaybackCancellation? cancellation,
   }) async {
-    final directories = <String>['0'];
-    final seenDirectories = <String>{'0'};
+    final directories = <String>{
+      if (resource.parentId?.isNotEmpty == true) resource.parentId!,
+      '0',
+    }.toList();
+    final seenDirectories = directories.toSet();
     var requests = 0;
     while (directories.isNotEmpty && requests < 50) {
       final folder = directories.removeAt(0);
@@ -1123,6 +1122,35 @@ class QuarkPlaybackService {
           statusCode: response.status,
           stage: 'cleanup',
         );
+      }
+      final taskId = response.data['task_id']?.toString() ?? '';
+      if (response.code == 0 && taskId.isNotEmpty) {
+        var completed = false;
+        for (var attempt = 0; attempt < 20; attempt++) {
+          final task = await _request(
+            'GET',
+            'task',
+            params: {'task_id': taskId, 'retry_index': '$attempt'},
+          );
+          _ensureSuccess(
+            task,
+            fallback: QuarkFailureKind.cleanupFailed,
+            stage: 'cleanup-task',
+          );
+          if (task.data['status'] == 2) {
+            completed = true;
+            break;
+          }
+          if (task.data['status'] == 3) break;
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+        }
+        if (!completed) {
+          throw const QuarkException(
+            QuarkFailureKind.cleanupFailed,
+            'temporary file deletion not confirmed',
+            stage: 'cleanup-task',
+          );
+        }
       }
       await _ledgerRemove(fid, accountId);
       AppLog.info('quark-playback', 'temp-file-released');
