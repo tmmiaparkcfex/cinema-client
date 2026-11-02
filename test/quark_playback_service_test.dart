@@ -121,9 +121,34 @@ class Harness {
       return ok(saved(fid));
     }
     if (path.endsWith('/file/download')) {
+      expect(jsonDecode(request.body)['token'], 'synthetic-fast-token');
+      expect(jsonDecode(request.body)['speedup_session'], '');
       return ok([
-        {'download_url': 'https://example.invalid/native-video'},
+        {'download_url': 'https://video.quark.cn/native-video'},
       ]);
+    }
+    if (path.endsWith('/msg/batch_send')) {
+      expect(request.url.host, 'drive-social-api.quark.cn');
+      final conversation = jsonDecode(request.body)['conversations'].single;
+      expect(conversation['conversation_type'], 3);
+      expect(
+        conversation['file_list'].single['fid'],
+        isNot(anyOf('preexisting-file', 'shared-file')),
+      );
+      return ok({
+        'send_msg_list': [
+          {
+            'store_msg_id': 'self-message',
+            'conversation_id': 'self-conversation',
+            'conversation_type': 3,
+          },
+        ],
+      });
+    }
+    if (path.endsWith('/file/acquire_dl_token')) {
+      expect(request.url.host, 'drive-social-api.quark.cn');
+      expect(jsonDecode(request.body)['conversation_type'], 3);
+      return ok({'token': 'synthetic-fast-token'});
     }
     if (path.endsWith('/file/delete')) {
       if (failedDeletes > 0) {
@@ -148,6 +173,179 @@ void main() {
     );
   });
   tearDown(() => h.service.close());
+
+  test('does not attach the viewer Cookie to a non-Quark CDN URL', () async {
+    h.intercept = (r) async => r.url.path.endsWith('/file/download')
+        ? ok([
+            {'download_url': 'https://cdn.example.invalid/video'},
+          ])
+        : null;
+    final lease = await h.service.acquire(resource());
+    expect(lease.headers.containsKey('Cookie'), false);
+    await lease.release();
+  });
+
+  test(
+    'keeps cleanup ownership until an asynchronous deletion succeeds',
+    () async {
+      final lease = await h.service.acquire(resource());
+      h.intercept = (r) async {
+        if (r.url.path.endsWith('/file/delete')) {
+          return ok({'task_id': 'delete-task'});
+        }
+        if (r.url.path.endsWith('/task')) return ok({'status': 3});
+        return null;
+      };
+      await expectLater(lease.release(), throwsA(isA<QuarkException>()));
+      expect(await h.rows(), hasLength(1));
+      h.intercept = (r) async {
+        if (r.url.path.endsWith('/file/delete')) {
+          return ok({'task_id': 'delete-task'});
+        }
+        if (r.url.path.endsWith('/task')) return ok({'status': 2});
+        return null;
+      };
+      await lease.release();
+      expect(await h.rows(), isEmpty);
+    },
+  );
+
+  test('uses the exact parent folder supplied by vod-web before scanning the share root', () async {
+    final located = MediaResource.fromJson({
+      'id': 'parent-sample',
+      'share': {'id': 'synthetic-share'},
+      'file': {
+        'id': 'shared-file',
+        'name': 'movie.mkv',
+        'sizeBytes': 1024,
+        'parentId': 'known-parent',
+      },
+    });
+    final lease = await h.service.acquire(located);
+    final lookups = h.requests.where(
+      (r) => r.url.path.endsWith('/share/sharepage/detail'),
+    );
+    expect(lookups, hasLength(1));
+    expect(lookups.single.url.queryParameters['pdir_fid'], 'known-parent');
+    await lease.release();
+  });
+
+  test('fast-transfer failure cleans the saved file without plain-download fallback', () async {
+    h.intercept = (r) async =>
+        r.url.path.endsWith('/file/acquire_dl_token') ? ok({}) : null;
+    await expectLater(
+      h.service.acquire(resource()),
+      throwsA(
+        isA<QuarkException>().having(
+          (e) => e.kind,
+          'kind',
+          QuarkFailureKind.fastTransfer,
+        ),
+      ),
+    );
+    expect(h.deleted, ['created-1']);
+    expect(h.requests.any((r) => r.url.path.endsWith('/file/download')), false);
+    expect(await h.rows(), isEmpty);
+  });
+
+  test(
+    'refuses a fast-transfer response identifying another conversation type',
+    () async {
+      h.intercept = (r) async => r.url.path.endsWith('/msg/batch_send')
+          ? ok({
+              'send_msg_list': [
+                {'store_msg_id': 'wrong', 'conversation_type': 1},
+              ],
+            })
+          : null;
+      await expectLater(
+        h.service.acquire(resource()),
+        throwsA(isA<QuarkException>()),
+      );
+      expect(h.deleted, ['created-1']);
+      expect(
+        h.requests.any((r) => r.url.path.endsWith('/file/acquire_dl_token')),
+        false,
+      );
+    },
+  );
+
+  test(
+    'accepts the nested self-transfer response and refreshes the fast token',
+    () async {
+      h.intercept = (r) async => r.url.path.endsWith('/msg/batch_send')
+          ? ok({
+              'conversations': [
+                {
+                  'file_list': [
+                    {
+                      'send_result': {
+                        'code': 0,
+                        'store_msg_id': 'nested-self-message',
+                        'conversation_id': 'self-conversation',
+                        'conversation_type': 3,
+                      },
+                    },
+                  ],
+                },
+              ],
+            })
+          : null;
+      final lease = await h.service.acquire(resource());
+      await lease.refresh();
+      final tokens = h.requests.where(
+        (r) => r.url.path.endsWith('/file/acquire_dl_token'),
+      );
+      expect(tokens, hasLength(2));
+      expect(
+        tokens.every(
+          (r) => jsonDecode(r.body)['msg_id'] == 'nested-self-message',
+        ),
+        true,
+      );
+      expect(h.saves, 1);
+      expect(h.requests.every((r) => r.url.host.endsWith('.quark.cn')), true);
+      await lease.release();
+    },
+  );
+
+  test('cancelling after self-transfer cleans the owned file before token acquisition', () async {
+    final cancellation = QuarkPlaybackCancellation();
+    h.intercept = (r) async {
+      if (r.url.path.endsWith('/msg/batch_send')) cancellation.cancel();
+      return null;
+    };
+    await expectLater(
+      h.service.acquire(resource(), cancellation: cancellation),
+      throwsA(cancelled),
+    );
+    expect(h.deleted, ['created-1']);
+    expect(
+      h.requests.any((r) => r.url.path.endsWith('/file/acquire_dl_token')),
+      false,
+    );
+    expect(await h.rows(), isEmpty);
+  });
+
+  test(
+    'refuses a download URL for a different file and keeps original files',
+    () async {
+      h.intercept = (r) async => r.url.path.endsWith('/file/download')
+          ? ok([
+              {
+                'fid': 'preexisting-file',
+                'download_url': 'https://example.invalid/wrong',
+              },
+            ])
+          : null;
+      await expectLater(
+        h.service.acquire(resource()),
+        throwsA(isA<QuarkException>()),
+      );
+      expect(h.deleted, ['created-1']);
+      expect(h.files, contains('preexisting-file'));
+    },
+  );
 
   test(
     'rejected login cannot replace an existing saved viewer session',

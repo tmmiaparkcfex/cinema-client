@@ -12,6 +12,8 @@ void main() {
     var played = 0;
     var seek = 0;
     var tracks = 0;
+    var locked = 0;
+    var info = 0;
     await tester.pumpWidget(
       MaterialApp(
         theme: buildCinemaTheme(),
@@ -44,6 +46,8 @@ void main() {
             },
             onFit: () {},
             onLines: () {},
+            onLock: () => locked++,
+            onInfo: () => info++,
           ),
         ),
       ),
@@ -52,9 +56,13 @@ void main() {
     await tester.tap(find.byIcon(Icons.play_arrow_rounded));
     await tester.tap(find.byIcon(Icons.forward_10_rounded));
     await tester.tap(find.text('音轨与字幕'));
+    await tester.tap(find.byTooltip('锁定屏幕'));
+    await tester.tap(find.byTooltip('播放信息'));
     expect(played, 1);
     expect(seek, 10);
     expect(tracks, 1);
+    expect(locked, 1);
+    expect(info, 1);
     expect(find.text('12:00'), findsOneWidget);
     expect(find.text('48:00'), findsOneWidget);
     expect(tester.takeException(), isNull);

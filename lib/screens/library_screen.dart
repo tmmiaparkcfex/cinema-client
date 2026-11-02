@@ -19,14 +19,17 @@ class LibraryScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: wide
-              ? const Text('我的片单', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800))
+              ? const Text(
+                  '我的片单',
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                )
               : const Text('我的片单'),
           leading: wide ? const SizedBox(width: 52) : null,
           automaticallyImplyLeading: !wide,
           bottom: const TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            indicatorColor: CinemaColors.red,
+            indicatorColor: CinemaColors.accent,
             labelColor: CinemaColors.text,
             unselectedLabelColor: CinemaColors.muted,
             tabs: [
@@ -81,7 +84,9 @@ class _FavoritesTab extends StatelessWidget {
           item: saved.toItem(),
           width: double.infinity,
           onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => DetailScreen(item: saved.toItem())),
+            MaterialPageRoute<void>(
+              builder: (_) => DetailScreen(item: saved.toItem()),
+            ),
           ),
         );
       },
@@ -125,7 +130,8 @@ class _HistoryTab extends StatelessWidget {
           child: InkWell(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => DetailScreen(item: record.toItem(), autoPlay: true),
+                builder: (_) =>
+                    DetailScreen(item: record.toItem(), autoPlay: true),
               ),
             ),
             child: Padding(
@@ -135,7 +141,11 @@ class _HistoryTab extends StatelessWidget {
                   SizedBox(
                     width: 92,
                     height: 62,
-                    child: PosterArtwork(item: record.toItem(), compact: true, borderRadius: 6),
+                    child: PosterArtwork(
+                      item: record.toItem(),
+                      compact: true,
+                      borderRadius: 6,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -151,13 +161,19 @@ class _HistoryTab extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           [
-                            if (record.episodeText.isNotEmpty) record.episodeText,
-                            record.completed ? '已播完' : '${(record.progress * 100).round()}%',
+                            if (record.episodeText.isNotEmpty)
+                              record.episodeText,
+                            record.completed
+                                ? '已播完'
+                                : '${(record.progress * 100).round()}%',
                             record.lineGroup,
                           ].join(' · '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: CinemaColors.muted, fontSize: 11),
+                          style: const TextStyle(
+                            color: CinemaColors.muted,
+                            fontSize: 11,
+                          ),
                         ),
                         const SizedBox(height: 7),
                         ClipRRect(
@@ -166,7 +182,7 @@ class _HistoryTab extends StatelessWidget {
                             value: record.progress,
                             minHeight: 3,
                             backgroundColor: Colors.white12,
-                            color: CinemaColors.red,
+                            color: CinemaColors.accent,
                           ),
                         ),
                       ],
@@ -175,7 +191,11 @@ class _HistoryTab extends StatelessWidget {
                   IconButton(
                     tooltip: '移除记录',
                     onPressed: () => store.removeHistoryRecord(record.itemKey),
-                    icon: const Icon(Icons.close_rounded, size: 17, color: CinemaColors.faint),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      size: 17,
+                      color: CinemaColors.faint,
+                    ),
                   ),
                 ],
               ),
@@ -193,8 +213,14 @@ class _HistoryTab extends StatelessWidget {
         title: const Text('清空观看记录？'),
         content: const Text('只清除本机的观看进度，不删除夸克文件或影视接口数据。'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('清空')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('清空'),
+          ),
         ],
       ),
     );
@@ -203,7 +229,11 @@ class _HistoryTab extends StatelessWidget {
 }
 
 class _Empty extends StatelessWidget {
-  const _Empty({required this.icon, required this.title, required this.message});
+  const _Empty({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
 
   final IconData icon;
   final String title;
@@ -219,7 +249,10 @@ class _Empty extends StatelessWidget {
           children: [
             Icon(icon, size: 44, color: CinemaColors.faint),
             const SizedBox(height: 14),
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 8),
             Text(
               message,

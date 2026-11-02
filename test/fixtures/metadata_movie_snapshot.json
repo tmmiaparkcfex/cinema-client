@@ -1,0 +1,594 @@
+{
+  "ok": true,
+  "playback": "client",
+  "item": {
+    "id": "sample-movie",
+    "name": "香肠派对",
+    "workId": "tmdb:movie:223702",
+    "mediaType": "movie",
+    "year": 2017,
+    "pic": "https://image.tmdb.org/t/p/w500/3sObp4Jz7VcJ5y56mXyqV5J6Aei.jpg",
+    "backdrop": "https://image.tmdb.org/t/p/w1280/hsb8nNBt3emvWqBs7Xv5IKlz6Im.jpg",
+    "metadata": {
+      "version": 2,
+      "source": "tmdb",
+      "sourceUrl": "https://www.themoviedb.org/movie/223702",
+      "tmdbId": 223702,
+      "mediaType": "movie",
+      "title": "香肠派对",
+      "originalTitle": "Sausage Party",
+      "overview": "故事从食物视角出发，讲述单纯的它们被采购回家，没想到会面临被生吞、活剥、碎尸的危险境遇。香肠组成逃亡小分队，誓要将秘密公布于众！",
+      "tagline": "腸 全部都係腸",
+      "fieldLanguages": {
+        "overview": "zh-CN",
+        "tagline": "zh-HK"
+      },
+      "poster": "https://image.tmdb.org/t/p/w500/3sObp4Jz7VcJ5y56mXyqV5J6Aei.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/hsb8nNBt3emvWqBs7Xv5IKlz6Im.jpg",
+      "genres": [
+        "冒险",
+        "动画",
+        "喜剧",
+        "奇幻"
+      ],
+      "countries": [
+        "United States of America",
+        "Canada"
+      ],
+      "languages": [
+        "English"
+      ],
+      "releaseDate": "2016-07-11",
+      "status": "Released",
+      "runtimeMinutes": 89,
+      "rating": 5.747,
+      "ratingCount": 7914,
+      "cast": [
+        {
+          "id": 19274,
+          "name": "塞斯·罗根",
+          "originalName": "Seth Rogen",
+          "character": "Frank / Sergeant Pepper / Peanut Butter (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/nYl9bvQzaPQLzlf0wf75clLN6Hi.jpg"
+        },
+        {
+          "id": 41091,
+          "name": "克丽丝滕·威格",
+          "originalName": "Kristen Wiig",
+          "character": "Brenda (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/gEKYhc3HvNxWhxneVfeePu0rTm.jpg"
+        },
+        {
+          "id": 21007,
+          "name": "乔纳·希尔",
+          "originalName": "Jonah Hill",
+          "character": "Carl (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/cymlWttB83MsAGR2EkTgANtjeRH.jpg"
+        },
+        {
+          "id": 19278,
+          "name": "比尔·哈德尔",
+          "originalName": "Bill Hader",
+          "character": "Firewater / Tequila / El Guaco (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/qyT50vQ9PQIEctE1IxDTEsBKstU.jpg"
+        },
+        {
+          "id": 39995,
+          "name": "迈克尔·塞拉",
+          "originalName": "Michael Cera",
+          "character": "Barry (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/qjhNKsw0OLyZQgK4srhelBafcCf.jpg"
+        },
+        {
+          "id": 17051,
+          "name": "詹姆斯·弗兰科",
+          "originalName": "James Franco",
+          "character": "Druggie (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/bjmAntHGiibLZixH8nTNVBzaFQn.jpg"
+        },
+        {
+          "id": 62862,
+          "name": "丹尼·麦克布莱德",
+          "originalName": "Danny McBride",
+          "character": "Honey Mustard (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/sVFPzl2t5QlGudQKWAszIWZCXZv.jpg"
+        },
+        {
+          "id": 64342,
+          "name": "克雷格·罗宾逊",
+          "originalName": "Craig Robinson",
+          "character": "Grits (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/mTyTrOWUSOBJMOlDpnd4OYx7FlJ.jpg"
+        },
+        {
+          "id": 22226,
+          "name": "保罗·路德",
+          "originalName": "Paul Rudd",
+          "character": "Darren (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/6jtwNOLKy0LdsRAKwZqgYMAfd5n.jpg"
+        },
+        {
+          "id": 208519,
+          "name": "尼克·克罗尔",
+          "originalName": "Nick Kroll",
+          "character": "Douche (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/fNiOuEKeBtELGdhKn4lxXq4O7YP.jpg"
+        },
+        {
+          "id": 38582,
+          "name": "大卫·克鲁姆霍兹",
+          "originalName": "David Krumholtz",
+          "character": "Kareem Abdul Lavash (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/2vaimzfyPQVxZGHbQS5M3z3tZw0.jpg"
+        },
+        {
+          "id": 819,
+          "name": "爱德华·诺顿",
+          "originalName": "Edward Norton",
+          "character": "Sammy Bagel Jr. (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/8nytsqL59SFJTVYVrN72k6qkGgJ.jpg"
+        },
+        {
+          "id": 3136,
+          "name": "萨尔玛·海耶克",
+          "originalName": "Salma Hayek Pinault",
+          "character": "Teresa Taco (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/3j8MpAjyopkAc8mbNiDeXyqBmcS.jpg"
+        },
+        {
+          "id": 521563,
+          "name": "安德雷斯·霍尔姆",
+          "originalName": "Anders Holm",
+          "character": "Troy (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/fgH6wEjj5tzEUcncUifBRVuidug.jpg"
+        },
+        {
+          "id": 1447323,
+          "name": "Scott Underwood",
+          "originalName": "Scott Underwood",
+          "character": "Gum / Twink / Krinkler's Chips / Pizza / Peanut (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/xGVDkJt7umdASrW6OYMUxgdesQd.jpg"
+        },
+        {
+          "id": 1281758,
+          "name": "Sugar Lyn Beard",
+          "originalName": "Sugar Lyn Beard",
+          "character": "Baby Carrot / Cookies (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/8AIFKRJ9bdW91PRXfx3Rx35xZQB.jpg"
+        },
+        {
+          "id": 12080,
+          "name": "康拉德·弗农",
+          "originalName": "Conrad Vernon",
+          "character": "Toilet Paper / Sauerkraut / Catcall Sausage / Grape #1 / Beer Can / Pop Bottle (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/2fhutx4eTBE6UR3eIRfYozKsUjk.jpg"
+        },
+        {
+          "id": 45924,
+          "name": "伊恩·詹姆斯·柯莱特",
+          "originalName": "Ian James Corlett",
+          "character": "Apple / Tickilish Licorice / Relish / Bag of Dog Food (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/y0p99omSo8CgHWPjv7qXtAQVyzr.jpg"
+        },
+        {
+          "id": 61133,
+          "name": "Michael Daingerfield",
+          "originalName": "Michael Daingerfield",
+          "character": "Chunk Munchers Cereal / Light Bulb / Indian Chutney (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/jvjsW7Qd7w7WWhtxRqUzuUAZepE.jpg"
+        },
+        {
+          "id": 1622600,
+          "name": "Jason Simpson",
+          "originalName": "Jason Simpson",
+          "character": "Plum #2 / Beer Keg / Fat Guy / Fit Man (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/nicxmXmjjQUMiiuwrnGwkBYobcZ.jpg"
+        },
+        {
+          "id": 1240645,
+          "name": "Vincent Tong",
+          "originalName": "Vincent Tong",
+          "character": "Pislitz Chips / Juice Box / Jamaican Rum (voice)",
+          "profile": null
+        },
+        {
+          "id": 1544803,
+          "name": "Karen E. Wright",
+          "originalName": "Karen E. Wright",
+          "character": "Diner Waitress",
+          "profile": null
+        },
+        {
+          "id": 54716,
+          "name": "Lauren Miller Rogen",
+          "originalName": "Lauren Miller Rogen",
+          "character": "Camille Toh / Tampon (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/eDAYJK2a0r7nvE1mPoxGkOSJNcN.jpg"
+        },
+        {
+          "id": 106776,
+          "name": "Sam Vincent",
+          "originalName": "Sam Vincent",
+          "character": "Old Pork Sausage / Refried Beans / Sandwich / Pop Tart / Licorice Rope (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/eJadsFcztqQZQIKzL5cMyasi1oa.jpg"
+        },
+        {
+          "id": 142587,
+          "name": "Greg Tiernan",
+          "originalName": "Greg Tiernan",
+          "character": "Potato / Noodle Soup / Larry the Corn (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/i1RJiqWLq8YfIPibwv5EAL7Z504.jpg"
+        },
+        {
+          "id": 89547,
+          "name": "Brian Dobson",
+          "originalName": "Brian Dobson",
+          "character": "Italian Tomato / Lettuce (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/3klT2K1UGl1wvmHKuDcSPuUFasV.jpg"
+        },
+        {
+          "id": 16846,
+          "name": "哈兰德·威廉姆斯",
+          "originalName": "Harland Williams",
+          "character": "Ketchup / Drug Dealer / Baba Ganoush (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/mnor1Hoy3kvTBygccBIVuyWfvge.jpg"
+        },
+        {
+          "id": 63797,
+          "name": "阿利斯泰尔·阿贝尔",
+          "originalName": "Alistair Abell",
+          "character": "Mariachi Salsa / Gefilte Fish (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/3IAmQJ8s2WqZDQscbVoyWFV7LaL.jpg"
+        },
+        {
+          "id": 963429,
+          "name": "艾丽斯·阿帕图",
+          "originalName": "Iris Apatow",
+          "character": "Berry Good Candies / Grape #3 / Coconut Milk (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/6ymE5Pb02fqt7CWpslxG3br97yz.jpg"
+        },
+        {
+          "id": 74362,
+          "name": "Michael Dobson",
+          "originalName": "Michael Dobson",
+          "character": "Queso (voice)",
+          "profile": "https://image.tmdb.org/t/p/w185/AjzZvcIWkq6mUC5dIxgGsPCv8bk.jpg"
+        }
+      ],
+      "directors": [
+        {
+          "id": 12080,
+          "name": "康拉德·弗农",
+          "originalName": "Conrad Vernon",
+          "character": null,
+          "profile": "https://image.tmdb.org/t/p/w185/2fhutx4eTBE6UR3eIRfYozKsUjk.jpg"
+        },
+        {
+          "id": 142587,
+          "name": "Greg Tiernan",
+          "originalName": "Greg Tiernan",
+          "character": null,
+          "profile": "https://image.tmdb.org/t/p/w185/i1RJiqWLq8YfIPibwv5EAL7Z504.jpg"
+        }
+      ],
+      "writers": [
+        {
+          "id": 19274,
+          "name": "塞斯·罗根",
+          "originalName": "Seth Rogen",
+          "character": null,
+          "profile": "https://image.tmdb.org/t/p/w185/nYl9bvQzaPQLzlf0wf75clLN6Hi.jpg"
+        },
+        {
+          "id": 19274,
+          "name": "塞斯·罗根",
+          "originalName": "Seth Rogen",
+          "character": null,
+          "profile": "https://image.tmdb.org/t/p/w185/nYl9bvQzaPQLzlf0wf75clLN6Hi.jpg"
+        },
+        {
+          "id": 54734,
+          "name": "埃文·戈德堡",
+          "originalName": "Evan Goldberg",
+          "character": null,
+          "profile": "https://image.tmdb.org/t/p/w185/qh0pRmpYzyix1ErrMGADthTnpLa.jpg"
+        },
+        {
+          "id": 54734,
+          "name": "埃文·戈德堡",
+          "originalName": "Evan Goldberg",
+          "character": null,
+          "profile": "https://image.tmdb.org/t/p/w185/qh0pRmpYzyix1ErrMGADthTnpLa.jpg"
+        },
+        {
+          "id": 1206449,
+          "name": "Ariel Shaffir",
+          "originalName": "Ariel Shaffir",
+          "character": null,
+          "profile": null
+        },
+        {
+          "id": 1206448,
+          "name": "Kyle Hunter",
+          "originalName": "Kyle Hunter",
+          "character": null,
+          "profile": null
+        },
+        {
+          "id": 21007,
+          "name": "乔纳·希尔",
+          "originalName": "Jonah Hill",
+          "character": null,
+          "profile": "https://image.tmdb.org/t/p/w185/cymlWttB83MsAGR2EkTgANtjeRH.jpg"
+        }
+      ],
+      "creators": [],
+      "externalIds": {
+        "imdb": "tt1700841",
+        "tvdb": null
+      },
+      "studios": [
+        "Columbia Pictures",
+        "Annapurna Pictures",
+        "Nitrogen Studios Canada",
+        "Point Grey Pictures"
+      ],
+      "networks": [],
+      "certifications": [
+        {
+          "country": "AR",
+          "rating": "+18"
+        },
+        {
+          "country": "AU",
+          "rating": "MA 15+"
+        },
+        {
+          "country": "BE",
+          "rating": "16"
+        },
+        {
+          "country": "BR",
+          "rating": "16"
+        },
+        {
+          "country": "CA",
+          "rating": "18A"
+        },
+        {
+          "country": "CH",
+          "rating": "16"
+        },
+        {
+          "country": "DE",
+          "rating": "16"
+        },
+        {
+          "country": "DK",
+          "rating": "11"
+        },
+        {
+          "country": "ES",
+          "rating": "16"
+        },
+        {
+          "country": "FI",
+          "rating": "K-12"
+        },
+        {
+          "country": "FR",
+          "rating": "12"
+        },
+        {
+          "country": "GB",
+          "rating": "15"
+        },
+        {
+          "country": "GR",
+          "rating": "K18"
+        },
+        {
+          "country": "HU",
+          "rating": "18"
+        },
+        {
+          "country": "IE",
+          "rating": "16"
+        },
+        {
+          "country": "IT",
+          "rating": "VM18"
+        },
+        {
+          "country": "JP",
+          "rating": "R15+"
+        },
+        {
+          "country": "KR",
+          "rating": "19"
+        },
+        {
+          "country": "LT",
+          "rating": "N-16"
+        },
+        {
+          "country": "MX",
+          "rating": "C"
+        },
+        {
+          "country": "NL",
+          "rating": "16"
+        },
+        {
+          "country": "NO",
+          "rating": "12"
+        },
+        {
+          "country": "NZ",
+          "rating": "R16"
+        },
+        {
+          "country": "PL",
+          "rating": "18"
+        },
+        {
+          "country": "RO",
+          "rating": "18"
+        },
+        {
+          "country": "RU",
+          "rating": "18+"
+        },
+        {
+          "country": "SE",
+          "rating": "11"
+        },
+        {
+          "country": "SK",
+          "rating": "18"
+        },
+        {
+          "country": "UA",
+          "rating": "16+"
+        },
+        {
+          "country": "US",
+          "rating": "R"
+        }
+      ],
+      "artwork": {
+        "posters": [
+          {
+            "url": "https://image.tmdb.org/t/p/w500/vNgdPJQ5CI60oEiiHLKRNrsDhMy.jpg",
+            "language": "en",
+            "width": 2000,
+            "height": 3000
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w500/sXtlUSKFX93IrD1tL2o0r9oHa5n.jpg",
+            "language": "en",
+            "width": 1000,
+            "height": 1500
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w500/gnPf3LMquGe0TLWaxPAbxTr7MEp.jpg",
+            "language": "en",
+            "width": 2000,
+            "height": 3000
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w500/7Ct3hi5dDx481bvbp9BxNlgS9Fp.jpg",
+            "language": null,
+            "width": 2000,
+            "height": 3000
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w500/f3P7GYPpam7tMQylNHPB81i52Y7.jpg",
+            "language": "en",
+            "width": 2000,
+            "height": 3000
+          }
+        ],
+        "backdrops": [
+          {
+            "url": "https://image.tmdb.org/t/p/w1280/zlOXmZfjSTQXamUCGMEu57d7hEP.jpg",
+            "language": "en",
+            "width": 1280,
+            "height": 720
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w1280/auBThDkmPUkfM7lUHCEUiaGjvSV.jpg",
+            "language": "en",
+            "width": 3307,
+            "height": 1860
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w1280/hsb8nNBt3emvWqBs7Xv5IKlz6Im.jpg",
+            "language": null,
+            "width": 3840,
+            "height": 2160
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w1280/zx4Z91MkYn7mV1A0pguqh4ETkGd.jpg",
+            "language": "en",
+            "width": 1920,
+            "height": 1080
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w1280/uHTjgDGom9iOoUZke86gqMjBUgy.jpg",
+            "language": null,
+            "width": 1920,
+            "height": 1080
+          }
+        ],
+        "logos": [
+          {
+            "url": "https://image.tmdb.org/t/p/w500/ndxKNQD7vrldnO1KNDJYFRlkJTo.png",
+            "language": "en",
+            "width": 1278,
+            "height": 445
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w500/rpg2SG1juKu5J5f3VZFB1kbUR2N.png",
+            "language": "en",
+            "width": 787,
+            "height": 76
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w500/9RA3I4QGZQTagkPLWR19iNw3Lvs.png",
+            "language": "en",
+            "width": 738,
+            "height": 75
+          }
+        ]
+      },
+      "collection": null,
+      "trailers": [],
+      "seasons": []
+    },
+    "episodes": [
+      {
+        "season": 0,
+        "episode": 0,
+        "airDate": "2016-07-11",
+        "runtimeSeconds": 5340
+      }
+    ],
+    "content": "故事从食物视角出发，讲述单纯的它们被采购回家，没想到会面临被生吞、活剥、碎尸的危险境遇。香肠组成逃亡小分队，誓要将秘密公布于众！"
+  },
+  "lines": [
+    {
+      "group": "普通主线",
+      "entries": [
+        {
+          "label": "正片",
+          "url": "http://catalogue.invalid/api/resource?id=sample-0",
+          "resource": {
+            "id": "sample-0",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "id": "synthetic-share",
+              "url": "https://pan.quark.cn/s/synthetic-share"
+            },
+            "file": {
+              "id": "synthetic-file-0",
+              "name": "sample.mkv",
+              "sizeBytes": 4000000000
+            },
+            "tier": "standard",
+            "season": null,
+            "episode": null,
+            "video": {
+              "width": 3840,
+              "height": 2160,
+              "codec": "hevc",
+              "bitDepth": 10
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        }
+      ]
+    }
+  ]
+}

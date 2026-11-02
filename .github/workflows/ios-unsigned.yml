@@ -1,6 +1,8 @@
 name: Build unsigned iOS IPA
 
 on:
+  push:
+    branches: [codex/iphone-metadata-fast-transfer]
   workflow_dispatch:
     inputs:
       api_base:
@@ -18,7 +20,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 45
     env:
-      VOD_API_BASE: ${{ inputs.api_base }}
+      VOD_API_BASE: ${{ inputs.api_base || 'http://172.16.3.70:8790' }}
       DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
       PUB_HOSTED_URL: https://pub.flutter-io.cn
     steps:
@@ -57,6 +59,16 @@ jobs:
         run: |
           set -o pipefail
           flutter test --reporter expanded 2>&1 | tee build/evidence/tests.log
+
+      - name: Render iPhone interface for review
+        run: |
+          set -o pipefail
+          flutter test test/screenshot_capture_test.dart \
+            --dart-define=CAPTURE_SCREENSHOTS=true \
+            --dart-define=SCREENSHOT_FONT="$PWD/assets/fonts/NotoSansSC.ttf" \
+            --dart-define=SCREENSHOT_ICON_FONT="$FLUTTER_ROOT/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf" \
+            --dart-define=SCREENSHOT_OUTPUT="$PWD/build/evidence/screenshots" \
+            2>&1 | tee build/evidence/interface-render.log
 
       - name: Test native iOS HttpOnly cookie bridge
         # Exercise the real iOS cookie plugin before producing the release IPA.

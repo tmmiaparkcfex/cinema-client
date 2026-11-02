@@ -1,3 +1,5 @@
+import 'media_metadata.dart';
+
 enum MediaKind { movie, tv, unknown }
 
 MediaKind parseMediaKind(Object? value) {
@@ -88,6 +90,7 @@ class Coverage {
 class VodItem {
   const VodItem({
     required this.key,
+    this.metadata = const MediaMetadata(),
     required this.name,
     required this.mediaType,
     this.workId = '',
@@ -109,6 +112,7 @@ class VodItem {
   });
 
   final String key;
+  final MediaMetadata metadata;
   final String workId;
   final List<MediaLine> catalogLines;
   String get identityKey => workId.isEmpty ? key : workId;
@@ -139,12 +143,14 @@ class VodItem {
   };
 
   factory VodItem.fromCatalogJson(Map<String, dynamic> json) {
+    final metadata = MediaMetadata.fromJson(json['metadata'], json['episodes']);
     final pictures = _stringList(json['pics']);
     final poster = pictures.isEmpty
         ? _firstText(json, const ['pic', 'poster', 'vod_pic'])
         : pictures.first;
     return VodItem(
       key: _firstText(json, const ['key', 'id', 'vod_id']) ?? '',
+      metadata: metadata,
       workId: _firstText(json, const ['workId', 'work_id']) ?? '',
       catalogLines: [
         for (final source in _mapList(json['sources']))
@@ -163,8 +169,11 @@ class VodItem {
         'backdropUrl',
         'background',
       ]),
-      genres: _stringList(json['genres']),
-      runtimeMinutes: _intValue(json['runtimeMinutes']),
+      genres: metadata.genres.isNotEmpty
+          ? metadata.genres
+          : _stringList(json['genres']),
+      runtimeMinutes:
+          _intValue(json['runtimeMinutes']) ?? metadata.runtimeMinutes,
       overview:
           _firstText(json, const ['content', 'overview', 'vod_content']) ?? '',
       remarks: _stringList(json['remarks']),
@@ -179,23 +188,32 @@ class VodItem {
   }
 
   factory VodItem.fromDetailJson(Map<String, dynamic> json) {
+    final metadata = MediaMetadata.fromJson(json['metadata'], json['episodes']);
     return VodItem(
       key: _firstText(json, const ['id', 'key']) ?? '',
+      metadata: metadata,
       workId: _firstText(json, const ['workId', 'work_id']) ?? '',
       name: _firstText(json, const ['name', 'vod_name']) ?? '未命名作品',
       mediaType: parseMediaKind(json['mediaType'] ?? json['type_name']),
       year: _intValue(json['year'] ?? json['vod_year']),
-      poster: _firstText(json, const ['pic', 'poster', 'vod_pic']),
+      poster:
+          _firstText(json, const ['pic', 'poster', 'vod_pic']) ??
+          (metadata.poster.isEmpty ? null : metadata.poster),
       backdrop: _firstText(json, const [
         'backdrop',
         'backdropUrl',
         'background',
       ]),
-      genres: _stringList(json['genres']),
-      runtimeMinutes: _intValue(json['runtimeMinutes']),
-      overview: _firstText(json, const ['content', 'blurb', 'overview']) ?? '',
+      genres: metadata.genres.isNotEmpty
+          ? metadata.genres
+          : _stringList(json['genres']),
+      runtimeMinutes:
+          _intValue(json['runtimeMinutes']) ?? metadata.runtimeMinutes,
+      overview:
+          _firstText(json, const ['content', 'blurb', 'overview']) ??
+          metadata.overview,
       remarks: _stringList(json['remarks']),
-      score: _firstText(json, const ['score', 'vod_score']) ?? '',
+      score: _firstText(json, const ['score', 'vod_score']) ?? metadata.score,
       actors: _firstText(json, const ['actor', 'actors']) ?? '',
       directors: _firstText(json, const ['director', 'directors']) ?? '',
       area: _firstText(json, const ['area']) ?? '',
@@ -208,6 +226,7 @@ class VodItem {
   }
 
   VodItem copyWith({
+    MediaMetadata? metadata,
     String? key,
     String? workId,
     String? name,
@@ -229,6 +248,7 @@ class VodItem {
   }) {
     return VodItem(
       key: key ?? this.key,
+      metadata: metadata ?? this.metadata,
       workId: workId ?? this.workId,
       catalogLines: catalogLines,
       name: name ?? this.name,
@@ -252,6 +272,8 @@ class VodItem {
 
   Map<String, dynamic> toCacheJson() => {
     'key': key,
+    'metadata': metadata.data,
+    'episodes': metadata.episodeData,
     'workId': workId,
     'name': name,
     'mediaType': mediaType.name,
@@ -285,6 +307,7 @@ class MediaResource {
     required this.sizeBytes,
     required this.tier,
     this.catalogKey = '',
+    this.parentId,
     this.season,
     this.episode,
     this.width,
@@ -298,6 +321,7 @@ class MediaResource {
 
   final String id;
   final String catalogKey;
+  final String? parentId;
   final String shareUrl;
   final String shareId;
   final String sharePassword;
@@ -352,6 +376,7 @@ class MediaResource {
       shareId: shareId,
       sharePassword: _firstText(share, const ['password']) ?? '',
       fileId: _firstText(file, const ['id']) ?? '',
+      parentId: _firstText(file, const ['parentId']),
       fileName: _firstText(file, const ['name']) ?? '未知文件',
       filePath: _firstText(file, const ['path']) ?? '',
       sizeBytes: _intValue(file['sizeBytes']) ?? 0,

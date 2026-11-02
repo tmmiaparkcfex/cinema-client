@@ -1,0 +1,925 @@
+{
+  "ok": true,
+  "playback": "client",
+  "item": {
+    "id": "sample-tv",
+    "name": "人民的名义",
+    "workId": "tmdb:tv:71100",
+    "mediaType": "tv",
+    "year": 2017,
+    "pic": "https://image.tmdb.org/t/p/w500/v0kZJmHpQTms264js0YHYMLV7Oy.jpg",
+    "backdrop": "https://image.tmdb.org/t/p/w1280/sRJo1YEF1b858xuKPd83AHWVjrf.jpg",
+    "metadata": {
+      "version": 2,
+      "source": "tmdb",
+      "sourceUrl": "https://www.themoviedb.org/tv/71100",
+      "tmdbId": 71100,
+      "mediaType": "tv",
+      "title": "人民的名义",
+      "originalTitle": "人民的名义",
+      "overview": "一位国家部委的项目处长被人举报受贿千万，当最高人民检察院反贪总局侦查处处长侯亮平前来搜查时，看到的却是一位长相憨厚、衣着朴素的“老农民”在简陋破败的旧房里吃炸酱面。当这位腐败分子的面具被最终撕开的同时，与之案件牵连甚紧的汉东省京州市副市长丁义珍，却在一位神秘人物的暗中相助下，以反侦察手段逃脱法网，流亡海外。案件线索终定位于由京州光明湖项目引发的一家汉东省国企大风服装厂的股权争夺，牵连其中的各派政治势力盘根错节，扑朔迷离。",
+      "tagline": "以人民的名义",
+      "fieldLanguages": {
+        "overview": "zh-CN",
+        "tagline": "zh-CN"
+      },
+      "poster": "https://image.tmdb.org/t/p/w500/v0kZJmHpQTms264js0YHYMLV7Oy.jpg",
+      "backdrop": "https://image.tmdb.org/t/p/w1280/sRJo1YEF1b858xuKPd83AHWVjrf.jpg",
+      "genres": [
+        "剧情"
+      ],
+      "countries": [
+        "China"
+      ],
+      "languages": [
+        "普通话"
+      ],
+      "releaseDate": "2017-03-28",
+      "status": "Ended",
+      "runtimeMinutes": 55,
+      "rating": 8.5,
+      "ratingCount": 50,
+      "cast": [
+        {
+          "id": 127269,
+          "name": "陆毅",
+          "originalName": "陆毅",
+          "character": "Hou Liangping",
+          "profile": "https://image.tmdb.org/t/p/w185/tTSfUQBS2t7uBVw6sb65n35XC5B.jpg"
+        },
+        {
+          "id": 65277,
+          "name": "张丰毅",
+          "originalName": "张丰毅",
+          "character": "Sha Ruijin",
+          "profile": "https://image.tmdb.org/t/p/w185/1PoEPyXiHgXdk8jm1auaNBUjiZa.jpg"
+        },
+        {
+          "id": 1086844,
+          "name": "吴刚",
+          "originalName": "吴刚",
+          "character": "Li Dakang",
+          "profile": "https://image.tmdb.org/t/p/w185/eUDye599p1edb2rY3UTY88fJO4Y.jpg"
+        },
+        {
+          "id": 1732752,
+          "name": "许亚军",
+          "originalName": "許亞軍",
+          "character": "Qi Tongwei",
+          "profile": "https://image.tmdb.org/t/p/w185/2TSCEjJQYCrFY4L4w1wT3uONNcR.jpg"
+        },
+        {
+          "id": 1912829,
+          "name": "柯蓝",
+          "originalName": "Ke Lan",
+          "character": "Lu Yike",
+          "profile": "https://image.tmdb.org/t/p/w185/pVFb1z7OqafpXOauuckOsatzARE.jpg"
+        },
+        {
+          "id": 2198399,
+          "name": "张志坚",
+          "originalName": "张志坚",
+          "character": "Gao Yuliang",
+          "profile": "https://image.tmdb.org/t/p/w185/4Uziv989kNVB4DcfW4X8V7ZHXSU.jpg"
+        },
+        {
+          "id": 1623137,
+          "name": "胡静",
+          "originalName": "胡静",
+          "character": "Gao Xiaoqin",
+          "profile": "https://image.tmdb.org/t/p/w185/gXOH1BiRGyymyWDUkMIWEks1VdH.jpg"
+        },
+        {
+          "id": 1195946,
+          "name": "张凯丽",
+          "originalName": "张凯丽",
+          "character": "Wu Huifen",
+          "profile": "https://image.tmdb.org/t/p/w185/oMsrzQb3Xu0qgwy10ppqPncaI0T.jpg"
+        },
+        {
+          "id": 576500,
+          "name": "高亚麟",
+          "originalName": "高亚麟",
+          "character": "Liu Xinjian",
+          "profile": "https://image.tmdb.org/t/p/w185/68NfDc9L45iV1Ug5kPQl7lCmn9u.jpg"
+        },
+        {
+          "id": 1981781,
+          "name": "白志迪",
+          "originalName": "白志迪",
+          "character": "Chen Yanshi",
+          "profile": "https://image.tmdb.org/t/p/w185/w7UJNphZ28bk7XcPgFYQHwd1P2h.jpg"
+        },
+        {
+          "id": 2091203,
+          "name": "李建义",
+          "originalName": "李建义",
+          "character": "Ji Changming",
+          "profile": "https://image.tmdb.org/t/p/w185/nsXgo8RobP7dEvIgbUlqmDas5Mp.jpg"
+        },
+        {
+          "id": 1332441,
+          "name": "冯雷",
+          "originalName": "冯雷",
+          "character": "Zhao Ruilong",
+          "profile": "https://image.tmdb.org/t/p/w185/yo0VKNfdXvHdbPi3BmGViUgxVqx.jpg"
+        },
+        {
+          "id": 1377790,
+          "name": "李光复",
+          "originalName": "李光复",
+          "character": "Zheng Xipo",
+          "profile": "https://image.tmdb.org/t/p/w185/9hEpZPehJveKq8oRqRcrOh6GFYK.jpg"
+        },
+        {
+          "id": 2275891,
+          "name": "赵子琪",
+          "originalName": "赵子琪",
+          "character": "Zhong Xiaoai",
+          "profile": "https://image.tmdb.org/t/p/w185/7I6p6wMOjKxmyPjNsHZo1KCIrpg.jpg"
+        },
+        {
+          "id": 1616830,
+          "name": "丁海峰",
+          "originalName": "丁海峰",
+          "character": "Zhao Donglai",
+          "profile": "https://image.tmdb.org/t/p/w185/jEWAJOEPJBZxKmN26KtO5843oGv.jpg"
+        },
+        {
+          "id": 2307499,
+          "name": "张晞临",
+          "originalName": "Zhang Xilin",
+          "character": "Cai Chenggong",
+          "profile": "https://image.tmdb.org/t/p/w185/48ouTms4er8aeDZGtgUgj22Zp3D.jpg"
+        }
+      ],
+      "directors": [
+        {
+          "id": 1983460,
+          "name": "李路",
+          "originalName": "李路",
+          "character": null,
+          "profile": "https://image.tmdb.org/t/p/w185/u7tIyHnY99CNGSEqJSZN6x99oNA.jpg"
+        }
+      ],
+      "writers": [],
+      "creators": [],
+      "externalIds": {
+        "imdb": "tt6742348",
+        "tvdb": 327209
+      },
+      "studios": [
+        "最高人民检察院影视中心",
+        "Ministry of Public Security Golden Shield Film and Television Culture Center 公安部金盾影视文化中心"
+      ],
+      "networks": [
+        "Hunan Television"
+      ],
+      "certifications": [],
+      "artwork": {
+        "posters": [
+          {
+            "url": "https://image.tmdb.org/t/p/w500/v0kZJmHpQTms264js0YHYMLV7Oy.jpg",
+            "language": "zh",
+            "width": 2000,
+            "height": 3000
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w500/lMjJPIbCcP2IVAAc081UfKOPJFI.jpg",
+            "language": "zh",
+            "width": 720,
+            "height": 1080
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w500/4VDKKLrTH8deWJpXAIq21Z04IzH.jpg",
+            "language": "zh",
+            "width": 1000,
+            "height": 1500
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w500/tcakE7j1c7hjm2puDje2iUODdIY.jpg",
+            "language": "zh",
+            "width": 1280,
+            "height": 1920
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w500/obwo1N2msn6eVN4DaNdwGNiN0Az.jpg",
+            "language": "zh",
+            "width": 960,
+            "height": 1440
+          }
+        ],
+        "backdrops": [
+          {
+            "url": "https://image.tmdb.org/t/p/w1280/sRJo1YEF1b858xuKPd83AHWVjrf.jpg",
+            "language": null,
+            "width": 3840,
+            "height": 2160
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w1280/tG7RcGeXNmDWHNSf4bc64i8nstd.jpg",
+            "language": "zh",
+            "width": 1932,
+            "height": 1087
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w1280/vvP36M0y1IDpBOMe2riFZHLq8oh.jpg",
+            "language": "zh",
+            "width": 3840,
+            "height": 2160
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w1280/askNhXJbNr36cjDvQXqgAyCv23Y.jpg",
+            "language": null,
+            "width": 3840,
+            "height": 2160
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w1280/zSYPp0ZNxPvivp4b7dOppd4cz24.jpg",
+            "language": null,
+            "width": 1920,
+            "height": 1080
+          }
+        ],
+        "logos": [
+          {
+            "url": "https://image.tmdb.org/t/p/w500/n0Myzkcvy9HacqbojPewX0fXW2t.png",
+            "language": "zh",
+            "width": 800,
+            "height": 266
+          },
+          {
+            "url": "https://image.tmdb.org/t/p/w500/xrKYD2GbxFSt1mmMoGNZ0C5w5mD.png",
+            "language": "zh",
+            "width": 846,
+            "height": 189
+          }
+        ]
+      },
+      "collection": null,
+      "trailers": [
+        {
+          "name": "China's \"House of Cards\" series trailer [Eng Sub] 人民的名义预告片",
+          "type": "Trailer",
+          "site": "YouTube",
+          "language": "zh",
+          "url": "https://www.youtube.com/watch?v=a3EyLur3MaI"
+        }
+      ],
+      "seasons": [
+        {
+          "season": 1,
+          "name": "人民的名义",
+          "episodeCount": 55,
+          "airDate": "2017-03-28",
+          "poster": "https://image.tmdb.org/t/p/w500/v0kZJmHpQTms264js0YHYMLV7Oy.jpg",
+          "overview": "一位国家部委的项目处长被人举报受贿千万，当最高人民检察院反贪总局侦查处处长侯亮平前来搜查时，看到的却是一位长相憨厚、衣着朴素的“老农民”在简陋破败的旧房里吃炸酱面。当这位腐败分子的面具被最终撕开的同时，与之案件牵连甚紧的汉东省京州市副市长丁义珍，却在一位神秘人物的暗中相助下，以反侦察手段逃脱法网，流亡海外。案件线索终定位于由京州光明湖项目引发的一家汉东省国企大风服装厂的股权争夺，牵连其中的各派政治势力盘根错节，扑朔迷离。"
+        }
+      ]
+    },
+    "episodes": [
+      {
+        "season": 1,
+        "episode": 1,
+        "airDate": "2017-03-28",
+        "runtimeSeconds": 2820,
+        "name": "侯亮平搜查贪污 反贪局合作行动",
+        "overview": "最高人民检察院反贪总局接到实名举报，国家某部委的项目处长赵德汉涉嫌巨额受贿，汉东省京州市副市长丁义珍也涉案其中，最高人民检察院反贪总局侦查处处长侯亮平要求汉东检察院反贪局局长陈海立即配合他们的行动，协同调查。",
+        "still": "https://image.tmdb.org/t/p/w500/a11McVJ0tQ49pKWelC0HLZbhrDi.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 2,
+        "airDate": "2017-03-29",
+        "runtimeSeconds": 2760,
+        "name": "赵德汉贪污被抓 丁义珍改名出逃",
+        "overview": "侯亮平他们来到赵德汉办公室，说起赵德汉贪污八千多万的前任，他泰然自若，狡猾的赵德汉依然笑着和侯亮平在周旋。丁义珍突然接到一个电话，他假称要帮刘副省长准备材料，匆匆离席，从酒店西门逃走。等林华华发现的时候，丁义珍已经不见踪影，陆亦可得到消息，不得不向陈海报告，陈海当即决定，不再等省委决定，直接对丁义珍实施抓捕，并悄悄发信息通知了侯亮平。侯亮平带人将赵德汉拉到帝京苑别墅，他很清楚自己的戏再也演不下去了。眼看无力回天，赵德汉索性全部交代，他带侯亮平来到卧室，那里的情景让人触目惊心，目瞪口呆。",
+        "still": "https://image.tmdb.org/t/p/w500/yeRqamfvilondGPN5ciDGIghqjq.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 3,
+        "airDate": "2017-03-30",
+        "runtimeSeconds": 2820,
+        "name": "丁义珍成功出逃 候亮平交接案件",
+        "overview": "祁同伟查到两个小时前丁义珍化名汤姆丁已经飞往美国，本来想趁飞机没有飞出中国领空的时候实施拦截，可是已经晚了，又想申请红色通缉令，可是和美国没有引渡条约，陈海很生气地离开了，自己盯了这么久的案子，就因为汇报会议的冗长泡汤了。面对老同学侯亮平一本正经地要和他交接案情，陈海赶忙陪着笑脸，一边办理交接，一边承受着侯亮平的指责：都是因为他的失职，丁义珍才得以逃脱，导致自己的努力前功尽弃。随后，林华华和他们俩一起来到陈海家吃饭。",
+        "still": "https://image.tmdb.org/t/p/w500/s6WbDQWEcAvDUiNK02KtyIGbGNQ.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 4,
+        "airDate": "2017-03-30",
+        "runtimeSeconds": 2820,
+        "name": "蔡成功求助亮平 李达康下令拆厂",
+        "overview": "蔡成功恳求侯亮平找高育良高抬贵手，放自己一条生路。蔡成功才知道丁义珍出事以后逃到美国。侯亮平用极其严厉的口吻追问蔡成功有没有行贿过丁义珍，蔡成功很害怕，战战兢兢地承认送过银行卡，随后就什么都不回答了。他要和陈海举报贪官，侯亮平劝他回去找陈海坦白。大风厂迟迟不拆迁，高小琴实在没有办法，只好和李达康诉苦。自从丁义珍出逃之后，蔡成功也失踪了，电话打不通，信息也不回。李达康很生气，随即下达命令，尽快查清蔡成功和丁义珍的问题，一周内要拆掉大风厂。",
+        "still": "https://image.tmdb.org/t/p/w500/2JTVpuR02F48WORnzaCQKDnHodt.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 5,
+        "airDate": "2017-03-31",
+        "runtimeSeconds": 2820,
+        "name": "蔡成功被围受伤 拆厂引意外大火",
+        "overview": "蔡成功被工人围攻，他连连和工人赔礼道歉，他告诉工人，自己在想尽一切办法帮工人筹钱，如果大家不相信，可以找尤瑞星会计查账，他想从银行贷款下来，还工人钱，工人们都很清楚银行也在到处找他，认为他就是在骗大家，群起而攻之，将蔡成功打晕了，他重重地摔倒在地，头上鲜血直流。常成虎命令拆迁队连夜带推土机到厂里来了，护厂队工人们用装满沙子的麻袋做了掩体，举着火把严阵以待。工人们和拆迁队对持中，王文革的火把掉了一点火苗，汽油瞬间就点燃了麻袋，形成一条火墙，假警察见状都跑了，工人们因为躲闪不及被烧伤，他们一气之下将拆迁队团团围住。",
+        "still": "https://image.tmdb.org/t/p/w500/22EiABLvd99r9vl7wOVVdOOyrGX.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 6,
+        "airDate": "2017-04-01",
+        "runtimeSeconds": 2820,
+        "name": "陈岩石平息众怒 蔡成功逃避追捕",
+        "overview": "陈岩石来到现场，用喇叭劝工人们，大风厂是自己亲手改制，员工股权是他提议的，大风厂拆迁后工人的工作安排，他会想办法争取大家的权益，他安抚职工，要理智一点，做合理合法的事情，让政府去处理，请求工人们放了拆迁队的人，让消防车进来救火。陈海如约去见蔡成功，而蔡成功却因为害怕又返回医院，出租司机看他鬼鬼祟祟的样子很可疑，随后就打了110报警。陈海来到和蔡成功约好的拆车厂，没有发现蔡成功，只见到蔡成功的表弟，也是这家车厂的老板，得知蔡成功因为害怕不赶来，陈海让他通知蔡成功去局里找自己。",
+        "still": "https://image.tmdb.org/t/p/w500/x8BkSDhnaG2GkdN6Yd3MG4YdKx9.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 7,
+        "airDate": "2017-04-02",
+        "runtimeSeconds": 2820,
+        "name": "陈海遭诡异车祸 侯亮平请调汉东",
+        "overview": "陈海和侯良平通电话，正在过马路的时候突然被一辆大卡车撞倒在地上，侯良平赶紧通知季昌明，陈老，陈老和老伴赶到医院，担心陈海安危，觉得他肯定是被人暗算的，高玉良一边安慰陈老，让祁同伟立刻组成专案组，调查此事。侯亮平认定陈海就是被害，司机怎么可能早晨8点就醉醺醺的，尽管秦思远告诉他司机是前一天晚上醉酒，可是侯亮平觉得一定是有人利用了这个酒鬼，他坚持要去汉东找线索。",
+        "still": "https://image.tmdb.org/t/p/w500/rxs2opFHiqYCPfCmR1lCSBFlOzL.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 8,
+        "airDate": "2017-04-02",
+        "runtimeSeconds": 2820,
+        "name": "胜利遭警察调查 祁同伟讨好陈老",
+        "overview": "警察小雷来到郑西坡家找“爱哭的毛毛虫”，郑胜利忙陪着笑脸让小雷坐下，因为郑胜利转发了大风厂放火，强拆还有污蔑高育良的帖子，涉嫌犯罪，郑胜利很清楚，单贴转发超过五百条才是犯罪，他是三个帖子加一起超过五百条，不算违法。小雷问他怎么认识的“扫除一切害人虫”，这个害人虫是不是北京人，郑胜利告诉小雷他们是在网上认识的。郑西坡对儿子的行为很不齿，反倒希望他被警察抓走。祁同伟殷勤地讨好陈岩石，口口声声要汇报工作，称赞陈岩石的出手相救，自己才不至于出洋相。祁同伟竟然像个小学生一样，搬了一个小凳子，靠近陈岩石的身边，毕恭毕敬地要想听他的教诲，然后假装不经意，随口问到陈岩石为什么管沙瑞金叫小金子，老伴解释说看着沙瑞金长大的，陈岩石急忙岔开话题，祁同伟见状悻悻地又去菜园里翻地，陈岩石看着眼前这个机关算尽的年轻人，不禁不寒而栗，他无语。",
+        "still": "https://image.tmdb.org/t/p/w500/qVjw72S7pf9IqPGxKDexCgvJtMn.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 9,
+        "airDate": "2017-04-03",
+        "runtimeSeconds": 2820,
+        "name": "侯亮平调任汉东 省厅接走蔡成功",
+        "overview": "秦局长找到侯亮平家里，给他布置了去汉东任职的任务，告诉他不要怕事，不要怕做功臣，侯亮平将此话铭记于心。这时蔡成功再次打来电话，告诉他自己向他举报李达康的老婆欧阳菁受贿二百万，并且要到北京找侯亮平，侯亮平告诉他自己会安排人去保护他。祁同伟派的人第一次找到蔡成功时，成了惊弓之鸟的蔡成功感到这些人是警察，于是借口包没拿跑掉了，上了表弟的车，他才又给侯亮平打电话，告诉他自己在弟弟的旧车厂，让侯亮平的朋友和自己在那里碰面，祁同伟的人之后接到指示到旧车厂将蔡成功接走，但是这件事还是被市警察局的赵东来给侦查到了。",
+        "still": "https://image.tmdb.org/t/p/w500/vVxza1PDmbSSwYYYZbdsjtxwDeT.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 10,
+        "airDate": "2017-04-03",
+        "runtimeSeconds": 2760,
+        "name": "陈岩石追忆革命 亮平任职糟欺生",
+        "overview": "沙瑞金把陈岩石请出来，给大家讲历史，讲怎么做一个合格的共产党员。陈岩石首先说起自己为啥入党，怎么入党，当年云城之战的时候，自己才十五岁，为了入党虚报了两岁，因为不是党员就没有资格背炸药包，他就为了这个特权，积极地申请入党。他清楚地记得1945年6月8日是自己入党的日子，第二天就和日伪展开最后决战，那天的战事非常惨烈，鬼子的炮火凶猛，战士们伤亡惨重，他的入党介绍人沙振江带领尖刀班的党员一起炸碉堡，他们奋勇向前，爱最后的生死十分钟，五个尖刀班战士都倒在血泊之中，沙振江身上被炸出六个大窟窿。最后时刻陈岩石代班长继续扛炸药包往前冲，眼看着战友在自己身边一个个倒下，陈岩石拼尽最后力气，炸毁了鬼子碉堡，为大部队取得最后胜利扫清了障碍。侯亮平空降汉东任反贪局局长，受到了冷遇，得知他的任职文件还没有下来，尽管季昌明一再解释沙瑞金已经和侯亮平见面，并且安排了工作，可以特事特办，大家依旧对他很冷淡，不理不睬。以陆亦可为首，她担心侯亮平的到来会将陈海挤走。当侯亮平说到办案的时候，吕梁第一个反对，他以看病为由，头也不回地离开了，侯亮平看他们都有情绪，也很无奈，只好劝说大家趁机去治病，就连一向活泼可爱的林华华对他也很抗拒。",
+        "still": "https://image.tmdb.org/t/p/w500/rfwVQ4NbJoUxZppIrrR3fmnMyho.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 11,
+        "airDate": "2017-04-04",
+        "runtimeSeconds": 2820,
+        "name": "警检争抢举报人 蔡成功要见亮平",
+        "overview": "赵东来已经得到消息蔡成功就藏在省公安厅招待所。祁同伟安排他去后门堵人，同时嘱咐小金告诉李达康公安厅一定配合工作。可祁同伟不知道的是李达康正在常委会上举例批评他的虚伪做作。高育良出言打断李达康，指责他这样评价祁同伟有失偏颇。高育良提及了很多汉东省干部的贪污腐败情况，甚至一些干部至今没有处理也不知如何处理，会议气氛一时很凝重。侯亮平决定不带走蔡成功，就在招待所对他进行审讯，二十四小时以后市局再将蔡成功带走。陆亦可和周正他们很快将审讯室布置好，蔡成功很警觉地环顾四周，他坚持要等侯亮平来才开始交代。",
+        "still": "https://image.tmdb.org/t/p/w500/lSYwTEbnt6x4PPUnCbfC2qXVKoJ.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 12,
+        "airDate": "2017-04-04",
+        "runtimeSeconds": 2820,
+        "name": "陆亦可求助季检 蔡成功交代实情",
+        "overview": "眼看时间一点点过去了，陆亦可只好向季昌明求救，因为蔡成功的拒不配合，所以侯亮平必须来。季昌明告诉陆亦可，侯亮平必须要回避，因为省里和市里都盯着，如果让侯亮平去，就是授人以柄，让陆亦可克服困难，继续对蔡成功攻下去。侯亮平的到来，让蔡成功既高兴又很激动，他狼吞虎咽地吃着饭，还不住地夸侯亮平做得好吃。饭后，蔡成功全盘交代了大风厂破产的始末：在京州，只有欧阳菁的城市银行和农村信用社给蔡成功贷款，蔡成功分别找欧阳菁贷款四次，每次都是用蔡成功母亲张桂花的银行卡给她五十万的回扣。后来蔡成功用过桥贷款的方式向山水集团贷了五千万的高利贷用于大风厂的生产，约定六天时间还清，用大风厂的全部股权做抵押，结果欧阳菁又取消了蔡成功事先预约的贷款。",
+        "still": "https://image.tmdb.org/t/p/w500/6WTC8e2nJu8ABJNUtVLkT0DByO3.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 13,
+        "airDate": "2017-04-04",
+        "runtimeSeconds": 2820,
+        "name": "区局传唤郑西坡 李达康训斥程度",
+        "overview": "警察来敲门，郑乾吓得不知所措，假装头疼立刻溜进房间。没想到警察要带走郑西坡，郑乾赶忙从房间跑出来，拍下传唤证和警察的警号，他要留下证据。程度争分夺秒终于按时把郑西坡送到。这时候，大风厂的大喇叭又开始广播，李达康气得大声训斥程度，他战战兢兢地过来要脱郑西坡的号服，郑西坡坚决不让，赵东来斥责他因为常成虎被抓的事打击报复，孙连城也指责程度把公安局当自己家的私有财产。",
+        "still": "https://image.tmdb.org/t/p/w500/fOfR8t2qpJSv25wyFHmh0U3qF9m.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 14,
+        "airDate": "2017-04-04",
+        "runtimeSeconds": 2760,
+        "name": "祁同伟保护程度 王大路安慰欧阳",
+        "overview": "程度见到祁同伟，唯唯诺诺地说明，李达康要把他清除出公安队伍，赵东来当天就让他脱下警服，安排他到光明区信访办。祁同伟训程度，党和人民的干部怎么能做出这么没有底线的事情，为了常成虎动用自己的权利胡作非为。程度连连点头承认错误，最后，程度拿出对李达康的监视的影像资料，祁同伟再次训斥他，这是违法行为，程度解释是受人之托。随后祁同伟给赵东来打电话，要把程度调任省厅办公室主任，赵东来说程度严重违反警风警纪，可是祁同伟坚持要定了。欧阳菁对于爱情仍像年轻人一样执着，沉迷在自己的白日梦里不肯醒来，仿佛自己就是浪漫故事里的女主角。大路酒业食品集团董事长王大路劝欧阳菁，什么都不缺，却对生活充满了怨气，欧阳菁说自己缺少关爱，缺少安全感，什么都指望不上李达康。王大路提醒他鱼和熊掌不能兼得，他劝欧阳菁对感情不要太自私，要多为李达康着想，他忙了一天的工作回到家，连个说话的人都没有。王大路的一番话都被欧阳菁伶牙俐齿一一回绝。",
+        "still": "https://image.tmdb.org/t/p/w500/15ul9nXWwogVK88voukNd7rYaHM.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 15,
+        "airDate": "2017-04-04",
+        "runtimeSeconds": 2820,
+        "name": "亮平高小琴智斗 杏枝诉上访无奈",
+        "overview": "高小琴和祁同伟众星捧月般把侯亮平情入席，在座的大多是政法口的官员，还有几个是侯亮平的同学，桌上就是一些农家小菜，显然是在侯亮平面前演清廉，高小琴谈笑风生，不露声色地对侯亮平大加恭维，祁同伟也是侃侃而谈民以食为天，以及伴随美食的美酒，大家推杯换盏，其乐融融。祁同伟建议进行下一个项目，他知道侯亮平喜欢京戏，就和高小琴一起陪侯亮平唱了一出《智斗》，高小琴的阿庆嫂表演得惟妙惟肖，风情万种，侯亮平的刁德一也是从容自如，祁同伟在旁边热情地帮衬着，三个人唱得字正腔圆，余音绕梁。高小琴对侯亮平察言观色，真真假假地试探，侯亮平却是不阴不阳，深藏不露，让人分不清楚是在唱戏文还是真实的较量。田杏枝原来是在一企业幼儿园，后来从企业剥离，归政府管理，她的退休金也应该按照事业单位来发放，可是光明区就一直拖着不落实，他们多次上访无果。田杏枝无奈地表示阎王好见，小鬼难缠。而且光明区信访办的工作人员态度恶劣，窗口矮得看不到人，她每次都是半跪着，可是还是看不到里面人的脸，每次上访回来，腿都疼好几天。",
+        "still": "https://image.tmdb.org/t/p/w500/cVoJ53wZGSPKrdsDagPwR1dO9AJ.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 16,
+        "airDate": "2017-04-04",
+        "runtimeSeconds": 2820,
+        "name": "欧阳埋怨闹离婚 蔡成功再糟重伤",
+        "overview": "欧阳菁回来了，两个人相对无言像陌生人一般。欧阳菁准备内退，然后去洛杉矶陪女儿，欧阳菁埋怨李达康对自己和孩子不负责任，她知道离婚协议对李达康很重要，因为自己的离开让李达康成了裸官，就丢了他的乌纱帽，李达康被她讥讽的言辞激怒，说自己的工资都给了孩子，欧阳菁冷笑，就他那点工资能够负担孩子在美国的费用。最后，欧阳菁答应和李达康离婚，条件是把山水集团的项目给大路集团的王大路，李达康面对威胁气得咬牙切齿地回答“你做梦”。两个人吵得不可开交，不欢而散。蔡成功精疲力尽地从审讯室出来，迎面遇到负责大风厂拆迁的常成虎正好被提审，他们刚一走近，常成虎就恶狠狠地拳打脚踢两下就把蔡成功打到在地，还咬牙切齿地大骂蔡成功，他觉得都是因为蔡成功，自己才被关起来。",
+        "still": "https://image.tmdb.org/t/p/w500/fS3QBUM5T3rPQ0rmPmnb1qnSH1Z.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 17,
+        "airDate": "2017-04-06",
+        "runtimeSeconds": 2820,
+        "name": "齐心再建大风厂 胜利假结婚骗钱",
+        "overview": "郑西坡，陈岩石将大风厂剩余的老弱病残都召集起来，准备一起筹建新的大风厂，他们首先召开了有二十一人参加的股东大会。郑西坡想起当年陈岩石是副市长的时候，他骑车来到大风厂，和他们彻夜长谈，劝说职工入股，希望大家能共同富裕。陈岩石说起当年毛主席带23户人家，三条驴腿建的合作社。现在日子好了，大家还有安置费。郑西坡说起文革的老婆汤成兰要去卖早点，他就心痛，坚决不要她再去步自己老婆的后尘。他表示下岗职工不能给国家添乱，陈岩石不但愿意来当顾问，还拿出10万退休费，陈岩石一再强调他不要股份，只是道义上的支持。郑西坡回到家，看到郑乾和张宝宝的结婚证，又听张宝宝甜甜地叫他爸，郑西坡的脸上乐开了花，一口气炒了六个菜，要庆祝他们家的双喜临门。郑乾一心只想要回那二十万的结婚费，他一再催促，郑西坡却是不断搪塞敷衍。",
+        "still": "https://image.tmdb.org/t/p/w500/lTT12OfKBwrt6MFltUILcQc9PtP.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 18,
+        "airDate": "2017-04-06",
+        "runtimeSeconds": 2760,
+        "name": "亮平初探寻端倪 沙李林城谈改革",
+        "overview": "侯亮平说丁义珍逃跑的那天晚上，肯定是有人和他通风报信，他问高育良有没有怀疑过，高育良也觉得疑点很大，可是没有根据，也不敢胡乱说。侯亮平得知当晚参加陈海的案情汇报会的人都出去过，而且还不止一次，李达康前前后后出去过三次。高育良说自己也出去过，是秘书帮他打的电话，向沙瑞金汇报情况的。侯亮平觉得祁同伟没有必要参加汇报会，高育良解释是祁同伟正巧来向我汇报工作，所以就一起参加了。侯亮平又告诉高育良，季昌明指出高育良那天拖拖拉拉，又是请示又是汇报，最后还和沙瑞金在电话里聊学习计划。高育良被这些话激怒了，指责季昌明鬼鬼祟祟，谨小慎微，他才最有问题。侯亮平看着气急败坏的老师陷入了沉思。沙瑞金和李达康一行人推车来到金融产业园，李达康向沙瑞金介绍园区里的东汇集团，那是汉东最早的高科技的软件企业，当年这些软件企业都是李达康从省里挖过来的，吕州的两家差点让高育良和李达康玩命，东汇集团主要从事软件开发，在金融，房地产和养老都有建树，当初挖过来的时候也就三五个人，沙瑞金参观完，觉得大开眼界，他感谢东汇集团的赵总给养老院老人送温暖。",
+        "still": "https://image.tmdb.org/t/p/w500/lDO8QljtNsi4XYKrSRcd3D2HiZL.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 19,
+        "airDate": "2017-04-07",
+        "runtimeSeconds": 2820,
+        "name": "亦可暗查欧阳菁 达康训斥孙连城",
+        "overview": "陆亦可查到蔡成功贿赂欧阳菁四张卡，三张是死卡，还有一个在用，里面的五十万已经陆陆续续取走了，只剩下五千元，因为时间太长，没有留下影像资料，没有证据是欧阳菁取走的，陆亦可想去提醒欧阳菁取走剩余的钱，侯亮平让林华华上门去询问一下部分企业的贷款情况，但是不能提蔡成功和大风厂，那样她就不敢用那五千元了。孙连城气喘吁吁地赶到信访局，他弯腰低头才勉强看到李达康满含怒气的脸，他蜷缩着蹲在地上，眼睛却始终不敢离开李达康的视线，他想进去和李达康解释，李达康坚决不让，他只好继续保持这个姿势接受李达康的质问。企业幼儿园的老师们移交到地方政府，为什么他们的待遇问题却迟迟不落实。孙连城累得单腿跪下来，趴在窗口上，委屈地称区里没有钱解决，他的四周围满了来上访的群众，大家都指着他议论纷纷。孙连城羞愧难当，他不停地换腿蹲在那里，已经累得满头大汗，还得继续接受李达康的训斥，李达康告诉他，千万不要把老百姓的事当小事，任何一件事都会影响干部在群众心里的形象。接着质问他，区长和书记接待日为什么要安排警察？孙连城不停地承认错误，并说是丁义珍定的。最后，李达康警告让他好自为之，可是孙连城也因为蹲得太久早已经站不起来了，大家都幸灾乐祸地看着他。",
+        "still": "https://image.tmdb.org/t/p/w500/fdDWEloms3ogYmPkMOYDRwEQ0ri.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 20,
+        "airDate": "2017-04-08",
+        "runtimeSeconds": 2820,
+        "name": "侯亮平惩罚陈东 欧阳菁同意离婚",
+        "overview": "陆亦可急匆匆来找侯亮平，小皮球陈东又在学校闯祸了，他把校长室的玻璃砸碎了，陆亦可没有时间去，只能侯亮平去学校处理此事。侯亮平找到校长，校长很好奇陈东又换家长了，建议他们要专人负责孩子，陈东已经踢坏过两次校长室的玻璃了。侯亮平赶忙陪着笑脸不停地赔礼道歉，接着校长带侯亮平去看被陈东弄脏的墙。侯亮平一边带着他清理墙上的污渍，一边警告陈东不许在楼道里踢球。陈东一脸的委屈，因为他是替补，已经按照要求交了15元钱，可是还不让他上场，得知其他同学也需要花钱才能获得上场踢球的权利。侯亮平觉察到问题的严重，这么小的孩子就懂得花钱好办事的腐败思想，他立刻就去找校长反映。校长坚持他们是重点学校，绝不可能有此现象，侯亮平义正言辞地表示反腐要从娃娃抓起，而且拿出自己的名片。校长的口气明显弱下来，承诺一定会彻查此事。欧阳菁也把检察院来人要查账的事告诉了王大路，王大路让她小心，劝她立刻和李达康离婚，马上去美国。李达康来到水榭等欧阳菁，他坐在藤椅上，四周很安静，夜色很美，月亮倒映在湖面上，闪着金光，李达康不知不觉睡着了。欧阳菁叫醒他，李达康又滔滔不绝地和欧阳菁讲起当初怎么把这块荒地建成了会展中心，所以城市才有了这么一大块绿肺，他看到欧阳菁的脸色变了，才意识到她最讨厌听自己讲工作，马上陪着笑脸要谈他们自己的事。",
+        "still": "https://image.tmdb.org/t/p/w500/34YTMoHIzRJPzXS54hsG35hKPW.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 21,
+        "airDate": "2017-04-09",
+        "runtimeSeconds": 2820,
+        "name": "侯亮平拦路抓捕 瑞金谈干部任命",
+        "overview": "欧阳菁在名品商城选了一件高档女装，一共一万六千八百元，蔡成功给他的卡里只有五千，她又拿出自己的卡补足了剩下的余额。欧阳菁急匆匆地赶回家，她一进门就开始收拾行李，把自己带不走的衣服都给了杏枝。李达康和民政局的同志一起回到家，他们盖章，签字，很快离婚手续就办完了。李达康不明白欧阳菁为什么这么着急，欧阳菁只说自己抢了一张很便宜的机票，李达康送欧阳菁去机场。临行前，欧阳菁摇下车窗，最后看了一眼自己的家。侯亮平和陆亦可站在前面，其他检察院工作人员，一字排开，拦在机场高速路口，侯亮平要把欧阳菁拦在国门之内。侯亮平伸出手，拦住李达康的车，司机下来询问，侯亮平拿出传唤证，欧阳菁和李达康说再见，然后缓缓走下车。沙瑞金向纪委书记田国富和组织部部长吴春林讲起有的领导把干部任命搞得像梁山好汉的忠义堂，如果不是自己族类就一概不用，宁愿位子空着，也要等着自己的人上位。田国富指出，老书记赵立春在这个问题上就起到了不好带头作用。吕州书记刘开河就完全延续了这种做法，他现在已经被双规。吕州高新区管委会的易学习，在副市级的岗位实际工作多年，成绩也是有目共睹，可是刘开河就是不按惯例把他提成副市级。原来，那个位子刘开河是想留给区委书记的，可是这位区委书记任职不到年限，到现在还差一年零三个月。易学习老实能干，就是没有政治资源，所以这么多年得不到提拔。当年李达康是县长，易学习是县委书记，他们一起在金山县搭班子的时候，由于集资修路，造成一位村干部意外死亡，易学习主动承担责任，保护了李达康，李达康却从来没有为他提拔说话通气搞关系。最后，组织部决定把易学习正式列入考察名单。",
+        "still": "https://image.tmdb.org/t/p/w500/nG6Mxkw8WGeO5ze45to7wwqXTP6.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 22,
+        "airDate": "2017-04-09",
+        "runtimeSeconds": 2820,
+        "name": "季检汇报受贿案 侯亮平依法办案",
+        "overview": "季昌明急匆匆地赶来见沙瑞金，他气喘吁吁向沙瑞金汇报欧阳菁涉嫌受贿被抓，在欧阳菁被传讯之前，李达康和她离婚了。随后欧阳菁要去美国，坐上李达康的车，他们双双赶去机场的路上，侯亮平他们果断拦下了欧阳菁，沙瑞金觉得侯亮平很精干。沙瑞金承认是自己建议李达康尽早离婚，所以他的离婚很正常。季昌明转告了李达康的怀疑，他觉得侯亮平是汉大帮的人，沙瑞金不相信，季昌明知道祁同伟是汉大帮圈子核心人物，经常用高育良名义组织汉东大学的同学聚会。最后，沙瑞金指示季昌明既不要看李达康的脸色，也不要管高育良怎么想，只要实事求是，依法办案。并且让季昌明转告侯亮平，沙瑞金和汉东省委感谢他，是他拦住欧阳菁，挽救了李达康的政治前途，否则汉东就会失去一个能干事的改革干将。侯亮平决定三堂会审。陈群芳去看守所，提审蔡成功，陆亦可去山水集团对付高小琴，林华华去审讯欧阳菁。季昌明和侯亮平一起坐在监视器的前面，亲自用耳机现场指挥他们三个的审讯欧阳菁眼神开始游离了，她故作镇定指责林华华他们是受高育良的指使对付李达康的。侯亮平让林华华问欧阳菁大风厂的蔡成功的贷款和断贷的问题，欧阳菁表示他们银行和蔡成功的业务往来都是合规合法的正常往来，本来按照计划是给蔡成功贷款的，但是银行的风控部门在贷钱的检查发现，蔡成功卷入一场非法集资的案件，涉嫌使用社会高息资金一亿五千万。侯亮平马上通知陈群芳，就此问题询问蔡成功，他承认用了不到八千万。欧阳菁继续讲，本金是八千万，其余是利息。所以银行不敢给他贷款，并且提醒他们不要被蔡成功的谎话蒙蔽。",
+        "still": "https://image.tmdb.org/t/p/w500/j381QdxErnVsbazM6WoS4hYPVg.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 23,
+        "airDate": "2017-04-10",
+        "runtimeSeconds": 2820,
+        "name": "胜利拍招生视频 丁义珍成洗碗工",
+        "overview": "郑乾冒充导演，带张宝宝找到一个学校，他拿出两百元给门卫，要借学校拍电视剧，门卫很爽快地答应他，可以趁孩子们不上学的周末来拍片。临走，门卫竟然和郑乾要场地费，郑乾只好无可奈何地放弃。突然，郑乾想到了大风厂的食堂，决定在那里办学校。郑乾让王校长冒充制片，自己是导演，马文明叫来职工当演员，郑乾称自己的电视剧叫《新丝绸之路》。周正他们来到旧金山，在餐馆吃饭的时候，无意中发现丁义珍在当洗碗工，周正赶忙过去查看，果然是丁义珍，只见他脖子上搭着块毛巾，全身都被汗水湿透了。周正假装惊喜地认出他，丁义珍显得很慌乱，周正谎称自己是京州五金公司的，他曾经到自己公司视察过。丁义珍才放松警惕，得知周正要去洛杉矶探亲，他的眼圈一红，眼泪险些落下来，他哽咽地告诉周正，自己被人绑架到旧金山，恳求周正帮忙，去洛杉矶找到自己的妹妹设法救他出去。他刚想写纸条给周正，被义福帮的人发现，威胁要割他舌头。周正借口要醋再次进入后厨，丁义珍趁机将纸条偷偷塞给周正，然后继续汗流浃背地卖力洗碗，还不停地遭到那些人的谩骂，丁义珍悲惨的境遇让人唏嘘。随后周正向毕敬业做了汇报。",
+        "still": "https://image.tmdb.org/t/p/w500/3K52JJgN6JsGHLdoDXpeBy7M7yD.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 24,
+        "airDate": "2017-04-10",
+        "runtimeSeconds": 2820,
+        "name": "陆亦可被逼相亲 亮平被捕闹乌龙",
+        "overview": "吴心怡给侯亮平打电话找陆亦可，希望他押送陆亦可去和汉东大学的林副教授相亲，侯亮平才恍然大悟，陆亦可到自己这里是为了躲避相亲的。陆亦可来到相亲地点，林副教授抬起手腕提醒陆亦可迟到了48分钟9秒，接着他就侃侃而谈自己的工作，如何买版面，买实验数据，还有教授权利的含权量，以及职场潜规则。聊天期间他不停地抬起手腕看时间，这让本来对他就很反感的陆亦可忍无可忍。他竟然恬不知耻地要调往政法系统，就像高育良一样。侯亮平送陆亦可去相亲后，他来到医院看陈海，向陈海讲述自己的三堂会审，竟然审出一个清白的阿庆嫂，以及一个十恶不赦的蔡成功，侯亮平觉得自己很失败，因为真相越来越模糊。侯亮平又向陈海讲起小皮球的淘气，以及因为教育他和陆亦可产生的分歧，侯亮平笑称陆亦可将小皮球当成自己的儿子一样宠溺。侯亮平随手从身后拿过水果，正要削皮，就被两个一直在门外监视的人拷走，任凭侯亮平百般解释也无济于事，他们不容分说就将侯亮平拉走了。等监控室的司法警察发现追出来的时候，他们的车早已经不见了踪影。",
+        "still": "https://image.tmdb.org/t/p/w500/2zzqJJ6tKbzuLSW1ra7nZT0Erfz.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 25,
+        "airDate": "2017-04-11",
+        "runtimeSeconds": 2820,
+        "name": "陈老查出关键罪证",
+        "overview": "信访局对待上访群众的态度十分敷衍，李达康督促孙连城整顿工作作风，岂料孙连城在信访局做戏蒙骗上访群众。援助律师证实大风股权转让案的判决是错误的，李达康询问得知是山水集团的靠山利用职权左右了案件的判决。",
+        "still": "https://image.tmdb.org/t/p/w500/9gDw3ep81hG91G8eUaVqCpeXLI9.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 26,
+        "airDate": "2017-04-11",
+        "runtimeSeconds": 2760,
+        "name": "陈清泉寻欢被抓",
+        "overview": "陈岩石夫妇拿出罪证举报陈清泉的种种劣迹，侯亮平立誓一定调查到底。李达康召开常委会公开陈清泉等人违纪行为，官员们却因陈清泉曾是高育良秘书而不敢严惩，此时政法委书记孙海平检举陈清泉违法审判官司。赵东来安排公安突袭山水庄园，抓获了正在寻欢作乐的陈清泉。",
+        "still": "https://image.tmdb.org/t/p/w500/vYsRl3qjfGjBswh5aBbDTFrKi9o.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 27,
+        "airDate": "2017-04-13",
+        "runtimeSeconds": 2820,
+        "name": "赵东来铁汉柔情",
+        "overview": "祁同伟认为李达康抓捕陈清泉是在蓄意报复，高育良铁面无私不肯包庇陈清泉。祁同伟亲自向李达康说情，李达康拒绝徇私后当即在会议上宣布双开陈清泉。赵东来拆穿陆亦可对陈海的心意，他坦言不会放弃追求陆亦可。梁璐和祁同伟是利益婚姻，他们之间爆发冲突。",
+        "still": "https://image.tmdb.org/t/p/w500/gwr6ZaEcEdCagPihYj26VKini3p.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 28,
+        "airDate": "2017-04-13",
+        "runtimeSeconds": 2760,
+        "name": "侯亮平遇袭",
+        "overview": "林华华想让郑乾准备一份光明峰招标会上详细情况的文字材料，郑乾却一心只想追回自己那六千元的招生费，不想配合。林华华警告他，王校长涉嫌骗取国家财政基金，不但没收他的四万八千元，还得追究法律责任，郑乾的六千元是不可能拿到的。郑乾一气之下将林华华赶出家门。",
+        "still": "https://image.tmdb.org/t/p/w500/ygFQG7yLYy85JhYJIn7dpmMRQFQ.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 29,
+        "airDate": "2017-04-14",
+        "runtimeSeconds": 2820,
+        "name": "祁同伟嫌弃妻子",
+        "overview": "祁同伟与梁璐的关系愈加恶化，高育良提醒学生最近有种反腐称为“原配反腐”。当年祁同伟毕业后的分配因梁璐插手而非常不顺心，他为了梁父的权力不惜改变态度下跪追求梁璐。祁同伟向高育良承认自己与高小琴是情人关系，他坦白在高小琴处入了一些股，高育良苦劝祁同伟退股。",
+        "still": "https://image.tmdb.org/t/p/w500/pj12HtFAAuK3GZMT1672KxYEhHF.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 30,
+        "airDate": "2017-04-15",
+        "runtimeSeconds": 2700,
+        "name": "官二代索赔遭拒",
+        "overview": "赵瑞龙的水上美食城污染很大，易学习不畏强权坚持拆除。赵瑞龙同意拆迁索要赔偿款，李达康提醒他不要狮子大开口。赵瑞龙恳请李达康释放陈清泉，李达康断然拒绝。当年李达康在金山县任县长时集资修路闹出人命，易学习和王大路为了百姓主动承担责任以此保住李达康。",
+        "still": "https://image.tmdb.org/t/p/w500/4tz6PvNv5I9hS27PA6etqlG9GZQ.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 31,
+        "airDate": "2017-04-16",
+        "runtimeSeconds": 2520,
+        "name": "高育良惹众怒",
+        "overview": "毛娅把自己炒的茶给沙瑞金他们喝，她在金山种茶，因为道路通到自然村，旅游的人一年四季不断，沙瑞金觉得都是因为易学习做出的牺牲，毛娅觉得很知足，她到现在还是金山的农村户口，家里还有承包地。沙瑞金觉得茶气足，有特殊的香气，要带走一点回去帮她宣传。",
+        "still": "https://image.tmdb.org/t/p/w500/hZY1Iyu2pCJ0lxv44r6jlcOCeKm.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 32,
+        "airDate": "2017-04-16",
+        "runtimeSeconds": 2760,
+        "name": "揭易学习从政之路",
+        "overview": "欧阳菁被林华华给她庆祝生日感动，主动说出贿款的真相，并牵出赵立春前任秘书刘新建的贪腐行为。山水集团财务处长刘庆祝在向陈海电话举报后离奇身亡，妻子魏彩霞却撒谎隐瞒举报实情，最终魏彩霞迫于警方铁证说出高小琴和刘庆祝的死亡有关系。",
+        "still": "https://image.tmdb.org/t/p/w500/klMLjp46xS825fWsr2IrB2LeY3c.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 33,
+        "airDate": "2017-04-17",
+        "runtimeSeconds": 2820,
+        "name": "高育良搞政治帮派",
+        "overview": "高育良在会上的发言使他成为了众矢之的，同时沙瑞金提出要表彰与提拔敬业为民的易学习。李达康在会后解释了前妻卷入贪腐案一事，高育良却不愿面对当年政绩工程留下的后患。魏彩霞怀疑丈夫的死另有隐情，但因高小琴借着高育良名义的震慑让魏彩霞不敢深究。",
+        "still": "https://image.tmdb.org/t/p/w500/apK8y01piqnLGjx9HeApVVaMZKS.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 34,
+        "airDate": "2017-04-17",
+        "runtimeSeconds": 2820,
+        "name": "利剑行动开始",
+        "overview": "祁同伟的远房亲戚轮流欺凌打工女，他不仅下令网开一面还窝藏罪犯，梁璐苦劝无果只能向高育良汇报此事，高育良立即指示依法抓捕。侯亮平找魏彩霞了解情况，魏彩霞透露刘庆祝火化时自己并不在场，并承认收了高小琴两百万抚恤金。",
+        "still": "https://image.tmdb.org/t/p/w500/kFj9Sx1SyikSwLDatcIbwVwUw2S.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 35,
+        "airDate": "2017-04-18",
+        "runtimeSeconds": 2820,
+        "name": "刘新建拒捕欲跳楼",
+        "overview": "刘新建拒捕以跳楼威胁侯亮平，此时程度奉赵瑞龙之命雇佣狙击手老虎在对面楼上企图击毙刘新建，幸亏警方行动迅速将刘新建逮捕。新大风厂没有土地建厂只能占着旧厂进行生产，政府贴封条屡次被工人撕毁，最后郑胜利提出两全法。",
+        "still": "https://image.tmdb.org/t/p/w500/i1xl4qAn9L1I3TCu7Ubr8igHdx7.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 36,
+        "airDate": "2017-04-18",
+        "runtimeSeconds": 2820,
+        "name": "祁同伟布置鸿门宴",
+        "overview": "侯亮平怀疑祁同伟制造了陈海的车祸，他将祁同伟为了前程向梁璐求婚之事告诉季昌明。高育良一时冲动要向沙瑞金检举祁同伟的种种恶行，却在最终一刻放弃。刘姗应聘郑胜利公司的服装设计师，她被带到大风厂参观。祁同伟和赵瑞龙设宴款待侯亮平，然而这是一场充满杀机的鸿门宴。",
+        "still": "https://image.tmdb.org/t/p/w500/kXepL8NxGTcgv9xxBCpPGxqA2Bw.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 37,
+        "airDate": "2017-04-19",
+        "runtimeSeconds": 2820,
+        "name": "祁同伟拉拢侯亮平",
+        "overview": "侯亮平将枪支藏了起来，最终没有带枪赴宴。赵瑞龙向侯亮平否认利用权力赚钱，郑胜利却向林华华揭穿赵瑞龙非法竞标之事。赵瑞龙欲杀侯亮平，又想让警方在山水集团的卧底当替罪羊。侯亮平拒绝被祁同伟收买，随即赵瑞龙的狙击手瞄准了侯亮平。侯亮平一边唱智斗，一边惊险的躲避暗杀。",
+        "still": "https://image.tmdb.org/t/p/w500/lob0DNX4Y6A9vtbvlzGA1PwPtDd.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 38,
+        "airDate": "2017-04-19",
+        "runtimeSeconds": 2820,
+        "name": "赵立春致电施压",
+        "overview": "　侯亮平此次冒险把山水集团的老底摸了个透，得知这是一个官商勾结，黑幕重重的犯罪团伙。祁同伟已经承认在山水集团有股份，但是侯亮平的手机，录音笔都被收，他没有取得证据，只能从刘新建身上找突破口，因为刘新建是山水集团和赵瑞龙家族的连接点，侯亮平准备连夜突击审讯刘新建。",
+        "still": "https://image.tmdb.org/t/p/w500/6fqf5s1Mm5Xqz0bcDrJ1swFYJEN.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 39,
+        "airDate": "2017-04-20",
+        "runtimeSeconds": 2820,
+        "name": "沙瑞金批评懒政",
+        "overview": "高育良吃着饭，吴惠芳提起学院里的小林老师，小林老师准备考公务员，吴惠芳想请高育良帮帮忙。高育良答应考虑一下。随后，吴惠芳质问高育良为何如此迷恋小高。小高到底比她好在哪里，吴惠芳要向她学习。吴惠芳一时间情绪激动，大声叫喊着高育良忠于了别人的爱情却负了自己。",
+        "still": "https://image.tmdb.org/t/p/w500/2TzrLTCNv4yujp9UAMMU9nRzeYh.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 40,
+        "airDate": "2017-04-20",
+        "runtimeSeconds": 2820,
+        "name": "高育良以权施压",
+        "overview": "沙瑞金在李达康的陪同下视察新大风公司的厂房，他亲自指示撕掉大风厂的封条以此保证工人们正当的劳动尊严。沙瑞金和新大风公司的工人们展开会谈，郑西坡拜托沙瑞金帮忙推销保安制服，沙瑞金表示自己不能用权力干扰市场。当初祁同伟通知高小琴安排丁义珍迅速离境，他表示隐瞒此事是为了保护高育良。",
+        "still": "https://image.tmdb.org/t/p/w500/y8MzsvrINhyhvdjUumd25QmCZAv.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 41,
+        "airDate": "2017-04-21",
+        "runtimeSeconds": 2820,
+        "name": "蔡成功举报侯亮平",
+        "overview": "王文革为了夺回股权带着两名工友密谋绑架蔡成功的儿子，郑西坡立即赶去阻拦。祁同伟担心侯亮平突破刘新建，他企图对付侯亮平。蔡成功突然举报自己与侯亮平和丁义珍合伙开煤矿，京州市院检察长肖钢玉负责督办此案。高育良向肖钢玉声称怀疑侯亮平设局谋杀陈海，他亲自向沙瑞金汇报此事。",
+        "still": "https://image.tmdb.org/t/p/w500/hcHR8mO4rBYHMqH2Z6AtRU1GcDQ.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 42,
+        "airDate": "2017-04-22",
+        "runtimeSeconds": 2820,
+        "name": "季昌明过招高育良",
+        "overview": "肖钢玉怀疑侯亮平可能不服从命令执意审讯，高育良也想到这一点，他让肖钢玉直接去检察院确保审讯停止。刘新建看了照片后动摇了，侯亮平还称如果证据确凿检察院可以零口供定罪，到那时，刘新建就失去了量刑从轻的机会。在侯亮平不断加压的质问下，刘新建终于被攻下来。",
+        "still": "https://image.tmdb.org/t/p/w500/qjSLxfMnE3Vx2M4CrPDgwYqDhYk.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 43,
+        "airDate": "2017-04-23",
+        "runtimeSeconds": 2820,
+        "name": "高育良翻脸无情",
+        "overview": "侯亮平埋怨季昌明找吕梁来审查自己的问题，明知道吕梁对自己耿耿于怀，况且他们这次一定是做足了文章想置自己与死地，季昌明气得骂他，如果真的是怂包就从检察院滚出去。侯亮平把电话递给季昌明，通知他们来吧，自己准备接招了。",
+        "still": "https://image.tmdb.org/t/p/w500/cZrWvULrxqAVYd8iYQqhrc8Y18H.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 44,
+        "airDate": "2017-04-24",
+        "runtimeSeconds": 2820,
+        "name": "侯亮平陷双规危机",
+        "overview": "吴心怡称自己与高育良是道不同不相为谋，她为侯亮平打抱不平，希望自己能帮忙，侯亮平让她给陈岩石打电话，如果他有空跟自己见一面，然后让陆亦可找赵东来，听听魏彩霞收集的录音，找线索。郑西坡看着刘珊的设计图，张宝宝当服装模特，他随口取笑张宝宝取个洋名，这一下惹怒了郑乾。",
+        "still": "https://image.tmdb.org/t/p/w500/qYsmzL2ePsNG2MXnpY0x9Pnb5Cb.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 45,
+        "airDate": "2017-04-24",
+        "runtimeSeconds": 2820,
+        "name": "李达康斥懒政干部",
+        "overview": "沙瑞金在和白秘书一边打篮球，一边等田国富，白秘书渐渐体力不支，跟不上沙瑞金的节奏，沙瑞金让他多锻炼，篮球赛在即，白秘书请沙瑞金当他们篮球队的队长。各区县以及各岗位的懒政干部学习班第一天开学，李达康首先严厉地指出他们懒政不作为，白吃干饭就是干部中的残次品。与此同时，白秘书用手机也看到了李达康对懒政干部的训话。",
+        "still": "https://image.tmdb.org/t/p/w500/yI0iHi1IFu6C9oLhRG7YQZAiptt.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 46,
+        "airDate": "2017-04-25",
+        "runtimeSeconds": 2820,
+        "name": "高育良迷恋女色",
+        "overview": "钟小艾觉得送照片的人是想给侯亮平线索，让他绝地反击。她建议侯亮平带着照片再找高育良吃一次螃蟹，让他去打草惊蛇。沙瑞金得知侯亮平也收到同样照片，田国富想看看侯亮平的反应。吕梁从监控录像里看到是宿舍管理员丁秀萍，他立刻向田国富汇报，田国富让他派人跟踪丁秀萍，看她和谁接触。",
+        "still": "https://image.tmdb.org/t/p/w500/gfWh8eFw6WVZ0cuCKLyD6IyGONW.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 47,
+        "airDate": "2017-04-25",
+        "runtimeSeconds": 2820,
+        "name": "侯亮平试探高育良",
+        "overview": "高育良和侯亮平四目相对，僵持不下。吴惠芬告诉钟小艾，高育良最得意的三个学生就是陈海，侯亮平和祁同伟，他们三个就像是高育良的亲儿子一样，无论动了谁，高育良的心里都受不了。侯亮平坐近高育良，拿出照片，高育良看到立刻脸色大变，他大声质问侯亮平照片是哪里来的，可侯亮平不能说。",
+        "still": "https://image.tmdb.org/t/p/w500/51CxNWkubil8fe51rWt94XzyP4L.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 48,
+        "airDate": "2017-04-26",
+        "runtimeSeconds": 2820,
+        "name": "高小琴感到恐惧",
+        "overview": "侯亮平夫妇走后，高育良心里也是感慨万千，吴惠芬让高育良赶快与赵立春切割。高育良很明白，哪能切割得清楚，他怀疑这三张照片就是赵瑞龙寄来的，目的就是把自己牢牢地绑在他们的破船上，这些私密的照片旁人是无法拍到的。高育良想把照片的事告诉沙瑞金，以证自己的清白，吴惠芬大喊制止他，不许高育良恶心自己。",
+        "still": "https://image.tmdb.org/t/p/w500/kEbt4y6tAUd5MOWDZ2ZbaxRCCtE.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 49,
+        "airDate": "2017-04-26",
+        "runtimeSeconds": 2820,
+        "name": "易学习调任纪委",
+        "overview": "张宝宝从交警队出来，向郑乾汇报因为套牌被交警罚款两千元，扣十二分，还要拘留十五天或者罚款五千，郑乾称自己去和检察院的同志去苑南县接回尤瑞星和小钱。等林华华警告他不能说的时候，为时已晚，他们的谈话被程度监听到了，只是最关键的地名没有听清楚。沙瑞金告诉李达康，明天巡视组要找他谈话，了解赵立春执政时的情况。",
+        "still": "https://image.tmdb.org/t/p/w500/7Xn2ycP1e9PP9LShMJtvE5Y6FKN.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 50,
+        "airDate": "2017-04-27",
+        "runtimeSeconds": 2760,
+        "name": "利剑行动强出击",
+        "overview": "为了维持厂里的生产，尤瑞星曾经办过三百五十多张银行卡。这些银行卡都是外地民工的身份证，侯亮平的那张卡肯定是蔡成功设法弄到了他的身份证复印件。与此同时，陈群芳他们来到尤瑞星的出租屋，从那三百多张银行卡里找到了侯亮平那一张，尤瑞星很确定这张卡是财务用来发工资的，而侯亮平从来没有从那里取过钱。",
+        "still": "https://image.tmdb.org/t/p/w500/mNeOid44T1YMGnSVAiUhIU6lZl.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 51,
+        "airDate": "2017-04-27",
+        "runtimeSeconds": 2820,
+        "name": "陈岩石自愿成人质",
+        "overview": "陈岩石继续语重心长地劝说王文革，援助律师一直在和山水集团谈判交涉，马上就要解决了，王文革坚持要律师拿来股权协议书给他看，否则他坚决不相信。与此同时，高小琴接到钱律师的短信，把王文革绑架蔡英俊的事告诉了她，高小琴立刻慌了神，祁同伟让她立刻叫来钱律师，马上在和解协议书上签字。",
+        "still": "https://image.tmdb.org/t/p/w500/xyhqTMEwJODpE5d9zSzrQW3QHs5.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 52,
+        "airDate": "2017-04-28",
+        "runtimeSeconds": 2820,
+        "name": "侯亮平逮捕高小琴",
+        "overview": "赵瑞龙接到他二姐的电话，提醒他上了沙瑞金的当了，赵瑞龙惊慌失措，立刻简单收拾几件衣服准备逃走。与此同时，监视他的人向季昌明了他的行踪，赵瑞龙给祁同伟打电话，让他帮忙安排自己从吕州出境去香港。祁同伟一直逼问赵瑞龙才得知，所有的一切都是沙瑞金和侯亮平做的局，赵立春让他赶快躲出去，别再回来了。",
+        "still": "https://image.tmdb.org/t/p/w500/amg1NJ6eqDwnP3RtxPYeviaTjBg.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 53,
+        "airDate": "2017-04-29",
+        "runtimeSeconds": 2820,
+        "name": "祁同伟重回孤鹰岭",
+        "overview": "祁同伟来到当年救过他性命的老人家，他的脚步很沉重。\n\n赵东来立刻赶到公安局指挥中心，侯亮平顾不上多解释，决定亲自去找祁同伟，侯亮平请求去孤鹰岭劝降祁同伟，不到万不得已，不要击毙他，他身上有太多的秘密，应该回来接受法律的惩罚，沙瑞金点头答应。\n\n高育良打电话给沙瑞金，得知正在全力抓捕祁同伟，他把电话扔在一边，整个人一下子颓掉了，双眼流露出绝望与无助。",
+        "still": "https://image.tmdb.org/t/p/w500/tjvPV6tHBAixc8YNqw0Ul5RwCj7.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 54,
+        "airDate": "2017-04-30",
+        "runtimeSeconds": 2820,
+        "name": "髙育良落网",
+        "overview": "高育良语重心长要给侯亮平上课，侃侃而谈改革的风险与诱惑，侯亮平觉得高育良就不该来当官，应该留在汉东大学继续当优秀教授。高育良即系讲述，为人要给自己留底线，无论是威名还是为官，都不可以与法律为敌，这样才能活得踏实，过得安心。高育良信誓旦旦地表示，自己的所作所为都合法，高育良得知中央最近要找自己谈话，他觉得很幸运，在谈话前，由侯亮平陪他做了一次精彩的预演。侯亮平称高小凤是进行过人格美容的人，最后总会是要卸妆的，他和高育良根本没有共同语言，真正能和高育良讨论明史的是吴惠芬，高育良称赞高小凤是出污泥而不染。侯亮平指出他是被人下套了。",
+        "still": "https://image.tmdb.org/t/p/w500/5i5w3Zu3w0DCBLz2GUunCl7FV1C.jpg",
+        "rating": null
+      },
+      {
+        "season": 1,
+        "episode": 55,
+        "airDate": "2017-05-01",
+        "runtimeSeconds": 2820,
+        "name": "以人民的名义",
+        "overview": "田国富指着一大片的篮球场，他告诉沙瑞金，这里原来是网球场，因为前省委书记赵立春喜欢打网球，现在改成篮球场，也是因为沙瑞金喜欢打篮球，这又何尝不是一种不正之风。侯亮平来看蔡成功，指责他诬陷自己，他请自己喝的茅台，差点把自己害死，蔡成功表示自己也是被逼无奈。临走，侯亮平再三叮嘱蔡成功，请他活下去，再难也不要突破自己的底线。",
+        "still": "https://image.tmdb.org/t/p/w500/voobDVmUjxvz8KZE8Istf3r3iSj.jpg",
+        "rating": null
+      }
+    ],
+    "content": "一位国家部委的项目处长被人举报受贿千万，当最高人民检察院反贪总局侦查处处长侯亮平前来搜查时，看到的却是一位长相憨厚、衣着朴素的“老农民”在简陋破败的旧房里吃炸酱面。当这位腐败分子的面具被最终撕开的同时，与之案件牵连甚紧的汉东省京州市副市长丁义珍，却在一位神秘人物的暗中相助下，以反侦察手段逃脱法网，流亡海外。案件线索终定位于由京州光明湖项目引发的一家汉东省国企大风服装厂的股权争夺，牵连其中的各派政治势力盘根错节，扑朔迷离。"
+  },
+  "lines": [
+    {
+      "group": "普通主线",
+      "entries": [
+        {
+          "label": "第1集",
+          "url": "http://catalogue.invalid/api/resource?id=sample-0",
+          "resource": {
+            "id": "sample-0",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "id": "synthetic-share",
+              "url": "https://pan.quark.cn/s/synthetic-share"
+            },
+            "file": {
+              "id": "synthetic-file-0",
+              "name": "sample.mkv",
+              "sizeBytes": 4000000000
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 1,
+            "video": {
+              "width": 3840,
+              "height": 2160,
+              "codec": "hevc",
+              "bitDepth": 10
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第2集",
+          "url": "http://catalogue.invalid/api/resource?id=sample-1",
+          "resource": {
+            "id": "sample-1",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "id": "synthetic-share",
+              "url": "https://pan.quark.cn/s/synthetic-share"
+            },
+            "file": {
+              "id": "synthetic-file-1",
+              "name": "sample.mkv",
+              "sizeBytes": 4000000000
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 2,
+            "video": {
+              "width": 3840,
+              "height": 2160,
+              "codec": "hevc",
+              "bitDepth": 10
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        },
+        {
+          "label": "第3集",
+          "url": "http://catalogue.invalid/api/resource?id=sample-2",
+          "resource": {
+            "id": "sample-2",
+            "platform": "quark",
+            "playback": "client",
+            "share": {
+              "id": "synthetic-share",
+              "url": "https://pan.quark.cn/s/synthetic-share"
+            },
+            "file": {
+              "id": "synthetic-file-2",
+              "name": "sample.mkv",
+              "sizeBytes": 4000000000
+            },
+            "tier": "standard",
+            "season": 1,
+            "episode": 3,
+            "video": {
+              "width": 3840,
+              "height": 2160,
+              "codec": "hevc",
+              "bitDepth": 10
+            },
+            "accountRequirement": "viewer_quark_account"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -7,7 +7,7 @@ abstract final class CinemaColors {
   static const text = Color(0xFFF4F5F7);
   static const muted = Color(0xFFA4AAB6);
   static const faint = Color(0xFF8C94A3);
-  static const red = Color(0xFFE50914);
+  static const accent = Color(0xFF3B8AFF);
   static const border = Color(0xFF272C36);
 }
 
@@ -24,8 +24,8 @@ ThemeData buildCinemaTheme() {
     useMaterial3: true,
     scaffoldBackgroundColor: CinemaColors.background,
     colorScheme: const ColorScheme.dark(
-      primary: CinemaColors.red,
-      secondary: CinemaColors.red,
+      primary: CinemaColors.accent,
+      secondary: CinemaColors.accent,
       surface: CinemaColors.elevated,
       onPrimary: Colors.white,
       onSurface: CinemaColors.text,
@@ -86,16 +86,16 @@ ThemeData buildCinemaTheme() {
     ),
     dividerTheme: const DividerThemeData(color: CinemaColors.border, space: 1),
     sliderTheme: base.sliderTheme.copyWith(
-      activeTrackColor: CinemaColors.red,
+      activeTrackColor: CinemaColors.accent,
       inactiveTrackColor: const Color(0x55FFFFFF),
-      thumbColor: CinemaColors.red,
-      overlayColor: CinemaColors.red.withValues(alpha: 0.16),
+      thumbColor: CinemaColors.accent,
+      overlayColor: CinemaColors.accent.withValues(alpha: 0.16),
       trackHeight: 3,
       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: CinemaColors.red,
+        backgroundColor: CinemaColors.accent,
         foregroundColor: Colors.white,
         textStyle: const TextStyle(fontWeight: FontWeight.w700),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

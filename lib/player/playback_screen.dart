@@ -51,6 +51,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   bool _buffering = true;
   bool _playing = false;
   bool _controlsVisible = true;
+  bool _locked = false;
+  double _subtitleDelay = 0;
+  double _subtitleScale = 1;
   bool _needsAccount = false;
   bool _ended = false;
   bool _mediaReady = false;
@@ -320,6 +323,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         ),
         play: true,
       );
+      await _applySubtitleSettings();
       if (_disposed || generation != _generation) {
         if (!identical(_lease, lease)) await lease.release();
         return;
@@ -686,7 +690,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 title: Text(option.$2),
                 subtitle: Text(option.$3),
                 trailing: _fit == option.$1
-                    ? const Icon(Icons.check_rounded, color: CinemaColors.red)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: CinemaColors.accent,
+                      )
                     : null,
                 onTap: () {
                   Navigator.of(context).pop();
@@ -744,7 +751,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                         trailing: _track.audio.id == audio.id
                             ? const Icon(
                                 Icons.check_rounded,
-                                color: CinemaColors.red,
+                                color: CinemaColors.accent,
                               )
                             : null,
                         onTap: () async {
@@ -764,7 +771,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                       trailing: _track.subtitle.id == 'no'
                           ? const Icon(
                               Icons.check_rounded,
-                              color: CinemaColors.red,
+                              color: CinemaColors.accent,
                             )
                           : null,
                       onTap: () async {
@@ -803,7 +810,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                         trailing: _track.subtitle.id == subtitle.id
                             ? const Icon(
                                 Icons.check_rounded,
-                                color: CinemaColors.red,
+                                color: CinemaColors.accent,
                               )
                             : null,
                         onTap: () async {
@@ -820,6 +827,14 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                         _importSubtitle();
                       },
                     ),
+                    TextButton.icon(
+                      icon: const Icon(Icons.tune_rounded),
+                      label: const Text('字幕同步与大小'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _openSubtitleSettings();
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -827,6 +842,107 @@ class _PlaybackScreenState extends State<PlaybackScreen>
           },
         );
       },
+    );
+    if (mounted) _showControlsTemporarily();
+  }
+
+  Future<void> _applySubtitleSettings() async {
+    final platform = _player?.platform;
+    if (platform is! NativePlayer) return;
+    await platform.setProperty('sub-delay', _subtitleDelay.toStringAsFixed(1));
+    await platform.setProperty('sub-scale', _subtitleScale.toStringAsFixed(2));
+  }
+
+  Future<void> _openSubtitleSettings() async {
+    _hideControlsTimer?.cancel();
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, updateSheet) => _Panel(
+          title: '字幕同步与大小',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '字幕延迟  ${_subtitleDelay >= 0 ? '+' : ''}${_subtitleDelay.toStringAsFixed(1)} 秒',
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '正值让字幕晚出现，负值让字幕提前。',
+                style: TextStyle(color: CinemaColors.faint, fontSize: 12),
+              ),
+              Slider(
+                value: _subtitleDelay,
+                min: -10,
+                max: 10,
+                divisions: 40,
+                onChanged: (value) => updateSheet(() => _subtitleDelay = value),
+                onChangeEnd: (_) => _applySubtitleSettings(),
+              ),
+              Text('字幕大小  ${(_subtitleScale * 100).round()}%'),
+              Slider(
+                value: _subtitleScale,
+                min: 0.75,
+                max: 1.75,
+                divisions: 8,
+                onChanged: (value) => updateSheet(() => _subtitleScale = value),
+                onChangeEnd: (_) => _applySubtitleSettings(),
+              ),
+              const Text(
+                '文字字幕可调整大小；图形字幕和自带定位的特效字幕由片源决定。',
+                style: TextStyle(color: CinemaColors.faint, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  updateSheet(() {
+                    _subtitleDelay = 0;
+                    _subtitleScale = 1;
+                  });
+                  _applySubtitleSettings();
+                },
+                child: const Text('恢复默认'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (mounted) _showControlsTemporarily();
+  }
+
+  Future<void> _openMediaInfo() async {
+    final resource = _resource;
+    _hideControlsTimer?.cancel();
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => _Panel(
+        title: '播放信息',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '夸克快传 · 原画',
+              style: TextStyle(
+                color: CinemaColors.accent,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 14),
+            SelectableText(resource?.fileName ?? _detail.item.name),
+            const SizedBox(height: 12),
+            Text(
+              resource?.technicalSummary ?? '',
+              style: const TextStyle(color: CinemaColors.muted, height: 1.7),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '播放线路：${_choice.line.group}',
+              style: const TextStyle(color: CinemaColors.muted),
+            ),
+          ],
+        ),
+      ),
     );
     if (mounted) _showControlsTemporarily();
   }
@@ -911,7 +1027,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                   selected
                       ? Icons.play_arrow_rounded
                       : Icons.play_arrow_outlined,
-                  color: selected ? CinemaColors.red : CinemaColors.muted,
+                  color: selected ? CinemaColors.accent : CinemaColors.muted,
                 ),
                 title: Text(choice.episodeLabel),
                 subtitle: Text(
@@ -922,7 +1038,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 trailing: selected
                     ? const Text(
                         '当前播放',
-                        style: TextStyle(color: CinemaColors.red, fontSize: 12),
+                        style: TextStyle(
+                          color: CinemaColors.accent,
+                          fontSize: 12,
+                        ),
                       )
                     : null,
                 onTap: () {
@@ -953,7 +1072,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 title: Text(line.group),
                 subtitle: Text('${line.entries.length} 个版本'),
                 trailing: line.group == _choice.line.group
-                    ? const Icon(Icons.check_rounded, color: CinemaColors.red)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: CinemaColors.accent,
+                      )
                     : null,
                 onTap: () {
                   final target = EpisodeChoice.sameEpisodeInLine(
@@ -1034,6 +1156,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         body: Focus(
           autofocus: true,
           onKeyEvent: (node, event) {
+            if (_locked) return KeyEventResult.ignored;
             if (event is! KeyDownEvent) return KeyEventResult.ignored;
             if (event.logicalKey == LogicalKeyboardKey.space &&
                 node.hasPrimaryFocus) {
@@ -1074,6 +1197,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                     ? GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
+                          if (_locked) return;
                           if (_nextChoice != null) return;
                           if (_controlsVisible) {
                             setState(() => _controlsVisible = false);
@@ -1082,16 +1206,19 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                           }
                         },
                         onDoubleTapDown: (details) {
+                          if (_locked) return;
                           final left = details.localPosition.dx < width / 2;
                           unawaited(_seekRelative(left ? -10 : 10));
                         },
                         onDoubleTap: () {},
                         onLongPressStart: (_) async {
+                          if (_locked) return;
                           _hideControlsTimer?.cancel();
                           await _player?.setRate(2);
                           _setStateIfMounted(() => _controlsVisible = true);
                         },
                         onLongPressEnd: (_) async {
+                          if (_locked) return;
                           await _player?.setRate(_rate);
                           _showControlsTemporarily();
                         },
@@ -1125,7 +1252,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 ),
               if (!_loading && _errorTitle == null)
                 PlaybackControls(
-                  visible: _controlsVisible,
+                  visible: _controlsVisible && !_locked,
                   title: _detail.item.name,
                   subtitle: _choice.fullLabel,
                   position: _dragPositionMs == null
@@ -1160,10 +1287,28 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                   onRate: _openRatePanel,
                   onEpisodes: _detail.isSeries ? _openEpisodesPanel : null,
                   onTracks: _openTrackPanel,
+                  onInfo: _openMediaInfo,
+                  onLock: () => setState(() {
+                    _locked = true;
+                    _controlsVisible = false;
+                  }),
                   onFit: _openFitPanel,
                   onLines: _detail.playableLines.length > 1
                       ? _openLinePanel
                       : null,
+                ),
+              if (_locked)
+                Positioned(
+                  right: MediaQuery.paddingOf(context).right + 16,
+                  top: MediaQuery.sizeOf(context).height / 2 - 24,
+                  child: IconButton.filledTonal(
+                    tooltip: '解锁屏幕',
+                    onPressed: () {
+                      setState(() => _locked = false);
+                      _showControlsTemporarily();
+                    },
+                    icon: const Icon(Icons.lock_rounded),
+                  ),
                 ),
               if (_nextChoice != null)
                 _NextEpisodePrompt(
@@ -1321,6 +1466,8 @@ class PlaybackControls extends StatelessWidget {
     required this.onTracks,
     required this.onFit,
     required this.onLines,
+    this.onInfo,
+    this.onLock,
   });
 
   final bool visible;
@@ -1344,6 +1491,8 @@ class PlaybackControls extends StatelessWidget {
   final VoidCallback onTracks;
   final VoidCallback onFit;
   final VoidCallback? onLines;
+  final VoidCallback? onInfo;
+  final VoidCallback? onLock;
 
   String _format(Duration value) {
     final seconds = value.inSeconds.clamp(0, 359999);
@@ -1434,6 +1583,24 @@ class PlaybackControls extends StatelessWidget {
                               ],
                             ),
                           ),
+                          if (onInfo != null)
+                            IconButton(
+                              tooltip: '播放信息',
+                              onPressed: onInfo,
+                              icon: const Icon(
+                                Icons.info_outline_rounded,
+                                size: 22,
+                              ),
+                            ),
+                          if (onLock != null)
+                            IconButton(
+                              tooltip: '锁定屏幕',
+                              onPressed: onLock,
+                              icon: const Icon(
+                                Icons.lock_open_rounded,
+                                size: 22,
+                              ),
+                            ),
                           if (rate != 1)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -1441,7 +1608,7 @@ class PlaybackControls extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0x55E50914),
+                                color: const Color(0x553B8AFF),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text('$rate×'),
@@ -1870,7 +2037,7 @@ class _PillButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? CinemaColors.red : CinemaColors.elevatedHigh,
+          color: selected ? CinemaColors.accent : CinemaColors.elevatedHigh,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(label),
