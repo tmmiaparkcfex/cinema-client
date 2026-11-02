@@ -190,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: CinemaColors.background,
       body: RefreshIndicator(
-        color: CinemaColors.red,
+        color: CinemaColors.accent,
         backgroundColor: CinemaColors.elevated,
         onRefresh: _refresh,
         child: CustomScrollView(
@@ -329,7 +329,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onPressed: () => _refresh(),
                         icon: const Icon(
                           Icons.cloud_off_rounded,
-                          color: CinemaColors.red,
+                          color: CinemaColors.accent,
                           size: 20,
                         ),
                       ),

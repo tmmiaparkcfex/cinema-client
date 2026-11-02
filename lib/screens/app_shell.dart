@@ -188,7 +188,7 @@ class _SideNavigation extends StatelessWidget {
                               width: 3,
                               height: 16,
                               decoration: BoxDecoration(
-                                color: CinemaColors.red,
+                                color: CinemaColors.accent,
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),

@@ -26,7 +26,7 @@ class LibraryScreen extends StatelessWidget {
           bottom: const TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            indicatorColor: CinemaColors.red,
+            indicatorColor: CinemaColors.accent,
             labelColor: CinemaColors.text,
             unselectedLabelColor: CinemaColors.muted,
             tabs: [
@@ -166,7 +166,7 @@ class _HistoryTab extends StatelessWidget {
                             value: record.progress,
                             minHeight: 3,
                             backgroundColor: Colors.white12,
-                            color: CinemaColors.red,
+                            color: CinemaColors.accent,
                           ),
                         ),
                       ],

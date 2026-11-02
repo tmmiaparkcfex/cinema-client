@@ -13,6 +13,7 @@ import 'package:cinema_client/quark/quark_account_store.dart';
 import 'package:cinema_client/quark/quark_playback_service.dart';
 import 'package:cinema_client/screens/app_shell.dart';
 import 'package:cinema_client/screens/detail_screen.dart';
+import 'package:cinema_client/quark/quark_login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -179,7 +180,7 @@ void main() {
     });
 
     final detailJson = jsonDecode(
-      File('test/fixtures/live_detail_snapshot.json').readAsStringSync(),
+      File('test/fixtures/metadata_tv_snapshot.json').readAsStringSync(),
     ) as Map<String, dynamic>;
     final item = VodItem.fromDetailJson(
       detailJson['item'] as Map<String, dynamic>,
@@ -258,6 +259,15 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 500));
     await _save(tester, boundaryKey, 'detail_episodes_iphone_testrender.png');
+    await tester.scrollUntilVisible(find.text('演职员').last, 240,
+      scrollable: find.byType(Scrollable).first);
+    await tester.pump(const Duration(milliseconds: 300));
+    await _save(tester, boundaryKey, 'detail_cast_iphone_testrender.png');
+    await tester.pumpWidget(RepaintBoundary(key: boundaryKey,
+      child: MaterialApp(theme: _screenshotTheme(),
+        home: QuarkLoginScreen(playbackService: services.quark))));
+    await tester.pump();
+    await _save(tester, boundaryKey, 'cookie_iphone_testrender.png');
     api.close();
   }, skip: !_capture);
 }

@@ -108,7 +108,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
           : _error != null
           ? _CatalogError(message: _error!.userMessage, onRetry: _loadFirst)
           : RefreshIndicator(
-              color: CinemaColors.red,
+              color: CinemaColors.accent,
               backgroundColor: CinemaColors.elevated,
               onRefresh: _loadFirst,
               child: CustomScrollView(

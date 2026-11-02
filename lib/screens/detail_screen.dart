@@ -5,6 +5,7 @@ import '../core/app_models.dart';
 import '../core/app_scope.dart';
 import '../core/app_theme.dart';
 import '../core/episode_choice.dart';
+import '../core/media_metadata.dart';
 import '../data/api_client.dart';
 import '../player/playback_screen.dart';
 import '../widgets/poster_artwork.dart';
@@ -29,6 +30,35 @@ class _DetailScreenState extends State<DetailScreen> {
   bool _autoPlayHandled = false;
   int _loadGeneration = 0;
   Future<VodDetail>? _detailsUpdate;
+  final _loadedEpisodeKeys = <String>{};
+
+  Future<void> _selectSeason(int? season) async {
+    if (season == null) return;
+    setState(() => _season = season);
+    final key = _episodes.firstOrNull?.resource?.catalogKey ?? '';
+    if (key.isEmpty || key == _detail?.item.key || !_loadedEpisodeKeys.add(key)) return;
+    final generation = _loadGeneration;
+    try {
+      final extra = await AppScope.of(context).api.fetchDetail(key, includeOtherSeasons: false);
+      if (!mounted || generation != _loadGeneration ||
+          extra.item.workId != _detail?.item.workId) return;
+      final current = _detail!;
+      final metadata = current.item.metadata;
+      final rows = <String, Map<String, dynamic>>{};
+      for (final row in [...metadata.episodeData, ...extra.item.metadata.episodeData]) {
+        rows['${row['season']}/${row['episode']}'] = row;
+      }
+      setState(() => _detail = VodDetail(
+        item: current.item.copyWith(metadata: MediaMetadata(data: metadata.data,
+            episodeData: rows.values.toList())),
+        lines: current.lines, seasonsLoaded: current.seasonsLoaded,
+        episodeCounts: current.episodeCounts,
+      ));
+    } on ApiException catch (error) {
+      _loadedEpisodeKeys.remove(key);
+      AppLog.error('episode-metadata', error);
+    }
+  }
 
   @override
   void initState() {
@@ -279,11 +309,6 @@ class _DetailScreenState extends State<DetailScreen> {
                                   _actionRow(detail),
                                   const SizedBox(height: 26),
                                   _description(detail.item),
-                                  if (detail.item.actors.isNotEmpty ||
-                                      detail.item.directors.isNotEmpty) ...[
-                                    const SizedBox(height: 24),
-                                    _credits(detail.item),
-                                  ],
                                   const SizedBox(height: 30),
                                   _linePicker(detail),
                                   if (_updating ||
@@ -304,6 +329,22 @@ class _DetailScreenState extends State<DetailScreen> {
                                     _episodeSection(detail)
                                   else
                                     _movieVersionSection(),
+                                  if (detail.item.metadata.credits.isNotEmpty ||
+                                      detail.item.actors.isNotEmpty ||
+                                      detail.item.directors.isNotEmpty) ...[
+                                    const SizedBox(height: 28),
+                                    _credits(detail.item),
+                                  ],
+                                  if (detail.item.metadata.studios.isNotEmpty) ...[
+                                    const SizedBox(height: 24),
+                                    Text(detail.item.metadata.studios.join(' · '),
+                                      style: const TextStyle(color: CinemaColors.faint, fontSize: 12)),
+                                  ],
+                                  if (detail.item.metadata.source.isNotEmpty) ...[
+                                    const SizedBox(height: 16),
+                                    Text('影视资料来自 ${detail.item.metadata.source.toUpperCase()}',
+                                      style: const TextStyle(color: CinemaColors.faint, fontSize: 11)),
+                                  ],
                                 ],
                               ),
                             ),
@@ -335,12 +376,18 @@ class _DetailScreenState extends State<DetailScreen> {
         Text(
           detail.item.name,
           style: const TextStyle(
-            fontSize: 38,
+            fontSize: 32,
             height: 1.08,
             fontWeight: FontWeight.w900,
             letterSpacing: -0.8,
           ),
         ),
+        if (detail.item.metadata.originalTitle.isNotEmpty &&
+            detail.item.metadata.originalTitle != detail.item.name) ...[
+          const SizedBox(height: 7),
+          Text(detail.item.metadata.originalTitle,
+            style: const TextStyle(color: CinemaColors.muted, fontSize: 14)),
+        ],
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,
@@ -378,8 +425,8 @@ class _DetailScreenState extends State<DetailScreen> {
           child: FilledButton.icon(
             onPressed: detail.playableLines.isEmpty ? null : _playDefault,
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
+              backgroundColor: CinemaColors.accent,
+              foregroundColor: Colors.white,
             ),
             icon: const Icon(Icons.play_arrow_rounded, size: 25),
             label: Text(buttonLabel),
@@ -430,6 +477,7 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Widget _credits(VodItem item) {
+    final credits = item.metadata.credits;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -438,6 +486,40 @@ class _DetailScreenState extends State<DetailScreen> {
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         const SizedBox(height: 8),
+        if (credits.isNotEmpty)
+          SizedBox(
+            height: 204,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: credits.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final person = credits[index];
+                return SizedBox(width: 92, child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(borderRadius: BorderRadius.circular(10),
+                      child: SizedBox(width: 92, height: 126,
+                        child: person.portrait == null
+                          ? const ColoredBox(color: CinemaColors.elevatedHigh,
+                              child: Icon(Icons.person_outline, color: CinemaColors.faint))
+                          : Image.network(person.portrait!, fit: BoxFit.cover, cacheWidth: 240,
+                              errorBuilder: (_, _, _) => const ColoredBox(
+                                color: CinemaColors.elevatedHigh,
+                                child: Icon(Icons.person_outline, color: CinemaColors.faint))),
+                      )),
+                    const SizedBox(height: 8),
+                    Text(person.name, maxLines: 2, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 3),
+                    Text(person.role, maxLines: 2, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11, color: CinemaColors.faint)),
+                  ],
+                ));
+              },
+            ),
+          ),
+        if (credits.isEmpty) ...[
         if (item.directors.isNotEmpty)
           Text(
             '导演：${item.directors}',
@@ -449,6 +531,7 @@ class _DetailScreenState extends State<DetailScreen> {
             '主演：${item.actors}',
             style: const TextStyle(color: CinemaColors.muted),
           ),
+        ],
         ],
       ],
     );
@@ -520,7 +603,7 @@ class _DetailScreenState extends State<DetailScreen> {
                   for (final season in seasons)
                     DropdownMenuItem(value: season, child: Text('第$season季')),
                 ],
-                onChanged: (value) => setState(() => _season = value),
+                onChanged: _selectSeason,
               ),
           ],
         ),
@@ -540,6 +623,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     width: width,
                     child: _EpisodeTile(
                       choice: choice,
+                      info: detail.item.metadata.episode(choice.season ?? 1, choice.episode ?? 0),
                       selected: record?.resourceId == choice.resource?.id,
                       onTap: () => _play(choice),
                     ),
@@ -663,10 +747,10 @@ class _ChoicePill extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? CinemaColors.red : CinemaColors.elevated,
+          color: selected ? CinemaColors.accent : CinemaColors.elevated,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? CinemaColors.red : CinemaColors.border,
+            color: selected ? CinemaColors.accent : CinemaColors.border,
           ),
         ),
         child: Text(
@@ -686,17 +770,19 @@ class _EpisodeTile extends StatelessWidget {
     required this.choice,
     required this.selected,
     required this.onTap,
+    this.info,
   });
 
   final EpisodeChoice choice;
   final bool selected;
   final VoidCallback onTap;
+  final EpisodeInfo? info;
 
   @override
   Widget build(BuildContext context) {
     final resource = choice.resource;
     return Material(
-      color: selected ? const Color(0xFF211416) : CinemaColors.elevated,
+      color: selected ? const Color(0xFF142339) : CinemaColors.elevated,
       borderRadius: BorderRadius.circular(8),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -705,12 +791,25 @@ class _EpisodeTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              Container(
+              if (info != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(7),
+                  child: SizedBox(width: 104, height: 64,
+                    child: info!.still.isEmpty
+                      ? const ColoredBox(color: CinemaColors.elevatedHigh,
+                          child: Icon(Icons.movie_outlined, color: CinemaColors.faint))
+                      : Image.network(info!.still, fit: BoxFit.cover, cacheWidth: 320,
+                          errorBuilder: (_, _, _) => const ColoredBox(
+                            color: CinemaColors.elevatedHigh,
+                            child: Icon(Icons.movie_outlined, color: CinemaColors.faint))),
+                  ),
+                )
+              else Container(
                 width: 36,
                 height: 36,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: selected ? CinemaColors.red : const Color(0xFF252A34),
+                  color: selected ? CinemaColors.accent : const Color(0xFF252A34),
                   borderRadius: BorderRadius.circular(7),
                 ),
                 child: Icon(
@@ -726,10 +825,22 @@ class _EpisodeTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      choice.episodeLabel,
+                      '${choice.episodeLabel}${info?.name.isNotEmpty == true ? ' · ${info!.name}' : ''}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 3),
+                    if (info?.overview.isNotEmpty == true) ...[
+                      Text(info!.overview, maxLines: 2, overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: CinemaColors.muted, fontSize: 11, height: 1.5)),
+                      const SizedBox(height: 5),
+                    ],
+                    if (info != null && (info!.runtimeMinutes > 0 || info!.airDate.isNotEmpty))
+                      Text([
+                        if (info!.runtimeMinutes > 0) '${info!.runtimeMinutes} 分钟',
+                        if (info!.airDate.isNotEmpty) info!.airDate,
+                      ].join(' · '), style: const TextStyle(color: CinemaColors.faint, fontSize: 10)),
                     Text(
                       resource?.technicalSummary.isNotEmpty == true
                           ? resource!.technicalSummary
@@ -747,7 +858,7 @@ class _EpisodeTile extends StatelessWidget {
               if (selected)
                 const Text(
                   '上次观看',
-                  style: TextStyle(color: CinemaColors.red, fontSize: 11),
+                  style: TextStyle(color: CinemaColors.accent, fontSize: 11),
                 ),
               const SizedBox(width: 6),
               const Icon(
