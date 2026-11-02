@@ -36,8 +36,11 @@ class _DetailScreenState extends State<DetailScreen> {
     if (season == null) return;
     setState(() => _season = season);
     final key = _episodes.firstOrNull?.resource?.catalogKey ?? '';
-    if (key.isEmpty || key == _detail?.item.key || !_loadedEpisodeKeys.add(key))
+    if (key.isEmpty ||
+        key == _detail?.item.key ||
+        !_loadedEpisodeKeys.add(key)) {
       return;
+    }
     final generation = _loadGeneration;
     try {
       final extra = await AppScope.of(context).api
@@ -1033,3 +1036,4 @@ class _ErrorBody extends StatelessWidget {
     );
   }
 }
+
