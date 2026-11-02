@@ -690,7 +690,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 title: Text(option.$2),
                 subtitle: Text(option.$3),
                 trailing: _fit == option.$1
-                    ? const Icon(Icons.check_rounded, color: CinemaColors.accent)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: CinemaColors.accent,
+                      )
                     : null,
                 onTap: () {
                   Navigator.of(context).pop();
@@ -852,30 +855,58 @@ class _PlaybackScreenState extends State<PlaybackScreen>
 
   Future<void> _openSubtitleSettings() async {
     _hideControlsTimer?.cancel();
-    await showModalBottomSheet<void>(context: context, builder: (context) =>
-      StatefulBuilder(builder: (context, updateSheet) => _Panel(
-        title: '字幕同步与大小',
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('字幕延迟  ${_subtitleDelay >= 0 ? '+' : ''}${_subtitleDelay.toStringAsFixed(1)} 秒'),
-          const SizedBox(height: 6),
-          const Text('正值让字幕晚出现，负值让字幕提前。',
-              style: TextStyle(color: CinemaColors.faint, fontSize: 12)),
-          Slider(value: _subtitleDelay, min: -10, max: 10, divisions: 40,
-            onChanged: (value) => updateSheet(() => _subtitleDelay = value),
-            onChangeEnd: (_) => _applySubtitleSettings()),
-          Text('字幕大小  ${(_subtitleScale * 100).round()}%'),
-          Slider(value: _subtitleScale, min: 0.75, max: 1.75, divisions: 8,
-            onChanged: (value) => updateSheet(() => _subtitleScale = value),
-            onChangeEnd: (_) => _applySubtitleSettings()),
-          const Text('文字字幕可调整大小；图形字幕和自带定位的特效字幕由片源决定。',
-              style: TextStyle(color: CinemaColors.faint, fontSize: 12)),
-          const SizedBox(height: 12),
-          TextButton(onPressed: () {
-            updateSheet(() { _subtitleDelay = 0; _subtitleScale = 1; });
-            _applySubtitleSettings();
-          }, child: const Text('恢复默认')),
-        ]),
-      )),
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, updateSheet) => _Panel(
+          title: '字幕同步与大小',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '字幕延迟  ${_subtitleDelay >= 0 ? '+' : ''}${_subtitleDelay.toStringAsFixed(1)} 秒',
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '正值让字幕晚出现，负值让字幕提前。',
+                style: TextStyle(color: CinemaColors.faint, fontSize: 12),
+              ),
+              Slider(
+                value: _subtitleDelay,
+                min: -10,
+                max: 10,
+                divisions: 40,
+                onChanged: (value) => updateSheet(() => _subtitleDelay = value),
+                onChangeEnd: (_) => _applySubtitleSettings(),
+              ),
+              Text('字幕大小  ${(_subtitleScale * 100).round()}%'),
+              Slider(
+                value: _subtitleScale,
+                min: 0.75,
+                max: 1.75,
+                divisions: 8,
+                onChanged: (value) => updateSheet(() => _subtitleScale = value),
+                onChangeEnd: (_) => _applySubtitleSettings(),
+              ),
+              const Text(
+                '文字字幕可调整大小；图形字幕和自带定位的特效字幕由片源决定。',
+                style: TextStyle(color: CinemaColors.faint, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  updateSheet(() {
+                    _subtitleDelay = 0;
+                    _subtitleScale = 1;
+                  });
+                  _applySubtitleSettings();
+                },
+                child: const Text('恢复默认'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
     if (mounted) _showControlsTemporarily();
   }
@@ -883,21 +914,36 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   Future<void> _openMediaInfo() async {
     final resource = _resource;
     _hideControlsTimer?.cancel();
-    await showModalBottomSheet<void>(context: context, builder: (_) => _Panel(
-      title: '播放信息',
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('夸克快传 · 原画',
-          style: TextStyle(color: CinemaColors.accent, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 14),
-        SelectableText(resource?.fileName ?? _detail.item.name),
-        const SizedBox(height: 12),
-        Text(resource?.technicalSummary ?? '',
-          style: const TextStyle(color: CinemaColors.muted, height: 1.7)),
-        const SizedBox(height: 10),
-        Text('播放线路：${_choice.line.group}',
-          style: const TextStyle(color: CinemaColors.muted)),
-      ]),
-    ));
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => _Panel(
+        title: '播放信息',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '夸克快传 · 原画',
+              style: TextStyle(
+                color: CinemaColors.accent,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 14),
+            SelectableText(resource?.fileName ?? _detail.item.name),
+            const SizedBox(height: 12),
+            Text(
+              resource?.technicalSummary ?? '',
+              style: const TextStyle(color: CinemaColors.muted, height: 1.7),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '播放线路：${_choice.line.group}',
+              style: const TextStyle(color: CinemaColors.muted),
+            ),
+          ],
+        ),
+      ),
+    );
     if (mounted) _showControlsTemporarily();
   }
 
@@ -992,7 +1038,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 trailing: selected
                     ? const Text(
                         '当前播放',
-                        style: TextStyle(color: CinemaColors.accent, fontSize: 12),
+                        style: TextStyle(
+                          color: CinemaColors.accent,
+                          fontSize: 12,
+                        ),
                       )
                     : null,
                 onTap: () {
@@ -1023,7 +1072,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 title: Text(line.group),
                 subtitle: Text('${line.entries.length} 个版本'),
                 trailing: line.group == _choice.line.group
-                    ? const Icon(Icons.check_rounded, color: CinemaColors.accent)
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: CinemaColors.accent,
+                      )
                     : null,
                 onTap: () {
                   final target = EpisodeChoice.sameEpisodeInLine(
@@ -1246,7 +1298,8 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                       : null,
                 ),
               if (_locked)
-                Positioned(right: MediaQuery.paddingOf(context).right + 16,
+                Positioned(
+                  right: MediaQuery.paddingOf(context).right + 16,
                   top: MediaQuery.sizeOf(context).height / 2 - 24,
                   child: IconButton.filledTonal(
                     tooltip: '解锁屏幕',
@@ -1255,7 +1308,8 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                       _showControlsTemporarily();
                     },
                     icon: const Icon(Icons.lock_rounded),
-                  )),
+                  ),
+                ),
               if (_nextChoice != null)
                 _NextEpisodePrompt(
                   title: _nextChoice!.episodeLabel,
@@ -1530,11 +1584,23 @@ class PlaybackControls extends StatelessWidget {
                             ),
                           ),
                           if (onInfo != null)
-                            IconButton(tooltip: '播放信息', onPressed: onInfo,
-                              icon: const Icon(Icons.info_outline_rounded, size: 22)),
+                            IconButton(
+                              tooltip: '播放信息',
+                              onPressed: onInfo,
+                              icon: const Icon(
+                                Icons.info_outline_rounded,
+                                size: 22,
+                              ),
+                            ),
                           if (onLock != null)
-                            IconButton(tooltip: '锁定屏幕', onPressed: onLock,
-                              icon: const Icon(Icons.lock_open_rounded, size: 22)),
+                            IconButton(
+                              tooltip: '锁定屏幕',
+                              onPressed: onLock,
+                              icon: const Icon(
+                                Icons.lock_open_rounded,
+                                size: 22,
+                              ),
+                            ),
                           if (rate != 1)
                             Container(
                               padding: const EdgeInsets.symmetric(

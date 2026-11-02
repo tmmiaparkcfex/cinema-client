@@ -259,13 +259,22 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 500));
     await _save(tester, boundaryKey, 'detail_episodes_iphone_testrender.png');
-    await tester.scrollUntilVisible(find.text('演职员').last, 240,
-      scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(
+      find.text('演职员').last,
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pump(const Duration(milliseconds: 300));
     await _save(tester, boundaryKey, 'detail_cast_iphone_testrender.png');
-    await tester.pumpWidget(RepaintBoundary(key: boundaryKey,
-      child: MaterialApp(theme: _screenshotTheme(),
-        home: QuarkLoginScreen(playbackService: services.quark))));
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: boundaryKey,
+        child: MaterialApp(
+          theme: _screenshotTheme(),
+          home: QuarkLoginScreen(playbackService: services.quark),
+        ),
+      ),
+    );
     await tester.pump();
     await _save(tester, boundaryKey, 'cookie_iphone_testrender.png');
     api.close();

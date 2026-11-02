@@ -205,7 +205,10 @@ class ContinueCard extends StatelessWidget {
                       const Spacer(),
                       const Text(
                         '继续观看',
-                        style: TextStyle(color: CinemaColors.accent, fontSize: 12),
+                        style: TextStyle(
+                          color: CinemaColors.accent,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),

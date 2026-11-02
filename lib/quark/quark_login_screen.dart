@@ -34,11 +34,16 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
   Future<void> _saveCookie() async {
     if (_checking) return;
     final cookie = _cookieInput.text.trim();
-    if (!cookie.contains('=') || cookie.contains('\n') || cookie.contains('\r')) {
+    if (!cookie.contains('=') ||
+        cookie.contains('\n') ||
+        cookie.contains('\r')) {
       setState(() => _message = '请粘贴完整的单行夸克 Cookie。');
       return;
     }
-    setState(() { _checking = true; _message = null; });
+    setState(() {
+      _checking = true;
+      _message = null;
+    });
     try {
       await widget.playbackService.connectCookie(cookie);
       _cookieInput.clear();
@@ -57,13 +62,22 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
       padding: const EdgeInsets.all(24),
       children: [
         const SizedBox(height: 24),
-        const Icon(Icons.cloud_done_outlined, size: 48, color: CinemaColors.accent),
+        const Icon(
+          Icons.cloud_done_outlined,
+          size: 48,
+          color: CinemaColors.accent,
+        ),
         const SizedBox(height: 20),
-        const Text('夸克快传', textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700)),
+        const Text(
+          '夸克快传',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 12),
-        const Text('使用你自己的夸克账号播放原画视频。Cookie 仅保存在这台 iPhone 的安全存储中，不会发送给影视接口。',
-            style: TextStyle(color: CinemaColors.muted, height: 1.6)),
+        const Text(
+          '使用你自己的夸克账号播放原画视频。Cookie 仅保存在这台 iPhone 的安全存储中，不会发送给影视接口。',
+          style: TextStyle(color: CinemaColors.muted, height: 1.6),
+        ),
         const SizedBox(height: 28),
         TextField(
           controller: _cookieInput,
@@ -73,7 +87,8 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
           enableSuggestions: false,
           keyboardType: TextInputType.visiblePassword,
           decoration: InputDecoration(
-            labelText: '夸克 Cookie', hintText: '粘贴完整的 Cookie',
+            labelText: '夸克 Cookie',
+            hintText: '粘贴完整的 Cookie',
             border: const OutlineInputBorder(),
             suffixIcon: IconButton(
               tooltip: _showCookie ? '隐藏 Cookie' : '显示 Cookie',
@@ -84,17 +99,25 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
           onSubmitted: (_) => _saveCookie(),
         ),
         const SizedBox(height: 12),
-        if (_message != null) Text(_message!,
-            style: const TextStyle(color: Color(0xFFFFB4B4))),
+        if (_message != null)
+          Text(_message!, style: const TextStyle(color: Color(0xFFFFB4B4))),
         const SizedBox(height: 20),
         FilledButton(
           onPressed: _checking ? null : _saveCookie,
-          child: Padding(padding: const EdgeInsets.symmetric(vertical: 14),
-              child: Text(_checking ? '正在验证…' : '验证并保存')),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Text(_checking ? '正在验证…' : '验证并保存'),
+          ),
         ),
         const SizedBox(height: 16),
-        const Text('也可以切换到网页登录。播放时会临时转存选中的文件，结束后清理本应用登记的副本。',
-            style: TextStyle(color: CinemaColors.faint, fontSize: 12, height: 1.6)),
+        const Text(
+          '也可以切换到网页登录。播放时会临时转存选中的文件，结束后清理本应用登记的副本。',
+          style: TextStyle(
+            color: CinemaColors.faint,
+            fontSize: 12,
+            height: 1.6,
+          ),
+        ),
       ],
     ),
   );
@@ -161,113 +184,133 @@ class _QuarkLoginScreenState extends State<QuarkLoginScreen> {
                 ButtonSegment(value: false, label: Text('网页登录')),
               ],
               selected: {_cookieMode},
-              onSelectionChanged: _checking ? null : (value) {
-                setState(() { _cookieMode = value.single; _message = null; });
-              },
+              onSelectionChanged: _checking
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _cookieMode = value.single;
+                        _message = null;
+                      });
+                    },
             ),
           ),
         ),
         actions: [
           if (!_cookieMode)
-          IconButton(
-            tooltip: '重新加载登录页',
-            onPressed: _checking
-                ? null
-                : () => _controller?.loadUrl(
-                    urlRequest: URLRequest(url: WebUri(quarkWebLoginUrl)),
-                  ),
-            icon: const Icon(Icons.refresh_rounded),
-          ),
+            IconButton(
+              tooltip: '重新加载登录页',
+              onPressed: _checking
+                  ? null
+                  : () => _controller?.loadUrl(
+                      urlRequest: URLRequest(url: WebUri(quarkWebLoginUrl)),
+                    ),
+              icon: const Icon(Icons.refresh_rounded),
+            ),
         ],
       ),
-      body: _cookieMode ? _cookieForm() : Column(
-        children: [
-          Container(
-            width: double.infinity,
-            color: const Color(0xFF12151B),
-            padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-            child: const Text(
-              '在下方夸克网页中使用手机号和验证码登录，完成后点击底部验证。会话只保存在本机安全存储，密码和 Cookie 不发送给影视接口或开发者。',
-              style: TextStyle(
-                color: Color(0xFFC9CDD6),
-                height: 1.45,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          if (_loading) const LinearProgressIndicator(minHeight: 2),
-          if (_message != null)
-            Container(
-              width: double.infinity,
-              color: const Color(0xFF3A1315),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-              child: Text(
-                _message!,
-                style: const TextStyle(color: Color(0xFFFFB4B4), height: 1.4),
-              ),
-            ),
-          Expanded(
-            child: InAppWebView(
-              initialUrlRequest: URLRequest(url: WebUri(quarkWebLoginUrl)),
-              initialSettings: InAppWebViewSettings(
-                javaScriptEnabled: true,
-                userAgent: quarkWebLoginUserAgent,
-                preferredContentMode: UserPreferredContentMode.DESKTOP,
-                sharedCookiesEnabled: true,
-                thirdPartyCookiesEnabled: true,
-                useHybridComposition: true,
-                transparentBackground: false,
-              ),
-              onWebViewCreated: (controller) => _controller = controller,
-              onLoadStart: (_, _) {
-                if (mounted) {
-                  setState(() {
-                    _loading = true;
-                    _message = null;
-                  });
-                }
-              },
-              onLoadStop: (controller, _) async {
-                if (mounted) setState(() => _loading = false);
-                try {
-                  await controller.evaluateJavascript(
-                    source: quarkWebLoginLayoutScript,
-                  );
-                } catch (error) {
-                  AppLog.error('quark-login-layout', error);
-                }
-              },
-              onReceivedError: (_, request, error) {
-                if (request.isForMainFrame == false) return;
-                AppLog.info('quark-login-web', 'page error ${error.type}');
-                if (mounted) {
-                  setState(() {
-                    _loading = false;
-                    _message = '夸克登录页加载失败，请检查网络后重试。';
-                  });
-                }
-              },
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _checking || _loading ? null : _captureSession,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B8AFF),
-                    padding: const EdgeInsets.symmetric(vertical: 15),
+      body: _cookieMode
+          ? _cookieForm()
+          : Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  color: const Color(0xFF12151B),
+                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+                  child: const Text(
+                    '在下方夸克网页中使用手机号和验证码登录，完成后点击底部验证。会话只保存在本机安全存储，密码和 Cookie 不发送给影视接口或开发者。',
+                    style: TextStyle(
+                      color: Color(0xFFC9CDD6),
+                      height: 1.45,
+                      fontSize: 13,
+                    ),
                   ),
-                  child: Text(_checking ? '正在验证登录状态…' : '验证登录并连接'),
                 ),
-              ),
+                if (_loading) const LinearProgressIndicator(minHeight: 2),
+                if (_message != null)
+                  Container(
+                    width: double.infinity,
+                    color: const Color(0xFF3A1315),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 10,
+                    ),
+                    child: Text(
+                      _message!,
+                      style: const TextStyle(
+                        color: Color(0xFFFFB4B4),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: InAppWebView(
+                    initialUrlRequest: URLRequest(
+                      url: WebUri(quarkWebLoginUrl),
+                    ),
+                    initialSettings: InAppWebViewSettings(
+                      javaScriptEnabled: true,
+                      userAgent: quarkWebLoginUserAgent,
+                      preferredContentMode: UserPreferredContentMode.DESKTOP,
+                      sharedCookiesEnabled: true,
+                      thirdPartyCookiesEnabled: true,
+                      useHybridComposition: true,
+                      transparentBackground: false,
+                    ),
+                    onWebViewCreated: (controller) => _controller = controller,
+                    onLoadStart: (_, _) {
+                      if (mounted) {
+                        setState(() {
+                          _loading = true;
+                          _message = null;
+                        });
+                      }
+                    },
+                    onLoadStop: (controller, _) async {
+                      if (mounted) setState(() => _loading = false);
+                      try {
+                        await controller.evaluateJavascript(
+                          source: quarkWebLoginLayoutScript,
+                        );
+                      } catch (error) {
+                        AppLog.error('quark-login-layout', error);
+                      }
+                    },
+                    onReceivedError: (_, request, error) {
+                      if (request.isForMainFrame == false) return;
+                      AppLog.info(
+                        'quark-login-web',
+                        'page error ${error.type}',
+                      );
+                      if (mounted) {
+                        setState(() {
+                          _loading = false;
+                          _message = '夸克登录页加载失败，请检查网络后重试。';
+                        });
+                      }
+                    },
+                  ),
+                ),
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _checking || _loading
+                            ? null
+                            : _captureSession,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF3B8AFF),
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                        ),
+                        child: Text(_checking ? '正在验证登录状态…' : '验证登录并连接'),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

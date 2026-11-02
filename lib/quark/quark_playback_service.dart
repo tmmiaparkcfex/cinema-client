@@ -251,11 +251,15 @@ class QuarkPlaybackService {
   }
 
   Uri _uri(String endpoint, Map<String, String> params, bool social) {
-    return Uri.parse('${social ? _socialBase : _apiBase}$endpoint')
-        .replace(queryParameters: {
-          'pr': 'ucpro', 'fr': 'pc', 'sys': 'win32', 've': '3.23.2',
-          ...params,
-        });
+    return Uri.parse('${social ? _socialBase : _apiBase}$endpoint').replace(
+      queryParameters: {
+        'pr': 'ucpro',
+        'fr': 'pc',
+        'sys': 'win32',
+        've': '3.23.2',
+        ...params,
+      },
+    );
   }
 
   Map<String, String> _headers({bool jsonBody = false}) => {
@@ -528,7 +532,9 @@ class QuarkPlaybackService {
       onStage?.call('正在通过夸克快传获取原画');
       cancellation?.throwIfCancelled();
       final url = await _fastTransferUrl(
-        savedFile.fid, resource.fileName, cancellation: cancellation,
+        savedFile.fid,
+        resource.fileName,
+        cancellation: cancellation,
       );
       AppLog.info('quark-playback', 'lease-ready');
       final leaseFile = savedFile;
@@ -555,7 +561,8 @@ class QuarkPlaybackService {
             );
           }
           final refreshed = await _fastTransferUrl(
-            leaseFile.fid, resource.fileName,
+            leaseFile.fid,
+            resource.fileName,
           );
           return (
             uri: refreshed,
@@ -936,7 +943,8 @@ class QuarkPlaybackService {
   // Same self-transfer protocol as vod-web's Android adapter. A plain download
   // request is deliberately not used as a fallback: it is not Quark Fast Transfer.
   Future<Uri> _fastTransferUrl(
-    String fid, String fileName, {
+    String fid,
+    String fileName, {
     QuarkPlaybackCancellation? cancellation,
   }) async {
     final random = Random.secure();
@@ -948,12 +956,14 @@ class QuarkPlaybackService {
       return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
           '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
     }
+
     var conversation = '300000${DateTime.now().millisecondsSinceEpoch}';
     final body = {
       'conversations': [
         {
           'conversation_id': conversation,
-          'conversation_type': 3, // Quark's self-transfer, never another contact.
+          'conversation_type':
+              3, // Quark's self-transfer, never another contact.
           'merge_file': 0,
           'file_list': [
             {
@@ -974,10 +984,16 @@ class QuarkPlaybackService {
     for (var attempt = 0; attempt < 4; attempt++) {
       cancellation?.throwIfCancelled();
       final sent = await _request(
-        'POST', 'msg/batch_send', body: body, social: true,
+        'POST',
+        'msg/batch_send',
+        body: body,
+        social: true,
       );
-      _ensureSuccess(sent, fallback: QuarkFailureKind.fastTransfer,
-          stage: 'fast-transfer-send');
+      _ensureSuccess(
+        sent,
+        fallback: QuarkFailureKind.fastTransfer,
+        stage: 'fast-transfer-send',
+      );
       final messages = sent.data['send_msg_list'];
       if (messages is List && messages.isNotEmpty && messages.first is Map) {
         message = messages.first as Map;
@@ -987,7 +1003,8 @@ class QuarkPlaybackService {
         final files = group is Map ? group['file_list'] : null;
         final file = files is List && files.isNotEmpty ? files.first : null;
         message = file is Map && file['send_result'] is Map
-            ? file['send_result'] as Map : null;
+            ? file['send_result'] as Map
+            : null;
       }
       if (message?['code']?.toString() == '14013' && attempt < 3) {
         await Future<void>.delayed(Duration(milliseconds: 700 * (attempt + 1)));
@@ -996,47 +1013,77 @@ class QuarkPlaybackService {
       break;
     }
     cancellation?.throwIfCancelled();
-    final messageId = (message?['store_msg_id'] ?? message?['msg_id'] ??
-        message?['id'])?.toString() ?? '';
+    final messageId =
+        (message?['store_msg_id'] ?? message?['msg_id'] ?? message?['id'])
+            ?.toString() ??
+        '';
     final messageCode = message?['code']?.toString();
     if (messageId.isEmpty ||
         (messageCode != null && messageCode != '0') ||
         (message?['conversation_type'] != null &&
             message!['conversation_type'].toString() != '3')) {
-      throw const QuarkException(QuarkFailureKind.fastTransfer,
-          'self-transfer rejected', stage: 'fast-transfer-send');
+      throw const QuarkException(
+        QuarkFailureKind.fastTransfer,
+        'self-transfer rejected',
+        stage: 'fast-transfer-send',
+      );
     }
     conversation = message?['conversation_id']?.toString() ?? conversation;
     final acquired = await _request(
-      'POST', 'file/acquire_dl_token', social: true,
-      body: {'conversation_id': conversation, 'conversation_type': 3,
-        'msg_id': messageId},
+      'POST',
+      'file/acquire_dl_token',
+      social: true,
+      body: {
+        'conversation_id': conversation,
+        'conversation_type': 3,
+        'msg_id': messageId,
+      },
     );
-    _ensureSuccess(acquired, fallback: QuarkFailureKind.fastTransfer,
-        stage: 'fast-transfer-token');
+    _ensureSuccess(
+      acquired,
+      fallback: QuarkFailureKind.fastTransfer,
+      stage: 'fast-transfer-token',
+    );
     cancellation?.throwIfCancelled();
     final token = acquired.data['token']?.toString() ?? '';
     if (token.isEmpty) {
-      throw const QuarkException(QuarkFailureKind.fastTransfer,
-          'fast-transfer token missing', stage: 'fast-transfer-token');
+      throw const QuarkException(
+        QuarkFailureKind.fastTransfer,
+        'fast-transfer token missing',
+        stage: 'fast-transfer-token',
+      );
     }
     final response = await _request(
-      'POST', 'file/download',
-      body: {'fids': [fid], 'speedup_session': '', 'token': token},
+      'POST',
+      'file/download',
+      body: {
+        'fids': [fid],
+        'speedup_session': '',
+        'token': token,
+      },
     );
-    _ensureSuccess(response, fallback: QuarkFailureKind.fastTransfer,
-        stage: 'fast-transfer-download');
-      cancellation?.throwIfCancelled();
+    _ensureSuccess(
+      response,
+      fallback: QuarkFailureKind.fastTransfer,
+      stage: 'fast-transfer-download',
+    );
+    cancellation?.throwIfCancelled();
     final data = response.json?['data'];
     final item = data is List && data.length == 1 && data.single is Map
-        ? data.single as Map : null;
+        ? data.single as Map
+        : null;
     final uri = Uri.tryParse(item?['download_url']?.toString() ?? '');
-    if (item == null || (item['fid'] != null && item['fid'].toString() != fid) ||
-        uri == null || uri.scheme != 'https' || uri.host.isEmpty ||
+    if (item == null ||
+        (item['fid'] != null && item['fid'].toString() != fid) ||
+        uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
         uri.userInfo.isNotEmpty) {
-      throw const QuarkException(QuarkFailureKind.protocol,
-          'fast-transfer returned an invalid file or URL',
-          stage: 'fast-transfer-download');
+      throw const QuarkException(
+        QuarkFailureKind.protocol,
+        'fast-transfer returned an invalid file or URL',
+        stage: 'fast-transfer-download',
+      );
     }
     return uri;
   }

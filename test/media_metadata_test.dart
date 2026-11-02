@@ -7,21 +7,32 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   for (final type in ['movie', 'tv']) {
-    test('reads current vod-web $type metadata and retains it in the cache', () {
-      final json = jsonDecode(File('test/fixtures/metadata_${type}_snapshot.json')
-          .readAsStringSync()) as Map<String, dynamic>;
-      final item = VodDetail.fromJson(json).item;
-      final metadata = json['item']['metadata'] as Map;
-      expect(item.runtimeMinutes, metadata['runtimeMinutes']);
-      expect(item.metadata.credits, isNotEmpty);
-      expect(item.metadata.credits.first.portrait, startsWith('https://'));
-      expect(item.metadata.originalTitle, metadata['originalTitle']);
-      final restored = VodItem.fromCacheJson(item.toCacheJson());
-      expect(restored.workId, item.workId);
-      expect(restored.runtimeMinutes, item.runtimeMinutes);
-      expect(restored.metadata.credits.first.name, item.metadata.credits.first.name);
-      expect(restored.metadata.episodeData.length, item.metadata.episodeData.length);
-    });
+    test(
+      'reads current vod-web $type metadata and retains it in the cache',
+      () {
+        final json = jsonDecode(
+          File('test/fixtures/metadata_${type}_snapshot.json')
+              .readAsStringSync(),
+        ) as Map<String, dynamic>;
+        final item = VodDetail.fromJson(json).item;
+        final metadata = json['item']['metadata'] as Map;
+        expect(item.runtimeMinutes, metadata['runtimeMinutes']);
+        expect(item.metadata.credits, isNotEmpty);
+        expect(item.metadata.credits.first.portrait, startsWith('https://'));
+        expect(item.metadata.originalTitle, metadata['originalTitle']);
+        final restored = VodItem.fromCacheJson(item.toCacheJson());
+        expect(restored.workId, item.workId);
+        expect(restored.runtimeMinutes, item.runtimeMinutes);
+        expect(
+          restored.metadata.credits.first.name,
+          item.metadata.credits.first.name,
+        );
+        expect(
+          restored.metadata.episodeData.length,
+          item.metadata.episodeData.length,
+        );
+      },
+    );
   }
 
   test('episode information is matched by both season and episode', () {
@@ -38,9 +49,12 @@ void main() {
     expect(empty.credits, isEmpty);
     expect(empty.runtimeMinutes, isNull);
     expect(empty.episode(1, 1), isNull);
-    final metadata = MediaMetadata.fromJson({'runtimeMinutes': '89'}, [
-      {'season': '1', 'episode': '2', 'runtimeSeconds': '2820'},
-    ]);
+    final metadata = MediaMetadata.fromJson(
+      {'runtimeMinutes': '89'},
+      [
+        {'season': '1', 'episode': '2', 'runtimeSeconds': '2820'},
+      ],
+    );
     expect(metadata.runtimeMinutes, 89);
     expect(metadata.episode(1, 2)?.runtimeMinutes, 47);
   });

@@ -131,10 +131,19 @@ class Harness {
       expect(request.url.host, 'drive-social-api.quark.cn');
       final conversation = jsonDecode(request.body)['conversations'].single;
       expect(conversation['conversation_type'], 3);
-      expect(conversation['file_list'].single['fid'],
-          isNot(anyOf('preexisting-file', 'shared-file')));
-      return ok({'send_msg_list': [{'store_msg_id': 'self-message',
-        'conversation_id': 'self-conversation', 'conversation_type': 3}]});
+      expect(
+        conversation['file_list'].single['fid'],
+        isNot(anyOf('preexisting-file', 'shared-file')),
+      );
+      return ok({
+        'send_msg_list': [
+          {
+            'store_msg_id': 'self-message',
+            'conversation_id': 'self-conversation',
+            'conversation_type': 3,
+          },
+        ],
+      });
     }
     if (path.endsWith('/file/acquire_dl_token')) {
       expect(request.url.host, 'drive-social-api.quark.cn');
@@ -166,40 +175,83 @@ void main() {
   tearDown(() => h.service.close());
 
   test('fast-transfer failure cleans the saved file without plain-download fallback', () async {
-    h.intercept = (r) async => r.url.path.endsWith('/file/acquire_dl_token')
-        ? ok({}) : null;
-    await expectLater(h.service.acquire(resource()),
-        throwsA(isA<QuarkException>().having((e) => e.kind, 'kind',
-            QuarkFailureKind.fastTransfer)));
+    h.intercept = (r) async =>
+        r.url.path.endsWith('/file/acquire_dl_token') ? ok({}) : null;
+    await expectLater(
+      h.service.acquire(resource()),
+      throwsA(
+        isA<QuarkException>().having(
+          (e) => e.kind,
+          'kind',
+          QuarkFailureKind.fastTransfer,
+        ),
+      ),
+    );
     expect(h.deleted, ['created-1']);
     expect(h.requests.any((r) => r.url.path.endsWith('/file/download')), false);
     expect(await h.rows(), isEmpty);
   });
 
-  test('refuses a fast-transfer response identifying another conversation type', () async {
-    h.intercept = (r) async => r.url.path.endsWith('/msg/batch_send')
-        ? ok({'send_msg_list': [{'store_msg_id': 'wrong', 'conversation_type': 1}]})
-        : null;
-    await expectLater(h.service.acquire(resource()), throwsA(isA<QuarkException>()));
-    expect(h.deleted, ['created-1']);
-    expect(h.requests.any((r) => r.url.path.endsWith('/file/acquire_dl_token')), false);
-  });
+  test(
+    'refuses a fast-transfer response identifying another conversation type',
+    () async {
+      h.intercept = (r) async => r.url.path.endsWith('/msg/batch_send')
+          ? ok({
+              'send_msg_list': [
+                {'store_msg_id': 'wrong', 'conversation_type': 1},
+              ],
+            })
+          : null;
+      await expectLater(
+        h.service.acquire(resource()),
+        throwsA(isA<QuarkException>()),
+      );
+      expect(h.deleted, ['created-1']);
+      expect(
+        h.requests.any((r) => r.url.path.endsWith('/file/acquire_dl_token')),
+        false,
+      );
+    },
+  );
 
-  test('accepts the nested self-transfer response and refreshes the fast token', () async {
-    h.intercept = (r) async => r.url.path.endsWith('/msg/batch_send')
-        ? ok({'conversations': [{'file_list': [{'send_result': {
-          'code': 0, 'store_msg_id': 'nested-self-message',
-          'conversation_id': 'self-conversation', 'conversation_type': 3,
-        }}]}]}) : null;
-    final lease = await h.service.acquire(resource());
-    await lease.refresh();
-    final tokens = h.requests.where((r) => r.url.path.endsWith('/file/acquire_dl_token'));
-    expect(tokens, hasLength(2));
-    expect(tokens.every((r) => jsonDecode(r.body)['msg_id'] == 'nested-self-message'), true);
-    expect(h.saves, 1);
-    expect(h.requests.every((r) => r.url.host.endsWith('.quark.cn')), true);
-    await lease.release();
-  });
+  test(
+    'accepts the nested self-transfer response and refreshes the fast token',
+    () async {
+      h.intercept = (r) async => r.url.path.endsWith('/msg/batch_send')
+          ? ok({
+              'conversations': [
+                {
+                  'file_list': [
+                    {
+                      'send_result': {
+                        'code': 0,
+                        'store_msg_id': 'nested-self-message',
+                        'conversation_id': 'self-conversation',
+                        'conversation_type': 3,
+                      },
+                    },
+                  ],
+                },
+              ],
+            })
+          : null;
+      final lease = await h.service.acquire(resource());
+      await lease.refresh();
+      final tokens = h.requests.where(
+        (r) => r.url.path.endsWith('/file/acquire_dl_token'),
+      );
+      expect(tokens, hasLength(2));
+      expect(
+        tokens.every(
+          (r) => jsonDecode(r.body)['msg_id'] == 'nested-self-message',
+        ),
+        true,
+      );
+      expect(h.saves, 1);
+      expect(h.requests.every((r) => r.url.host.endsWith('.quark.cn')), true);
+      await lease.release();
+    },
+  );
 
   test('cancelling after self-transfer cleans the owned file before token acquisition', () async {
     final cancellation = QuarkPlaybackCancellation();
@@ -207,20 +259,37 @@ void main() {
       if (r.url.path.endsWith('/msg/batch_send')) cancellation.cancel();
       return null;
     };
-    await expectLater(h.service.acquire(resource(), cancellation: cancellation), throwsA(cancelled));
+    await expectLater(
+      h.service.acquire(resource(), cancellation: cancellation),
+      throwsA(cancelled),
+    );
     expect(h.deleted, ['created-1']);
-    expect(h.requests.any((r) => r.url.path.endsWith('/file/acquire_dl_token')), false);
+    expect(
+      h.requests.any((r) => r.url.path.endsWith('/file/acquire_dl_token')),
+      false,
+    );
     expect(await h.rows(), isEmpty);
   });
 
-  test('refuses a download URL for a different file and keeps original files', () async {
-    h.intercept = (r) async => r.url.path.endsWith('/file/download')
-        ? ok([{'fid': 'preexisting-file', 'download_url': 'https://example.invalid/wrong'}])
-        : null;
-    await expectLater(h.service.acquire(resource()), throwsA(isA<QuarkException>()));
-    expect(h.deleted, ['created-1']);
-    expect(h.files, contains('preexisting-file'));
-  });
+  test(
+    'refuses a download URL for a different file and keeps original files',
+    () async {
+      h.intercept = (r) async => r.url.path.endsWith('/file/download')
+          ? ok([
+              {
+                'fid': 'preexisting-file',
+                'download_url': 'https://example.invalid/wrong',
+              },
+            ])
+          : null;
+      await expectLater(
+        h.service.acquire(resource()),
+        throwsA(isA<QuarkException>()),
+      );
+      expect(h.deleted, ['created-1']);
+      expect(h.files, contains('preexisting-file'));
+    },
+  );
 
   test(
     'rejected login cannot replace an existing saved viewer session',

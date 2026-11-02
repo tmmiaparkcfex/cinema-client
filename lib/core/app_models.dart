@@ -169,8 +169,11 @@ class VodItem {
         'backdropUrl',
         'background',
       ]),
-      genres: metadata.genres.isNotEmpty ? metadata.genres : _stringList(json['genres']),
-      runtimeMinutes: _intValue(json['runtimeMinutes']) ?? metadata.runtimeMinutes,
+      genres: metadata.genres.isNotEmpty
+          ? metadata.genres
+          : _stringList(json['genres']),
+      runtimeMinutes:
+          _intValue(json['runtimeMinutes']) ?? metadata.runtimeMinutes,
       overview:
           _firstText(json, const ['content', 'overview', 'vod_content']) ?? '',
       remarks: _stringList(json['remarks']),
@@ -193,7 +196,8 @@ class VodItem {
       name: _firstText(json, const ['name', 'vod_name']) ?? '未命名作品',
       mediaType: parseMediaKind(json['mediaType'] ?? json['type_name']),
       year: _intValue(json['year'] ?? json['vod_year']),
-      poster: _firstText(json, const ['pic', 'poster', 'vod_pic']) ??
+      poster:
+          _firstText(json, const ['pic', 'poster', 'vod_pic']) ??
           (metadata.poster.isEmpty ? null : metadata.poster),
       backdrop: _firstText(json, const [
         'backdrop',
@@ -201,9 +205,12 @@ class VodItem {
         'background',
       ]),
       genres: metadata.genres.isNotEmpty
-          ? metadata.genres : _stringList(json['genres']),
-      runtimeMinutes: _intValue(json['runtimeMinutes']) ?? metadata.runtimeMinutes,
-      overview: _firstText(json, const ['content', 'blurb', 'overview']) ??
+          ? metadata.genres
+          : _stringList(json['genres']),
+      runtimeMinutes:
+          _intValue(json['runtimeMinutes']) ?? metadata.runtimeMinutes,
+      overview:
+          _firstText(json, const ['content', 'blurb', 'overview']) ??
           metadata.overview,
       remarks: _stringList(json['remarks']),
       score: _firstText(json, const ['score', 'vod_score']) ?? metadata.score,

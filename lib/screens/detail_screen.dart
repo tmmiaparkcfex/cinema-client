@@ -36,24 +36,39 @@ class _DetailScreenState extends State<DetailScreen> {
     if (season == null) return;
     setState(() => _season = season);
     final key = _episodes.firstOrNull?.resource?.catalogKey ?? '';
-    if (key.isEmpty || key == _detail?.item.key || !_loadedEpisodeKeys.add(key)) return;
+    if (key.isEmpty || key == _detail?.item.key || !_loadedEpisodeKeys.add(key))
+      return;
     final generation = _loadGeneration;
     try {
-      final extra = await AppScope.of(context).api.fetchDetail(key, includeOtherSeasons: false);
-      if (!mounted || generation != _loadGeneration ||
-          extra.item.workId != _detail?.item.workId) return;
+      final extra = await AppScope.of(context).api
+          .fetchDetail(key, includeOtherSeasons: false);
+      if (!mounted ||
+          generation != _loadGeneration ||
+          extra.item.workId != _detail?.item.workId) {
+        return;
+      }
       final current = _detail!;
       final metadata = current.item.metadata;
       final rows = <String, Map<String, dynamic>>{};
-      for (final row in [...metadata.episodeData, ...extra.item.metadata.episodeData]) {
+      for (final row in [
+        ...metadata.episodeData,
+        ...extra.item.metadata.episodeData,
+      ]) {
         rows['${row['season']}/${row['episode']}'] = row;
       }
-      setState(() => _detail = VodDetail(
-        item: current.item.copyWith(metadata: MediaMetadata(data: metadata.data,
-            episodeData: rows.values.toList())),
-        lines: current.lines, seasonsLoaded: current.seasonsLoaded,
-        episodeCounts: current.episodeCounts,
-      ));
+      setState(
+        () => _detail = VodDetail(
+          item: current.item.copyWith(
+            metadata: MediaMetadata(
+              data: metadata.data,
+              episodeData: rows.values.toList(),
+            ),
+          ),
+          lines: current.lines,
+          seasonsLoaded: current.seasonsLoaded,
+          episodeCounts: current.episodeCounts,
+        ),
+      );
     } on ApiException catch (error) {
       _loadedEpisodeKeys.remove(key);
       AppLog.error('episode-metadata', error);
@@ -335,15 +350,33 @@ class _DetailScreenState extends State<DetailScreen> {
                                     const SizedBox(height: 28),
                                     _credits(detail.item),
                                   ],
-                                  if (detail.item.metadata.studios.isNotEmpty) ...[
+                                  if (detail
+                                      .item
+                                      .metadata
+                                      .studios
+                                      .isNotEmpty) ...[
                                     const SizedBox(height: 24),
-                                    Text(detail.item.metadata.studios.join(' · '),
-                                      style: const TextStyle(color: CinemaColors.faint, fontSize: 12)),
+                                    Text(
+                                      detail.item.metadata.studios.join(' · '),
+                                      style: const TextStyle(
+                                        color: CinemaColors.faint,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                   ],
-                                  if (detail.item.metadata.source.isNotEmpty) ...[
+                                  if (detail
+                                      .item
+                                      .metadata
+                                      .source
+                                      .isNotEmpty) ...[
                                     const SizedBox(height: 16),
-                                    Text('影视资料来自 ${detail.item.metadata.source.toUpperCase()}',
-                                      style: const TextStyle(color: CinemaColors.faint, fontSize: 11)),
+                                    Text(
+                                      '影视资料来自 ${detail.item.metadata.source.toUpperCase()}',
+                                      style: const TextStyle(
+                                        color: CinemaColors.faint,
+                                        fontSize: 11,
+                                      ),
+                                    ),
                                   ],
                                 ],
                               ),
@@ -385,8 +418,10 @@ class _DetailScreenState extends State<DetailScreen> {
         if (detail.item.metadata.originalTitle.isNotEmpty &&
             detail.item.metadata.originalTitle != detail.item.name) ...[
           const SizedBox(height: 7),
-          Text(detail.item.metadata.originalTitle,
-            style: const TextStyle(color: CinemaColors.muted, fontSize: 14)),
+          Text(
+            detail.item.metadata.originalTitle,
+            style: const TextStyle(color: CinemaColors.muted, fontSize: 14),
+          ),
         ],
         const SizedBox(height: 10),
         Wrap(
@@ -495,43 +530,77 @@ class _DetailScreenState extends State<DetailScreen> {
               separatorBuilder: (_, _) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final person = credits[index];
-                return SizedBox(width: 92, child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(borderRadius: BorderRadius.circular(10),
-                      child: SizedBox(width: 92, height: 126,
-                        child: person.portrait == null
-                          ? const ColoredBox(color: CinemaColors.elevatedHigh,
-                              child: Icon(Icons.person_outline, color: CinemaColors.faint))
-                          : Image.network(person.portrait!, fit: BoxFit.cover, cacheWidth: 240,
-                              errorBuilder: (_, _, _) => const ColoredBox(
-                                color: CinemaColors.elevatedHigh,
-                                child: Icon(Icons.person_outline, color: CinemaColors.faint))),
-                      )),
-                    const SizedBox(height: 8),
-                    Text(person.name, maxLines: 2, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 3),
-                    Text(person.role, maxLines: 2, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, color: CinemaColors.faint)),
-                  ],
-                ));
+                return SizedBox(
+                  width: 92,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SizedBox(
+                          width: 92,
+                          height: 126,
+                          child: person.portrait == null
+                              ? const ColoredBox(
+                                  color: CinemaColors.elevatedHigh,
+                                  child: Icon(
+                                    Icons.person_outline,
+                                    color: CinemaColors.faint,
+                                  ),
+                                )
+                              : Image.network(
+                                  person.portrait!,
+                                  fit: BoxFit.cover,
+                                  cacheWidth: 240,
+                                  errorBuilder: (_, _, _) => const ColoredBox(
+                                    color: CinemaColors.elevatedHigh,
+                                    child: Icon(
+                                      Icons.person_outline,
+                                      color: CinemaColors.faint,
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        person.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        person.role,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: CinemaColors.faint,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
           ),
         if (credits.isEmpty) ...[
-        if (item.directors.isNotEmpty)
-          Text(
-            '导演：${item.directors}',
-            style: const TextStyle(color: CinemaColors.muted),
-          ),
-        if (item.actors.isNotEmpty) ...[
-          const SizedBox(height: 5),
-          Text(
-            '主演：${item.actors}',
-            style: const TextStyle(color: CinemaColors.muted),
-          ),
-        ],
+          if (item.directors.isNotEmpty)
+            Text(
+              '导演：${item.directors}',
+              style: const TextStyle(color: CinemaColors.muted),
+            ),
+          if (item.actors.isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(
+              '主演：${item.actors}',
+              style: const TextStyle(color: CinemaColors.muted),
+            ),
+          ],
         ],
       ],
     );
@@ -623,7 +692,10 @@ class _DetailScreenState extends State<DetailScreen> {
                     width: width,
                     child: _EpisodeTile(
                       choice: choice,
-                      info: detail.item.metadata.episode(choice.season ?? 1, choice.episode ?? 0),
+                      info: detail.item.metadata.episode(
+                        choice.season ?? 1,
+                        choice.episode ?? 0,
+                      ),
                       selected: record?.resourceId == choice.resource?.id,
                       onTap: () => _play(choice),
                     ),
@@ -794,31 +866,49 @@ class _EpisodeTile extends StatelessWidget {
               if (info != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(7),
-                  child: SizedBox(width: 104, height: 64,
+                  child: SizedBox(
+                    width: 104,
+                    height: 64,
                     child: info!.still.isEmpty
-                      ? const ColoredBox(color: CinemaColors.elevatedHigh,
-                          child: Icon(Icons.movie_outlined, color: CinemaColors.faint))
-                      : Image.network(info!.still, fit: BoxFit.cover, cacheWidth: 320,
-                          errorBuilder: (_, _, _) => const ColoredBox(
+                        ? const ColoredBox(
                             color: CinemaColors.elevatedHigh,
-                            child: Icon(Icons.movie_outlined, color: CinemaColors.faint))),
+                            child: Icon(
+                              Icons.movie_outlined,
+                              color: CinemaColors.faint,
+                            ),
+                          )
+                        : Image.network(
+                            info!.still,
+                            fit: BoxFit.cover,
+                            cacheWidth: 320,
+                            errorBuilder: (_, _, _) => const ColoredBox(
+                              color: CinemaColors.elevatedHigh,
+                              child: Icon(
+                                Icons.movie_outlined,
+                                color: CinemaColors.faint,
+                              ),
+                            ),
+                          ),
                   ),
                 )
-              else Container(
-                width: 36,
-                height: 36,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: selected ? CinemaColors.accent : const Color(0xFF252A34),
-                  borderRadius: BorderRadius.circular(7),
+              else
+                Container(
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? CinemaColors.accent
+                        : const Color(0xFF252A34),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Icon(
+                    selected
+                        ? Icons.play_arrow_rounded
+                        : Icons.play_arrow_outlined,
+                    size: 20,
+                  ),
                 ),
-                child: Icon(
-                  selected
-                      ? Icons.play_arrow_rounded
-                      : Icons.play_arrow_outlined,
-                  size: 20,
-                ),
-              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -832,15 +922,31 @@ class _EpisodeTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     if (info?.overview.isNotEmpty == true) ...[
-                      Text(info!.overview, maxLines: 2, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: CinemaColors.muted, fontSize: 11, height: 1.5)),
+                      Text(
+                        info!.overview,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: CinemaColors.muted,
+                          fontSize: 11,
+                          height: 1.5,
+                        ),
+                      ),
                       const SizedBox(height: 5),
                     ],
-                    if (info != null && (info!.runtimeMinutes > 0 || info!.airDate.isNotEmpty))
-                      Text([
-                        if (info!.runtimeMinutes > 0) '${info!.runtimeMinutes} 分钟',
-                        if (info!.airDate.isNotEmpty) info!.airDate,
-                      ].join(' · '), style: const TextStyle(color: CinemaColors.faint, fontSize: 10)),
+                    if (info != null &&
+                        (info!.runtimeMinutes > 0 || info!.airDate.isNotEmpty))
+                      Text(
+                        [
+                          if (info!.runtimeMinutes > 0)
+                            '${info!.runtimeMinutes} 分钟',
+                          if (info!.airDate.isNotEmpty) info!.airDate,
+                        ].join(' · '),
+                        style: const TextStyle(
+                          color: CinemaColors.faint,
+                          fontSize: 10,
+                        ),
+                      ),
                     Text(
                       resource?.technicalSummary.isNotEmpty == true
                           ? resource!.technicalSummary
