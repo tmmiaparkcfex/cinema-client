@@ -8,7 +8,8 @@ import '../widgets/poster_artwork.dart';
 import 'detail_screen.dart';
 
 class LibraryScreen extends StatelessWidget {
-  const LibraryScreen({super.key});
+  const LibraryScreen({super.key, this.initialIndex = 0});
+  final int initialIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +17,7 @@ class LibraryScreen extends StatelessWidget {
     final wide = MediaQuery.sizeOf(context).width >= 900;
     return DefaultTabController(
       length: 2,
+      initialIndex: initialIndex,
       child: Scaffold(
         appBar: AppBar(
           title: wide

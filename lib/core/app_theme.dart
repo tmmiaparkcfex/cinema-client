@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 abstract final class CinemaColors {
-  static const background = Color(0xFF07080B);
-  static const elevated = Color(0xFF11141A);
-  static const elevatedHigh = Color(0xFF181C24);
-  static const text = Color(0xFFF4F5F7);
-  static const muted = Color(0xFFA4AAB6);
-  static const faint = Color(0xFF8C94A3);
-  static const accent = Color(0xFF3B8AFF);
-  static const border = Color(0xFF272C36);
+  static const background = Color(0xFFF3F0EC);
+  static const elevated = Color(0xFFFCFAF7);
+  static const elevatedHigh = Color(0xFFE9E2DB);
+  static const text = Color(0xFF292320);
+  static const muted = Color(0xFF74665D);
+  static const faint = Color(0xFF887A70);
+  static const accent = Color(0xFF765440);
+  static const border = Color(0xFFDCCFC4);
 }
 
 ThemeData buildCinemaTheme() {
@@ -20,10 +20,10 @@ ThemeData buildCinemaTheme() {
     'sans-serif',
   ];
   final base = ThemeData(
-    brightness: Brightness.dark,
+    brightness: Brightness.light,
     useMaterial3: true,
     scaffoldBackgroundColor: CinemaColors.background,
-    colorScheme: const ColorScheme.dark(
+    colorScheme: const ColorScheme.light(
       primary: CinemaColors.accent,
       secondary: CinemaColors.accent,
       surface: CinemaColors.elevated,
@@ -98,14 +98,14 @@ ThemeData buildCinemaTheme() {
         backgroundColor: CinemaColors.accent,
         foregroundColor: Colors.white,
         textStyle: const TextStyle(fontWeight: FontWeight.w700),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: CinemaColors.text,
         side: const BorderSide(color: CinemaColors.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       ),
     ),
     snackBarTheme: const SnackBarThemeData(

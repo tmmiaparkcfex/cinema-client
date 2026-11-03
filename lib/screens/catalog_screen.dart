@@ -25,6 +25,21 @@ class _CatalogScreenState extends State<CatalogScreen> {
   bool _loadingMore = false;
   int _page = 1;
   int _pageCount = 1;
+  String? _genre;
+  int? _year;
+  bool _sortByYear = false;
+
+  List<VodItem> get _visible {
+    final items = _items
+        .where(
+          (item) =>
+              (_genre == null || item.genres.contains(_genre)) &&
+              (_year == null || item.year == _year),
+        )
+        .toList();
+    if (_sortByYear) items.sort((a, b) => (b.year ?? 0).compareTo(a.year ?? 0));
+    return items;
+  }
 
   @override
   void initState() {
@@ -101,6 +116,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final visible = _visible;
+    final genres = _items.expand((item) => item.genres).toSet().toList()
+      ..sort();
+    final years =
+        _items.map((item) => item.year).whereType<int>().toSet().toList()
+          ..sort((a, b) => b.compareTo(a));
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
       body: _loading
@@ -117,12 +138,79 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(18, 10, 18, 14),
-                      child: Text(
-                        '已加载 ${_items.length} 部作品',
-                        style: const TextStyle(
-                          color: CinemaColors.muted,
-                          fontSize: 12,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '已加载 ${_items.length} 部 · 当前显示 ${visible.length} 部',
+                            style: const TextStyle(
+                              color: CinemaColors.muted,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              PopupMenuButton<String>(
+                                initialValue: _genre ?? '',
+                                onSelected: (value) => setState(
+                                  () => _genre = value.isEmpty ? null : value,
+                                ),
+                                itemBuilder: (_) => [
+                                  const PopupMenuItem(
+                                    value: '',
+                                    child: Text('全部类型'),
+                                  ),
+                                  for (final genre in genres)
+                                    PopupMenuItem(
+                                      value: genre,
+                                      child: Text(genre),
+                                    ),
+                                ],
+                                child: Chip(
+                                  label: Text('${_genre ?? '全部类型'} ▾'),
+                                ),
+                              ),
+                              PopupMenuButton<int>(
+                                initialValue: _year ?? 0,
+                                onSelected: (value) => setState(
+                                  () => _year = value == 0 ? null : value,
+                                ),
+                                itemBuilder: (_) => [
+                                  const PopupMenuItem(
+                                    value: 0,
+                                    child: Text('全部年份'),
+                                  ),
+                                  for (final year in years)
+                                    PopupMenuItem(
+                                      value: year,
+                                      child: Text('$year'),
+                                    ),
+                                ],
+                                child: Chip(
+                                  label: Text('${_year ?? '全部年份'} ▾'),
+                                ),
+                              ),
+                              FilterChip(
+                                label: const Text('年份从新到旧'),
+                                selected: _sortByYear,
+                                onSelected: (value) =>
+                                    setState(() => _sortByYear = value),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            '筛选范围为已加载作品，可继续加载更多。',
+                            style: TextStyle(
+                              color: CinemaColors.faint,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -138,11 +226,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
                           ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) => MediaCard(
-                          item: _items[index],
+                          item: visible[index],
                           width: double.infinity,
-                          onTap: () => _open(_items[index]),
+                          onTap: () => _open(visible[index]),
                         ),
-                        childCount: _items.length,
+                        childCount: visible.length,
                       ),
                     ),
                   ),

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ import 'core/app_theme.dart';
 import 'data/api_client.dart';
 import 'data/home_cache.dart';
 import 'data/local_store.dart';
+import 'data/download_manager.dart';
 import 'quark/quark_account_store.dart';
 import 'quark/quark_playback_service.dart';
 import 'screens/app_shell.dart';
@@ -43,6 +45,19 @@ Future<void> main() async {
     accountStore: const QuarkAccountStore(),
     supportDirectory: supportDirectory,
   );
+  final downloads = DownloadManager(
+    prefs: prefs,
+    directory: Directory('${supportDirectory.path}/downloads'),
+    connect: (resource, cancellation) async {
+      final lease = await quark.acquire(resource, cancellation: cancellation);
+      return DownloadConnection(
+        uri: lease.mediaUri,
+        headers: lease.headers,
+        release: lease.release,
+      );
+    },
+  );
+  await downloads.restore();
 
   HomeFeed? initialHome;
   try {
@@ -57,11 +72,14 @@ Future<void> main() async {
     store: store,
     homeCache: cache,
     quark: quark,
+    downloads: downloads,
   );
   runApp(CinemaApp(services: services, initialHome: initialHome));
-  unawaited(quark.cleanupStale().catchError((Object error) {
-    AppLog.error('quark-startup-cleanup', error);
-  }));
+  unawaited(
+    quark.cleanupStale().catchError((Object error) {
+      AppLog.error('quark-startup-cleanup', error);
+    }),
+  );
 }
 
 class CinemaApp extends StatelessWidget {

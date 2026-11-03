@@ -11,12 +11,14 @@ import 'package:media_kit_video/media_kit_video.dart';
 import '../core/app_log.dart';
 import '../core/app_models.dart';
 import '../core/app_scope.dart';
-import '../core/app_theme.dart';
+import 'player_theme.dart';
 import '../core/episode_choice.dart';
 import '../quark/quark_login_screen.dart';
 import '../quark/quark_playback_service.dart';
 import 'subtitle_files.dart';
 import 'native_player.dart';
+import 'playback_budget.dart';
+import 'playback_diagnostics.dart';
 import 'range_playback_source.dart';
 
 class PlaybackScreen extends StatefulWidget {
@@ -25,11 +27,13 @@ class PlaybackScreen extends StatefulWidget {
     required this.detail,
     required this.initialChoice,
     this.updatedDetail,
+    this.localPath,
   });
 
   final VodDetail detail;
   final EpisodeChoice initialChoice;
   final Future<VodDetail>? updatedDetail;
+  final String? localPath;
 
   @override
   State<PlaybackScreen> createState() => _PlaybackScreenState();
@@ -38,6 +42,7 @@ class PlaybackScreen extends StatefulWidget {
 class _PlaybackScreenState extends State<PlaybackScreen>
     with WidgetsBindingObserver {
   late AppServices _services;
+  late BuildContext _playerThemeContext;
   late EpisodeChoice _choice;
   late VodDetail _detail;
   SubtitleFiles? _subtitleFiles;
@@ -46,6 +51,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   QuarkPlaybackLease? _lease;
   RangePlaybackSource? _rangeSource;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
+  final _uiBudget = PlaybackUiBudget();
+  final _uiElapsed = Stopwatch()..start();
+  Size? _displaySize;
+  PlaybackDiagnostics _diagnostics = const PlaybackDiagnostics();
 
   bool _started = false;
   bool _loading = true;
@@ -156,28 +165,60 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     setState(action);
   }
 
+  void _paintPlaybackClock() {
+    if (!mounted || _disposed) return;
+    if (_uiBudget.shouldPaint(
+      elapsed: _uiElapsed.elapsed,
+      visible: _controlsVisible && !_locked && !_loading,
+    )) {
+      setState(() {});
+    }
+  }
+
+  Size _videoDisplayBudget() {
+    final view = MediaQuery.of(context);
+    return displayVideoSize(
+      viewport: view.size,
+      pixelRatio: view.devicePixelRatio,
+      sourceWidth: _player?.state.width ?? _resource?.width ?? 3840,
+      sourceHeight: _player?.state.height ?? _resource?.height ?? 2160,
+    );
+  }
+
   Future<void> _ensurePlayer() async {
     if (_player != null) return;
     final player = createNativePlayer();
+    final mobile =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.android);
+    final size = mobile ? _videoDisplayBudget() : null;
+    _displaySize = size;
     final controller = VideoController(
       player,
-      configuration: const VideoControllerConfiguration(
+      configuration: VideoControllerConfiguration(
         enableHardwareAcceleration: true,
+        hwdec: 'auto',
+        width: size?.width.toInt(),
+        height: size?.height.toInt(),
       ),
     );
     _player = player;
     _videoController = controller;
     _subscriptions.addAll([
       player.stream.playing.listen((value) {
+        if (_playing == value && !_loading) return;
         _setStateIfMounted(() => _playing = value);
+        if (_mediaReady) _rangeSource?.setPaused(!value);
         if (value) {
           _armHideControls();
         }
       }),
       player.stream.position.listen((value) {
-        if (!mounted) return;
+        if (!mounted || _disposed) return;
         if (_dragPositionMs == null) {
-          setState(() => _position = value);
+          _position = value;
+          _paintPlaybackClock();
         }
         if (DateTime.now().difference(_lastProgressSave).inSeconds >= 10) {
           _lastProgressSave = DateTime.now();
@@ -188,9 +229,11 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         _setStateIfMounted(() => _duration = value);
       }),
       player.stream.buffer.listen((value) {
-        _setStateIfMounted(() => _buffer = value);
+        _buffer = value;
+        _paintPlaybackClock();
       }),
       player.stream.buffering.listen((value) {
+        if (_buffering == value) return;
         _setStateIfMounted(() => _buffering = value);
         if (value) {
           _startBufferWatchdog();
@@ -219,6 +262,12 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     bool refreshLease = false,
   }) async {
     if (_disposed || !mounted) return;
+    await _services.downloads?.pauseAll();
+    if (_disposed || !mounted) return;
+    if (widget.localPath != null) {
+      await _startLocalPlayback(resumeAt: resumeAt);
+      return;
+    }
     final resource = _resource;
     if (resource == null) {
       _showError('线路缺少资源描述', '接口没有返回这条线路的文件信息。请切换线路，或在后台补齐资源描述后再试。');
@@ -347,6 +396,16 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       }
       _prepareTimer?.cancel();
       _mediaReady = true;
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+        final size = _videoDisplayBudget();
+        _displaySize = size;
+        await _videoController!.setSize(
+          width: size.width.toInt(),
+          height: size.height.toInt(),
+        );
+      }
+      if (_disposed || generation != _generation || !mounted) return;
+      _rangeSource?.setPaused(!_player!.state.playing);
       _setStateIfMounted(() {
         _loading = false;
         _buffering = _player!.state.buffering;
@@ -356,6 +415,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       });
       _startBufferWatchdog();
       _armHideControls();
+      unawaited(_readDiagnostics(generation));
     } on TimeoutException {
       if (_disposed || generation != _generation) return;
       _showError('起播超时', '播放地址已取得，但仍未显示画面。请检查网络或切换线路后重试。');
@@ -380,6 +440,59 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       _prepareTimer?.cancel();
       _showError('暂时无法起播', '播放准备过程失败。请稍后重试；反复失败时请切换线路。');
     }
+  }
+
+  Future<void> _startLocalPlayback({Duration? resumeAt}) async {
+    final generation = ++_generation;
+    _setStateIfMounted(() {
+      _loading = true;
+      _errorTitle = null;
+    });
+    try {
+      final path = widget.localPath!;
+      if (!await File(path).exists()) {
+        throw const FileSystemException('Local media missing');
+      }
+      await _ensurePlayer();
+      final record = _services.store.recordForItem(_detail.item);
+      final resume =
+          resumeAt ??
+          (record?.resourceId == _resource?.id && record?.completed != true
+              ? Duration(milliseconds: record!.safePositionMs)
+              : Duration.zero);
+      await _player!.open(Media(path, start: resume));
+      await _applySubtitleSettings();
+      await _videoController!.waitUntilFirstFrameRendered.timeout(
+        const Duration(seconds: 30),
+      );
+      if (_disposed || !mounted || generation != _generation) return;
+      _mediaReady = true;
+      _setStateIfMounted(() {
+        _loading = false;
+        _buffering = _player!.state.buffering;
+        _errorTitle = null;
+      });
+      _armHideControls();
+      unawaited(_readDiagnostics(generation));
+    } catch (error) {
+      AppLog.error('local-playback', error.runtimeType);
+      if (generation == _generation) {
+        _showError('无法播放本地文件', '请检查文件是否完整，或删除后重新下载。');
+      }
+    }
+  }
+
+  Future<void> _readDiagnostics(int generation) async {
+    final player = _player;
+    if (player == null) return;
+    final value = await PlaybackDiagnostics.read(player);
+    if (_disposed || !mounted || generation != _generation) return;
+    _diagnostics = value;
+    AppLog.info(
+      'playback-vitals',
+      'decoder=${value.decoder} thermal=${value.thermalState} '
+          'display=${_displaySize?.width.toInt()}x${_displaySize?.height.toInt()}',
+    );
   }
 
   void _showError(String title, String detail) {
@@ -666,7 +779,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     _hideControlsTimer?.cancel();
     setState(() => _controlsVisible = false);
     await showModalBottomSheet<void>(
-      context: context,
+      context: _playerThemeContext,
       builder: (context) => _Panel(
         title: '播放速度',
         child: Wrap(
@@ -693,7 +806,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     _hideControlsTimer?.cancel();
     setState(() => _controlsVisible = false);
     await showModalBottomSheet<void>(
-      context: context,
+      context: _playerThemeContext,
       builder: (context) => _Panel(
         title: '画面比例',
         child: Column(
@@ -710,7 +823,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 trailing: _fit == option.$1
                     ? const Icon(
                         Icons.check_rounded,
-                        color: CinemaColors.accent,
+                        color: PlayerColors.accent,
                       )
                     : null,
                 onTap: () {
@@ -730,7 +843,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     _hideControlsTimer?.cancel();
     setState(() => _controlsVisible = false);
     await showModalBottomSheet<void>(
-      context: context,
+      context: _playerThemeContext,
       isScrollControlled: true,
       builder: (context) {
         return StatefulBuilder(
@@ -738,7 +851,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
             return _Panel(
               title: '音轨与字幕',
               child: DefaultTextStyle(
-                style: const TextStyle(color: CinemaColors.text),
+                style: const TextStyle(color: PlayerColors.text),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -754,7 +867,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                         padding: EdgeInsets.symmetric(vertical: 10),
                         child: Text(
                           '没有可切换的内嵌音轨',
-                          style: TextStyle(color: CinemaColors.faint),
+                          style: TextStyle(color: PlayerColors.faint),
                         ),
                       ),
                     for (final audio in _tracks.audio.where(
@@ -769,7 +882,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                         trailing: _track.audio.id == audio.id
                             ? const Icon(
                                 Icons.check_rounded,
-                                color: CinemaColors.accent,
+                                color: PlayerColors.accent,
                               )
                             : null,
                         onTap: () async {
@@ -789,7 +902,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                       trailing: _track.subtitle.id == 'no'
                           ? const Icon(
                               Icons.check_rounded,
-                              color: CinemaColors.accent,
+                              color: PlayerColors.accent,
                             )
                           : null,
                       onTap: () async {
@@ -804,7 +917,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                         padding: EdgeInsets.symmetric(vertical: 10),
                         child: Text(
                           '没有检测到内嵌字幕',
-                          style: TextStyle(color: CinemaColors.faint),
+                          style: TextStyle(color: PlayerColors.faint),
                         ),
                       ),
                     for (final subtitle in _tracks.subtitle.where(
@@ -828,7 +941,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                         trailing: _track.subtitle.id == subtitle.id
                             ? const Icon(
                                 Icons.check_rounded,
-                                color: CinemaColors.accent,
+                                color: PlayerColors.accent,
                               )
                             : null,
                         onTap: () async {
@@ -874,7 +987,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   Future<void> _openSubtitleSettings() async {
     _hideControlsTimer?.cancel();
     await showModalBottomSheet<void>(
-      context: context,
+      context: _playerThemeContext,
       builder: (context) => StatefulBuilder(
         builder: (context, updateSheet) => _Panel(
           title: '字幕同步与大小',
@@ -887,7 +1000,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
               const SizedBox(height: 6),
               const Text(
                 '正值让字幕晚出现，负值让字幕提前。',
-                style: TextStyle(color: CinemaColors.faint, fontSize: 12),
+                style: TextStyle(color: PlayerColors.faint, fontSize: 12),
               ),
               Slider(
                 value: _subtitleDelay,
@@ -908,7 +1021,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
               ),
               const Text(
                 '文字字幕可调整大小；图形字幕和自带定位的特效字幕由片源决定。',
-                style: TextStyle(color: CinemaColors.faint, fontSize: 12),
+                style: TextStyle(color: PlayerColors.faint, fontSize: 12),
               ),
               const SizedBox(height: 12),
               TextButton(
@@ -932,17 +1045,21 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   Future<void> _openMediaInfo() async {
     final resource = _resource;
     _hideControlsTimer?.cancel();
+    if (_player != null) {
+      _diagnostics = await PlaybackDiagnostics.read(_player!);
+    }
+    if (!mounted || _disposed) return;
     await showModalBottomSheet<void>(
-      context: context,
+      context: _playerThemeContext,
       builder: (_) => _Panel(
         title: '播放信息',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '夸克快传 · 原画',
+              '原画播放',
               style: TextStyle(
-                color: CinemaColors.accent,
+                color: PlayerColors.accent,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -951,13 +1068,34 @@ class _PlaybackScreenState extends State<PlaybackScreen>
             const SizedBox(height: 12),
             Text(
               resource?.technicalSummary ?? '',
-              style: const TextStyle(color: CinemaColors.muted, height: 1.7),
+              style: const TextStyle(color: PlayerColors.muted, height: 1.7),
             ),
             const SizedBox(height: 10),
             Text(
               '播放线路：${_choice.line.group}',
-              style: const TextStyle(color: CinemaColors.muted),
+              style: const TextStyle(color: PlayerColors.muted),
             ),
+            const Divider(height: 24),
+            Text('播放内核：libmpv / FFmpeg（原生）'),
+            const SizedBox(height: 8),
+            Text('实际解码：${_diagnostics.decoderLabel}'),
+            if (_displaySize != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                '显示输出：${_displaySize!.width.toInt()} × ${_displaySize!.height.toInt()}，匹配屏幕像素',
+              ),
+              const Text(
+                '片源保持原画分辨率与码率。',
+                style: TextStyle(fontSize: 12, color: PlayerColors.muted),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              '视频掉帧：${_diagnostics.droppedFrames.isEmpty ? '暂未取得' : _diagnostics.droppedFrames}',
+            ),
+            const SizedBox(height: 8),
+            Text('系统热状态：${_diagnostics.thermalLabel}'),
+            if (_diagnostics.lowPower) const Text('系统低电量模式已开启'),
           ],
         ),
       ),
@@ -1027,7 +1165,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     setState(() => _controlsVisible = false);
     final episodes = EpisodeChoice.forLine(_choice.line);
     await showModalBottomSheet<void>(
-      context: context,
+      context: _playerThemeContext,
       isScrollControlled: true,
       builder: (context) => _Panel(
         title: '选集 · ${_choice.line.group}',
@@ -1045,7 +1183,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                   selected
                       ? Icons.play_arrow_rounded
                       : Icons.play_arrow_outlined,
-                  color: selected ? CinemaColors.accent : CinemaColors.muted,
+                  color: selected ? PlayerColors.accent : PlayerColors.muted,
                 ),
                 title: Text(choice.episodeLabel),
                 subtitle: Text(
@@ -1057,7 +1195,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                     ? const Text(
                         '当前播放',
                         style: TextStyle(
-                          color: CinemaColors.accent,
+                          color: PlayerColors.accent,
                           fontSize: 12,
                         ),
                       )
@@ -1079,7 +1217,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     _hideControlsTimer?.cancel();
     setState(() => _controlsVisible = false);
     await showModalBottomSheet<void>(
-      context: context,
+      context: _playerThemeContext,
       builder: (context) => _Panel(
         title: '切换线路',
         child: Column(
@@ -1092,7 +1230,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                 trailing: line.group == _choice.line.group
                     ? const Icon(
                         Icons.check_rounded,
-                        color: CinemaColors.accent,
+                        color: PlayerColors.accent,
                       )
                     : null,
                 onTap: () {
@@ -1125,6 +1263,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
       _nextTimer?.cancel();
+      _rangeSource?.setPaused(true);
+      unawaited(_player?.pause());
+      if (_loading) unawaited(_cancelLoading());
       unawaited(_saveProgress());
     } else if (state == AppLifecycleState.resumed && _nextChoice != null) {
       _showNextPrompt(_nextChoice!);
@@ -1134,6 +1275,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   @override
   void dispose() {
     _disposed = true;
+    _uiElapsed.stop();
     _cancellation?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _generation++;
@@ -1166,6 +1308,16 @@ class _PlaybackScreenState extends State<PlaybackScreen>
 
   @override
   Widget build(BuildContext context) {
+    return Theme(
+      data: buildCinemaPlayerTheme(),
+      child: Builder(builder: (context) {
+        _playerThemeContext = context;
+        return _buildPlayer(context);
+      }),
+    );
+  }
+
+  Widget _buildPlayer(BuildContext context) {
     final player = _player;
     final controller = _videoController;
     final width = MediaQuery.sizeOf(context).width;
@@ -1369,7 +1521,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
             Text(
               _stage,
               style: TextStyle(
-                color: CinemaColors.text,
+                color: PlayerColors.text,
                 fontSize: compact ? 14 : 17,
                 fontWeight: FontWeight.w600,
               ),
@@ -1377,7 +1529,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
             const SizedBox(height: 8),
             const Text(
               '只会转存到本应用的专用目录，退出播放后清理。',
-              style: TextStyle(color: CinemaColors.faint, fontSize: 12),
+              style: TextStyle(color: PlayerColors.faint, fontSize: 12),
             ),
             const SizedBox(height: 20),
             TextButton(onPressed: _cancelLoading, child: const Text('取消加载')),
@@ -1404,7 +1556,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                         ? Icons.lock_outline_rounded
                         : Icons.error_outline_rounded,
                     size: 42,
-                    color: CinemaColors.muted,
+                    color: PlayerColors.muted,
                   ),
                   const SizedBox(height: 14),
                   Text(
@@ -1420,7 +1572,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                     _errorDetail ?? '',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: CinemaColors.muted,
+                      color: PlayerColors.muted,
                       height: 1.5,
                     ),
                   ),
@@ -1598,7 +1750,7 @@ class PlaybackControls extends StatelessWidget {
                                     subtitle,
                                     style: const TextStyle(
                                       fontSize: 11,
-                                      color: CinemaColors.muted,
+                                      color: PlayerColors.muted,
                                     ),
                                   ),
                               ],
@@ -1724,7 +1876,7 @@ class PlaybackControls extends StatelessWidget {
                                   _format(duration),
                                   style: const TextStyle(
                                     fontSize: 11,
-                                    color: CinemaColors.muted,
+                                    color: PlayerColors.muted,
                                   ),
                                 ),
                               ],
@@ -1793,7 +1945,7 @@ class _ControlAction extends StatelessWidget {
       child: TextButton(
         onPressed: onTap,
         style: TextButton.styleFrom(
-          foregroundColor: CinemaColors.text,
+          foregroundColor: PlayerColors.text,
           padding: const EdgeInsets.symmetric(vertical: 8),
         ),
         child: Column(
@@ -1895,7 +2047,7 @@ class _NextEpisodePrompt extends StatelessWidget {
                 Text(
                   '$countdown 秒后自动开始',
                   style: const TextStyle(
-                    color: CinemaColors.muted,
+                    color: PlayerColors.muted,
                     fontSize: 12,
                   ),
                 ),
@@ -1949,7 +2101,7 @@ class _EndedPrompt extends StatelessWidget {
             children: [
               const Icon(
                 Icons.check_circle_outline_rounded,
-                color: CinemaColors.muted,
+                color: PlayerColors.muted,
                 size: 34,
               ),
               const SizedBox(height: 12),
@@ -1964,7 +2116,7 @@ class _EndedPrompt extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 isSeries && !canSwitchLine ? '没有更多剧集。' : '进度已保存。',
-                style: const TextStyle(color: CinemaColors.muted, fontSize: 12),
+                style: const TextStyle(color: PlayerColors.muted, fontSize: 12),
               ),
               const SizedBox(height: 18),
               Wrap(
@@ -2017,7 +2169,7 @@ class _Panel extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: CinemaColors.border,
+                    color: PlayerColors.border,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -2058,7 +2210,7 @@ class _PillButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? CinemaColors.accent : CinemaColors.elevatedHigh,
+          color: selected ? PlayerColors.accent : PlayerColors.elevatedHigh,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(label),

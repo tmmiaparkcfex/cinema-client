@@ -10,13 +10,13 @@ class RangePlaybackSource {
     _client
       ..autoUncompress = false
       ..connectionTimeout = const Duration(seconds: 12)
-      ..maxConnectionsPerHost = 4;
+      ..maxConnectionsPerHost = 2;
     _server.autoCompress = false;
     _server.listen((request) => unawaited(_serve(request)));
   }
 
   static const _partSize = 1024 * 1024;
-  static const _window = 4;
+  static const _window = 2;
   final Uri _uri;
   final Map<String, String> _headers;
   final int _length;
@@ -27,6 +27,27 @@ class RangePlaybackSource {
     (_) => Random.secure().nextInt(256),
   ).map((n) => n.toRadixString(16).padLeft(2, '0')).join();
   bool _closed = false;
+  bool _paused = false;
+  Completer<void>? _resume;
+
+  /// Finish at most the current bounded parts, then stop requesting bytes while
+  /// the viewer pauses or backgrounds the app. No polling timer is needed.
+  void setPaused(bool paused) {
+    if (_closed || _paused == paused) return;
+    _paused = paused;
+    if (paused) {
+      _resume = Completer<void>();
+    } else {
+      _resume?.complete();
+      _resume = null;
+    }
+  }
+
+  Future<void> _waitForResume() async {
+    while (_paused && !_closed) {
+      await _resume!.future;
+    }
+  }
 
   static Future<RangePlaybackSource> open({
     required Uri uri,
@@ -192,13 +213,18 @@ class RangePlaybackSource {
         }
       }
 
+      await _waitForResume();
       fill();
       for (
         var offset = start;
         offset <= end && !disconnected && !_closed;
         offset += _partSize
       ) {
+        await _waitForResume();
+        if (_closed || disconnected) break;
         final bytes = await pending.remove(offset)!;
+        await _waitForResume();
+        if (_closed || disconnected) break;
         response.add(bytes);
         await response.flush();
         fill();
@@ -222,6 +248,8 @@ class RangePlaybackSource {
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
+    _resume?.complete();
+    _resume = null;
     _client.close(force: true);
     await _server.close(force: true);
   }

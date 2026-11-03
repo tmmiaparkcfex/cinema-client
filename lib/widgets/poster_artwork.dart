@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_models.dart';
+import 'cinema_surface.dart';
 
 class PosterArtwork extends StatelessWidget {
   const PosterArtwork({
@@ -24,7 +25,7 @@ class PosterArtwork extends StatelessWidget {
       child = Image.network(
         poster,
         fit: BoxFit.cover,
-        cacheWidth: 600,
+        cacheWidth: 420,
         errorBuilder: (_, _, _) => fallback,
         frameBuilder: (_, child, frame, _) => frame == null ? fallback : child,
       );
@@ -176,8 +177,8 @@ class BackdropArtwork extends StatelessWidget {
   Widget build(BuildContext context) {
     final poster = item.backdrop ?? item.poster;
     if (poster != null && poster.startsWith('http')) {
-      return Image.network(
-        poster,
+      return Image(
+        image: cinemaBackdropImage(poster),
         fit: BoxFit.cover,
         errorBuilder: (_, _, _) => _backdropFallback(),
         frameBuilder: (_, child, frame, _) =>

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../data/api_client.dart';
 import '../data/home_cache.dart';
 import '../data/local_store.dart';
+import '../data/download_manager.dart';
 import '../quark/quark_playback_service.dart';
 import 'app_settings.dart';
 
@@ -13,6 +14,7 @@ class AppServices {
     required this.store,
     required this.homeCache,
     required this.quark,
+    this.downloads,
   });
 
   final AppSettings settings;
@@ -20,14 +22,11 @@ class AppServices {
   final LocalStore store;
   final HomeCache homeCache;
   final QuarkPlaybackService quark;
+  final DownloadManager? downloads;
 }
 
 class AppScope extends InheritedWidget {
-  const AppScope({
-    super.key,
-    required this.services,
-    required super.child,
-  });
+  const AppScope({super.key, required this.services, required super.child});
 
   final AppServices services;
 

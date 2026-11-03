@@ -2,7 +2,7 @@ name: Build unsigned iOS IPA
 
 on:
   push:
-    branches: [codex/iphone-metadata-fast-transfer, codex/playback-capacity-buffering-fix]
+    branches: [codex/iphone-metadata-fast-transfer, codex/playback-capacity-buffering-fix, codex/immersive-native-cinema]
   workflow_dispatch:
     inputs:
       api_base:

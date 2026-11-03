@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,6 +8,9 @@ import '../core/app_scope.dart';
 import '../core/app_theme.dart';
 import '../quark/quark_login_screen.dart';
 import '../quark/quark_playback_service.dart';
+import '../widgets/cinema_surface.dart';
+import 'downloads_screen.dart';
+import 'library_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, required this.onServerChanged});
@@ -199,238 +204,231 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _copyLogPath() {
+  Future<void> _copyLog() async {
     final path = AppLog.filePath;
-    if (path.isEmpty) return;
-    Clipboard.setData(ClipboardData(text: path));
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('日志路径已复制。')));
+    if (path.isEmpty || !await File(path).exists()) return;
+    final text = await File(path).readAsString();
+    await Clipboard.setData(
+      ClipboardData(
+        text: text.length > 24000 ? text.substring(text.length - 24000) : text,
+      ),
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('最近的诊断日志已复制。')));
+    }
+  }
+
+  void _about() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '影院',
+                style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '0.4.0 · 原画随心看',
+                style: TextStyle(color: CinemaColors.muted),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                '播放与设备',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                '原生 libmpv / FFmpeg 播放。影片信息页可查看当前解码方式、视频掉帧及系统热状态。原画文件不会被转码，显示输出按屏幕像素匹配。',
+                style: TextStyle(height: 1.7, color: CinemaColors.muted),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                '隐私与本地数据',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                '夸克登录保存在系统安全存储。收藏、观看进度和下载保存在本机。诊断日志会过滤 Cookie、密码和私有地址。',
+                style: TextStyle(height: 1.7, color: CinemaColors.muted),
+              ),
+              const SizedBox(height: 18),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.copy_outlined),
+                title: const Text('复制最近诊断日志'),
+                subtitle: const Text('用于排查起播、卡顿和发热问题'),
+                onTap: AppLog.filePath.isEmpty ? null : _copyLog,
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.code_rounded),
+                title: const Text('开源组件许可'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => showLicensePage(
+                  context: context,
+                  applicationName: '影院',
+                  applicationVersion: '0.4.0',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
-    final wide = MediaQuery.sizeOf(context).width >= 900;
     return Scaffold(
-      appBar: wide
-          ? AppBar(
-              title: const Text(
-                '我的',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
-              ),
-              leading: const SizedBox(width: 52),
-              automaticallyImplyLeading: false,
-            )
-          : AppBar(title: const Text('我的')),
+      appBar: AppBar(
+        title: const Text('我的影院'),
+        automaticallyImplyLeading: false,
+      ),
       body: ListView(
-        padding: EdgeInsets.fromLTRB(wide ? 52 : 18, 10, wide ? 52 : 18, 30),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
         children: [
+          const Row(
+            children: [
+              CircleAvatar(
+                radius: 32,
+                backgroundColor: CinemaColors.elevatedHigh,
+                child: Icon(
+                  Icons.person_rounded,
+                  size: 36,
+                  color: CinemaColors.accent,
+                ),
+              ),
+              SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '影院观众',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                  ),
+                  SizedBox(height: 4),
+                  Text('好故事，慢慢看', style: TextStyle(color: CinemaColors.muted)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 26),
+          AnimatedBuilder(
+            animation: services.store,
+            builder: (context, _) => Row(
+              children: [
+                Expanded(
+                  child: _stat(
+                    '${services.store.favorites.length}',
+                    '我的收藏',
+                    () => _library(0),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _stat(
+                    '${services.store.history.length}',
+                    '观看记录',
+                    () => _library(1),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _stat(
+                    '${services.downloads?.jobs.length ?? 0}',
+                    '我的下载',
+                    _downloads,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 26),
           _SectionCard(
-            title: '账号与设备',
+            title: '播放账号',
             children: [
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(
-                  Icons.cloud_outlined,
-                  color: CinemaColors.muted,
-                ),
-                title: const Text('夸克账号'),
+                leading: const Icon(Icons.cloud_outlined),
+                title: const Text('夸克网盘'),
                 subtitle: Text(
-                  _hasQuark == true ? '已在本机连接 · 播放使用你的账号和流量' : '未连接 · 播放前需要授权',
+                  _hasQuark == true ? '已连接 · 会话仅保存在本机' : '连接后播放或下载原画',
                   style: const TextStyle(
-                    color: CinemaColors.muted,
                     fontSize: 12,
+                    color: CinemaColors.muted,
                   ),
                 ),
-                trailing: _hasQuark == true
-                    ? TextButton(
-                        onPressed: _logoutQuark,
-                        child: const Text('断开'),
-                      )
-                    : FilledButton(
-                        onPressed: _loginQuark,
-                        child: const Text('连接'),
-                      ),
+                trailing: FilledButton(
+                  onPressed: _hasQuark == true ? _validateQuark : _loginQuark,
+                  child: Text(_hasQuark == true ? '检查' : '连接'),
+                ),
               ),
-              if (_hasQuark == true) ...[
+              if (_accountMessage != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    _accountMessage!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: CinemaColors.muted,
+                    ),
+                  ),
+                ),
+              if (_hasQuark == true)
                 Row(
                   children: [
-                    OutlinedButton(
-                      onPressed: _validateQuark,
-                      child: const Text('检查会话'),
-                    ),
-                    const SizedBox(width: 10),
                     TextButton(
                       onPressed: _loginQuark,
                       child: const Text('重新登录'),
                     ),
-                  ],
-                ),
-                if (_accountMessage != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    _accountMessage!,
-                    style: const TextStyle(
-                      color: CinemaColors.muted,
-                      fontSize: 12,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ],
-              const Divider(height: 26),
-              const ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  Icons.devices_outlined,
-                  color: CinemaColors.muted,
-                ),
-                title: Text('跨设备接续'),
-                subtitle: Text(
-                  '未接入。当前观看进度只保存在本机；夸克登录不等于观看记录同步。',
-                  style: TextStyle(
-                    color: CinemaColors.faint,
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-                trailing: _StatusTag(text: '未完成'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _SectionCard(
-            title: '影视接口',
-            children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(
-                  Icons.dns_outlined,
-                  color: CinemaColors.muted,
-                ),
-                title: const Text('接口根地址'),
-                subtitle: SelectableText(
-                  services.settings.baseUrl,
-                  style: const TextStyle(
-                    color: CinemaColors.muted,
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                  ),
-                ),
-                trailing: TextButton(
-                  onPressed: _editServer,
-                  child: const Text('修改'),
-                ),
-              ),
-              if (services.settings.baseUrl.startsWith('http://'))
-                const Padding(
-                  padding: EdgeInsets.only(top: 6),
-                  child: Text(
-                    '当前为 HTTP 明文接口。只建议在可信局域网测试；正式部署请配置 HTTPS。',
-                    style: TextStyle(
-                      color: Color(0xFFD8A35F),
-                      fontSize: 11,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              const Divider(height: 26),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(
-                  Icons.cleaning_services_outlined,
-                  color: CinemaColors.muted,
-                ),
-                title: const Text('清理本应用临时文件'),
-                subtitle: const Text(
-                  '只处理本应用记录、由专用目录创建的文件；不删除用户原有文件。',
-                  style: TextStyle(
-                    color: CinemaColors.faint,
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-                trailing: TextButton(
-                  onPressed: _cleanupTemporaryFiles,
-                  child: const Text('清理'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _SectionCard(
-            title: '当前能力边界',
-            children: [
-              const _CapabilityRow(label: '首页、详情、搜索、片单、本地续播', status: '已实现'),
-              const _CapabilityRow(
-                label: '设备内夸克授权、专用目录转存、原生 libmpv 起播',
-                status: '代码已实现',
-              ),
-              const _CapabilityRow(
-                label: '内嵌音轨与字幕切换、倍速、比例、线路切换',
-                status: '代码已实现',
-              ),
-              const _CapabilityRow(
-                label: 'iPhone 真机 4K/HDR/功耗与真实账号闭环',
-                status: '未验证',
-              ),
-              const _CapabilityRow(
-                label: '在线字幕、截图/GIF/OCR、调色、均衡器、投屏',
-                status: '未实现',
-              ),
-              const _CapabilityRow(label: '观看记录和偏好跨设备同步', status: '未实现'),
-              const _CapabilityRow(
-                label: 'Android 手机 / Android TV / Windows 正式产物',
-                status: '未构建',
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _SectionCard(
-            title: '诊断',
-            children: [
-              const Text(
-                '应用日志不记录 Cookie、密码、私有播放地址或分享地址。',
-                style: TextStyle(
-                  color: CinemaColors.muted,
-                  fontSize: 12,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 10),
-              if (AppLog.filePath.isNotEmpty)
-                Row(
-                  children: [
-                    Expanded(
-                      child: SelectableText(
-                        AppLog.filePath,
-                        style: const TextStyle(
-                          color: CinemaColors.faint,
-                          fontFamily: 'monospace',
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: '复制日志路径',
-                      onPressed: _copyLogPath,
-                      icon: const Icon(Icons.copy_rounded, size: 18),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: _logoutQuark,
+                      child: const Text('断开连接'),
                     ),
                   ],
-                )
-              else
-                const Text(
-                  '日志文件尚未初始化。',
-                  style: TextStyle(color: CinemaColors.faint),
                 ),
-              const Divider(height: 26),
-              const Text(
-                '影院客户端 0.1.0+1\nFlutter 3.47.8 · media_kit 1.2.6 / libmpv',
-                style: TextStyle(
-                  color: CinemaColors.faint,
-                  fontSize: 11,
-                  height: 1.6,
-                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _SectionCard(
+            title: '偏好与存储',
+            children: [
+              _row(Icons.download_outlined, '下载管理', '保存原画，离线观看', _downloads),
+              const Divider(height: 1),
+              _row(
+                Icons.dns_outlined,
+                '影视接口',
+                services.settings.baseUrl,
+                _editServer,
+              ),
+              const Divider(height: 1),
+              _row(
+                Icons.cleaning_services_outlined,
+                '清理播放临时文件',
+                '清理本应用创建的网盘临时文件',
+                _cleanupTemporaryFiles,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _SectionCard(
+            title: '关于',
+            children: [
+              _row(
+                Icons.info_outline_rounded,
+                '关于影院',
+                '0.4.0 · 播放信息、隐私与组件许可',
+                _about,
               ),
             ],
           ),
@@ -438,89 +436,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  Widget _stat(String value, String label, VoidCallback onTap) => CinemaGlass(
+    radius: 22,
+    onTap: onTap,
+    padding: const EdgeInsets.symmetric(vertical: 20),
+    child: Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: CinemaColors.muted),
+        ),
+      ],
+    ),
+  );
+  Widget _row(
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap,
+  ) => ListTile(
+    contentPadding: EdgeInsets.zero,
+    leading: Icon(icon, color: CinemaColors.accent),
+    title: Text(title),
+    subtitle: Text(
+      subtitle,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(fontSize: 11, color: CinemaColors.muted),
+    ),
+    trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+    onTap: onTap,
+  );
+  void _library(int index) => Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => LibraryScreen(initialIndex: index)),
+  );
+  void _downloads() => Navigator.of(context)
+      .push(MaterialPageRoute<void>(builder: (_) => const DownloadsScreen()));
 }
 
 class _SectionCard extends StatelessWidget {
   const _SectionCard({required this.title, required this.children});
-
   final String title;
   final List<Widget> children;
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        color: CinemaColors.elevated,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: CinemaColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-          ...children,
-        ],
-      ),
-    );
-  }
-}
-
-class _CapabilityRow extends StatelessWidget {
-  const _CapabilityRow({required this.label, required this.status});
-
-  final String label;
-  final String status;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (status) {
-      '已实现' => const Color(0xFF7DD3A7),
-      '代码已实现' => const Color(0xFF8DB9E8),
-      '未验证' => const Color(0xFFE2B674),
-      '未实现' || '未构建' => CinemaColors.faint,
-      _ => CinemaColors.muted,
-    };
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 12.5, height: 1.4),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(status, style: TextStyle(fontSize: 11, color: color)),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusTag extends StatelessWidget {
-  const _StatusTag({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: const Color(0x1FFFFFFF),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(color: CinemaColors.faint, fontSize: 10),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => CinemaGlass(
+    radius: 24,
+    padding: const EdgeInsets.all(18),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        ...children,
+      ],
+    ),
+  );
 }

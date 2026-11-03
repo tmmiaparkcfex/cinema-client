@@ -73,34 +73,52 @@ class _AppShellState extends State<AppShell> {
         return Scaffold(
           backgroundColor: CinemaColors.background,
           body: IndexedStack(index: _index, children: pages),
-          bottomNavigationBar: NavigationBar(
-            height: 64,
-            backgroundColor: const Color(0xF20A0B0E),
-            indicatorColor: const Color(0x33E50914),
-            selectedIndex: _index,
-            onDestinationSelected: _select,
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home_rounded, color: Colors.white),
-                label: '首页',
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(32),
+                child: NavigationBar(
+                  height: 64,
+                  backgroundColor: CinemaColors.elevated,
+                  indicatorColor: CinemaColors.elevatedHigh,
+                  selectedIndex: _index,
+                  onDestinationSelected: _select,
+                  labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                  destinations: const [
+                    NavigationDestination(
+                      icon: Icon(Icons.home_outlined),
+                      selectedIcon: Icon(
+                        Icons.home_rounded,
+                        color: CinemaColors.accent,
+                      ),
+                      label: '首页',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.search_rounded),
+                      label: '搜索',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.bookmark_border_rounded),
+                      selectedIcon: Icon(
+                        Icons.bookmark_rounded,
+                        color: CinemaColors.accent,
+                      ),
+                      label: '我的片单',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.person_outline_rounded),
+                      selectedIcon: Icon(
+                        Icons.person_rounded,
+                        color: CinemaColors.accent,
+                      ),
+                      label: '我的',
+                    ),
+                  ],
+                ),
               ),
-              NavigationDestination(
-                icon: Icon(Icons.search_rounded),
-                label: '搜索',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.bookmark_border_rounded),
-                selectedIcon: Icon(Icons.bookmark_rounded, color: Colors.white),
-                label: '我的片单',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline_rounded),
-                selectedIcon: Icon(Icons.person_rounded, color: Colors.white),
-                label: '我的',
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -125,7 +143,7 @@ class _SideNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 206,
-      color: const Color(0xFF0A0B0E),
+      color: CinemaColors.elevated,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,7 +167,7 @@ class _SideNavigation extends StatelessWidget {
                 ),
                 child: Material(
                   color: i == index
-                      ? const Color(0x1AE50914)
+                      ? CinemaColors.elevatedHigh
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(7),
                   child: InkWell(
@@ -166,7 +184,7 @@ class _SideNavigation extends StatelessWidget {
                             _items[i].$1,
                             size: 21,
                             color: i == index
-                                ? Colors.white
+                                ? CinemaColors.accent
                                 : CinemaColors.muted,
                           ),
                           const SizedBox(width: 14),
@@ -174,7 +192,7 @@ class _SideNavigation extends StatelessWidget {
                             _items[i].$2,
                             style: TextStyle(
                               color: i == index
-                                  ? Colors.white
+                                  ? CinemaColors.accent
                                   : CinemaColors.muted,
                               fontWeight: i == index
                                   ? FontWeight.w700
@@ -203,7 +221,7 @@ class _SideNavigation extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.fromLTRB(24, 12, 24, 24),
               child: Text(
-                '0.2.1 · 内测版\n播放使用观看者自己的账号',
+                '影院 0.4.0\n每一部，都值得好好看',
                 style: TextStyle(
                   color: CinemaColors.faint,
                   fontSize: 10,

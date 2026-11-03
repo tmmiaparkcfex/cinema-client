@@ -358,6 +358,31 @@ class MediaResource {
     return parts.join(' · ');
   }
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'catalogKey': catalogKey,
+    'tier': tier,
+    'season': season,
+    'episode': episode,
+    'share': {'url': shareUrl, 'id': shareId, 'password': sharePassword},
+    'file': {
+      'id': fileId,
+      'parentId': parentId,
+      'name': fileName,
+      'path': filePath,
+      'sizeBytes': sizeBytes,
+    },
+    'video': {
+      'width': width,
+      'height': height,
+      'codec': codec,
+      'bitrate': bitrate,
+      'durationSeconds': durationSeconds,
+      'bitDepth': bitDepth,
+    },
+    'verification': {'level': verificationLevel},
+  };
+
   factory MediaResource.fromJson(Map<String, dynamic> json) {
     final share = _map(json['share']);
     final file = _map(json['file']);

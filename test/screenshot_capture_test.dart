@@ -10,6 +10,8 @@ import 'package:cinema_client/core/app_theme.dart';
 import 'package:cinema_client/data/api_client.dart';
 import 'package:cinema_client/data/home_cache.dart';
 import 'package:cinema_client/data/local_store.dart';
+import 'package:cinema_client/data/download_manager.dart';
+import 'package:cinema_client/screens/downloads_screen.dart';
 import 'package:cinema_client/quark/quark_account_store.dart';
 import 'package:cinema_client/quark/quark_playback_service.dart';
 import 'package:cinema_client/screens/app_shell.dart';
@@ -159,10 +161,19 @@ void main() {
       await iconLoader.load();
     });
 
-    final snapshot = jsonDecode(
-      File('test/fixtures/live_home_snapshot.json').readAsStringSync(),
-    ) as Map<String, dynamic>;
-    final feed = HomeFeed.fromJson(snapshot);
+    final titles = [
+      for (final path in [
+        'test/fixtures/metadata_tv_snapshot.json',
+        'test/fixtures/metadata_movie_snapshot.json',
+      ])
+        VodItem.fromDetailJson(
+          (jsonDecode(File(path).readAsStringSync())
+                  as Map<String, dynamic>)['item']
+              as Map<String, dynamic>,
+        ),
+    ];
+    final feed = HomeFeed(fourK: titles, latest: titles);
+    final snapshot = feed.toCacheJson();
 
     SharedPreferences.setMockInitialValues({
       'vod_api_base': 'http://127.0.0.1:8765',
@@ -184,6 +195,12 @@ void main() {
       api: api,
       store: LocalStore.load(prefs),
       homeCache: _MemoryHomeCache(),
+      downloads: DownloadManager(
+        prefs: prefs,
+        directory: Directory('unused'),
+        connect: (_, _) async =>
+            throw StateError('No transfer during UI render'),
+      ),
       quark: QuarkPlaybackService(
         accountStore: const QuarkAccountStore(),
         supportDirectory: Directory('unused'),
@@ -226,6 +243,24 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 300));
     await _save(tester, boundaryKey, 'home_rows_iphone_testrender.png');
+
+    await tester.tap(find.text('搜索').last);
+    await tester.pump(const Duration(milliseconds: 400));
+    await _save(tester, boundaryKey, 'search_iphone_testrender.png');
+    await tester.tap(find.text('我的片单').last);
+    await tester.pump(const Duration(milliseconds: 400));
+    await _save(tester, boundaryKey, 'library_iphone_testrender.png');
+    await tester.tap(find.text('我的').last);
+    await tester.pump(const Duration(milliseconds: 400));
+    await _save(tester, boundaryKey, 'profile_iphone_testrender.png');
+    final profileContext = tester.element(find.text('我的影院'));
+    Navigator.of(profileContext)
+        .push(MaterialPageRoute<void>(builder: (_) => const DownloadsScreen()));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 400));
+    await _save(tester, boundaryKey, 'downloads_iphone_testrender.png');
+    await tester.pumpWidget(const SizedBox.shrink());
+    services.downloads?.dispose();
 
     api.close();
     debugNetworkImageHttpClientProvider = null;
@@ -284,6 +319,12 @@ void main() {
       api: api,
       store: LocalStore.load(prefs),
       homeCache: _MemoryHomeCache(),
+      downloads: DownloadManager(
+        prefs: prefs,
+        directory: Directory('unused'),
+        connect: (_, _) async =>
+            throw StateError('No transfer during UI render'),
+      ),
       quark: QuarkPlaybackService(
         accountStore: const QuarkAccountStore(),
         supportDirectory: Directory('unused'),
@@ -390,6 +431,7 @@ void main() {
     );
     await tester.pump();
     await _save(tester, boundaryKey, 'player_controls_iphone_testrender.png');
+    services.downloads?.dispose();
     api.close();
     debugNetworkImageHttpClientProvider = null;
   }, skip: !_capture);

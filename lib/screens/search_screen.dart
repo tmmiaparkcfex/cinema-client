@@ -7,6 +7,7 @@ import '../core/app_theme.dart';
 import '../data/api_client.dart';
 import '../widgets/media_cards.dart';
 import 'detail_screen.dart';
+import 'catalog_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -50,6 +51,8 @@ class _SearchScreenState extends State<SearchScreen> {
     });
     try {
       final value = await AppScope.of(context).api.search(query, page: page);
+      if (!mounted || generation != _requestGeneration) return;
+      await AppScope.of(context).settings.rememberSearch(query);
       if (!mounted || generation != _requestGeneration) return;
       setState(() {
         final merged = uniqueTitles([..._items, ...value.items]);
@@ -171,10 +174,109 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
     if (!_searched) {
-      return const _SearchMessage(
-        icon: Icons.search_rounded,
-        title: '搜索你的影院',
-        message: '按作品名称搜索已核验的 4K 电影和电视剧。',
+      final settings = AppScope.of(context).settings;
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 30),
+        children: [
+          const Text(
+            '发现原画',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '从片名出发，找到下一部好故事。',
+            style: TextStyle(color: CinemaColors.muted),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              for (final kind in [MediaKind.movie, MediaKind.tv])
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: Card(
+                      elevation: 0,
+                      color: CinemaColors.elevated,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => CatalogScreen(
+                              kind: kind,
+                              title: kind == MediaKind.movie ? '电影片库' : '电视剧片库',
+                            ),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                kind == MediaKind.movie
+                                    ? Icons.movie_outlined
+                                    : Icons.tv_rounded,
+                                color: CinemaColors.accent,
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                kind == MediaKind.movie ? '电影' : '电视剧',
+                                style: const TextStyle(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              const Text(
+                                '浏览全部 →',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: CinemaColors.muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 30),
+          if (settings.searchHistory.isNotEmpty) ...[
+            Row(
+              children: [
+                const Text(
+                  '最近搜索',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () async {
+                    await settings.clearSearchHistory();
+                    if (mounted) setState(() {});
+                  },
+                  child: const Text('清空'),
+                ),
+              ],
+            ),
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              children: [
+                for (final query in settings.searchHistory)
+                  ActionChip(
+                    label: Text(query),
+                    onPressed: () {
+                      _controller.text = query;
+                      _search();
+                    },
+                  ),
+              ],
+            ),
+          ],
+        ],
       );
     }
     if (_items.isEmpty) {

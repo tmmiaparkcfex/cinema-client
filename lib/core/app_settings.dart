@@ -15,12 +15,30 @@ class AppSettings extends ChangeNotifier {
   String _baseUrl;
 
   String get baseUrl => _baseUrl;
+  List<String> get searchHistory =>
+      _prefs.getStringList('cinema_search_history') ?? const [];
+
+  Future<void> rememberSearch(String query) async {
+    final value = query.trim();
+    if (value.isEmpty) return;
+    await _prefs.setStringList(
+      'cinema_search_history',
+      [value, ...searchHistory.where((e) => e != value)].take(12).toList(),
+    );
+  }
+
+  Future<void> clearSearchHistory() async {
+    await _prefs.remove('cinema_search_history');
+    notifyListeners();
+  }
 
   static AppSettings load(SharedPreferences prefs) {
     final stored = prefs.getString(_baseKey)?.trim();
     return AppSettings._(
       prefs,
-      normalizeApiBase(stored == null || stored.isEmpty ? defaultVodApiBase : stored) ??
+      normalizeApiBase(
+            stored == null || stored.isEmpty ? defaultVodApiBase : stored,
+          ) ??
           defaultVodApiBase,
     );
   }

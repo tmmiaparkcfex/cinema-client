@@ -98,6 +98,18 @@ void main() {
   });
 
   test(
+    'paused playback does not start video requests and resumes byte exact',
+    () async {
+      source.setPaused(true);
+      final response = http.get(source.uri, headers: {'Range': 'bytes=0-127'});
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(ranges, isEmpty);
+      source.setPaused(false);
+      expect((await response).bodyBytes, bytes.sublist(0, 128));
+    },
+  );
+
+  test(
     'unpredictable local path is required and closing releases the listener',
     () async {
       final missing = await http.get(source.uri.replace(path: '/media'));

@@ -9,6 +9,8 @@ import '../core/media_metadata.dart';
 import '../data/api_client.dart';
 import '../player/playback_screen.dart';
 import '../widgets/poster_artwork.dart';
+import '../widgets/cinema_surface.dart';
+import 'downloads_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   const DetailScreen({super.key, required this.item, this.autoPlay = false});
@@ -29,13 +31,17 @@ class _DetailScreenState extends State<DetailScreen> {
   int? _season;
   bool _autoPlayHandled = false;
   bool _expandedOverview = false;
+  int _episodeGroup = 0;
   int _loadGeneration = 0;
   Future<VodDetail>? _detailsUpdate;
   final _loadedEpisodeKeys = <String>{};
 
   Future<void> _selectSeason(int? season) async {
     if (season == null) return;
-    setState(() => _season = season);
+    setState(() {
+      _season = season;
+      _episodeGroup = 0;
+    });
     final key = _episodes.firstOrNull?.resource?.catalogKey ?? '';
     if (key.isEmpty ||
         key == _detail?.item.key ||
@@ -239,13 +245,95 @@ class _DetailScreenState extends State<DetailScreen> {
     await AppScope.of(context).store.toggleFavorite(detail.item);
   }
 
+  Future<void> _download() async {
+    final detail = _detail;
+    final manager = AppScope.of(context).downloads;
+    if (detail == null || manager == null) return;
+    final choices = _episodes;
+    if (choices.isEmpty) return;
+    final choice = await showModalBottomSheet<EpisodeChoice>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.65,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child: Text(
+                  '选择原画文件',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: choices.length,
+                  itemBuilder: (context, index) {
+                    final choice = choices[index];
+                    return ListTile(
+                      title: Text(choice.episodeLabel),
+                      subtitle: Text(
+                        choice.resource?.technicalSummary ?? '文件信息待补齐',
+                      ),
+                      trailing: const Icon(Icons.download_rounded),
+                      onTap: choice.resource == null
+                          ? null
+                          : () => Navigator.pop(context, choice),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (choice?.resource == null || !mounted) return;
+    try {
+      await manager.enqueue(
+        detail.item,
+        choice!.resource!,
+        choice.episodeLabel,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('已加入下载队列'),
+          action: SnackBarAction(
+            label: '查看',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const DownloadsScreen()),
+            ),
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('文件信息不完整，暂时无法下载。')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final item = _detail?.item ?? widget.item;
+    return PosterSurface(
+      imageUrl: item.backdrop?.isNotEmpty == true ? item.backdrop : item.poster,
+      child: Builder(builder: _buildDetail),
+    );
+  }
+
+  Widget _buildDetail(BuildContext context) {
     final detail = _detail;
     final services = AppScope.of(context);
     final screenWidth = MediaQuery.sizeOf(context).width;
     final horizontal = screenWidth >= 900 ? 56.0 : 18.0;
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -267,7 +355,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           children: [
                             _Hero(
                               item: detail.item,
-                              height: screenWidth >= 900 ? 430 : 350,
+                              height: screenWidth >= 900 ? 530 : 470,
                             ),
                             Positioned(
                               left: 0,
@@ -298,8 +386,8 @@ class _DetailScreenState extends State<DetailScreen> {
                                               .isFavoriteItem(detail.item);
                                           return _RoundButton(
                                             icon: favorite
-                                                ? Icons.check_rounded
-                                                : Icons.add_rounded,
+                                                ? Icons.favorite_rounded
+                                                : Icons.favorite_border_rounded,
                                             tooltip: favorite ? '已在片单' : '加入片单',
                                             onTap: _toggleFavorite,
                                           );
@@ -462,8 +550,8 @@ class _DetailScreenState extends State<DetailScreen> {
             child: FilledButton.icon(
               onPressed: detail.playableLines.isEmpty ? null : _playDefault,
               style: FilledButton.styleFrom(
-                backgroundColor: CinemaColors.accent,
-                foregroundColor: Colors.white,
+                backgroundColor: Colors.white,
+                foregroundColor: CinemaColors.text,
               ),
               icon: const Icon(Icons.play_arrow_rounded, size: 25),
               label: Text(
@@ -486,13 +574,23 @@ class _DetailScreenState extends State<DetailScreen> {
                 onPressed: _toggleFavorite,
                 tooltip: favorite ? '从片单移除' : '加入片单',
                 icon: Icon(
-                  favorite ? Icons.check_rounded : Icons.add_rounded,
+                  favorite
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
                   size: 20,
                 ),
               );
             },
           ),
         ),
+        if (AppScope.of(context).downloads != null) ...[
+          const SizedBox(width: 8),
+          IconButton.outlined(
+            tooltip: '下载原画',
+            onPressed: _download,
+            icon: const Icon(Icons.download_rounded),
+          ),
+        ],
       ],
     );
   }
@@ -676,6 +774,8 @@ class _DetailScreenState extends State<DetailScreen> {
     }
     final seasons = EpisodeChoice.seasonsForLine(line);
     final episodes = _episodes;
+    final groupCount = (episodes.length / 5).ceil();
+    final group = _episodeGroup.clamp(0, groupCount > 0 ? groupCount - 1 : 0);
     final record = AppScope.of(context).store.recordForItem(detail.item);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -687,6 +787,39 @@ class _DetailScreenState extends State<DetailScreen> {
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
             ),
             const Spacer(),
+            TextButton(
+              onPressed: () => showModalBottomSheet<void>(
+                context: context,
+                showDragHandle: true,
+                isScrollControlled: true,
+                builder: (context) => SafeArea(
+                  child: SizedBox(
+                    height: MediaQuery.sizeOf(context).height * 0.7,
+                    child: ListView.separated(
+                      padding: const EdgeInsets.all(18),
+                      itemCount: episodes.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final choice = episodes[index];
+                        return _EpisodeTile(
+                          choice: choice,
+                          info: detail.item.metadata.episode(
+                            choice.season ?? 1,
+                            choice.episode ?? 0,
+                          ),
+                          selected: record?.resourceId == choice.resource?.id,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _play(choice);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              child: const Text('全部'),
+            ),
             if (seasons.length > 1)
               DropdownButton<int>(
                 value: _season ?? seasons.first,
@@ -701,32 +834,46 @@ class _DetailScreenState extends State<DetailScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final columns = constraints.maxWidth >= 760 ? 2 : 1;
-            final width = columns == 1
-                ? constraints.maxWidth
-                : (constraints.maxWidth - 12) / 2;
-            return Wrap(
-              spacing: 12,
-              runSpacing: 10,
+        if (groupCount > 1) ...[
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
               children: [
-                for (final choice in episodes)
-                  SizedBox(
-                    width: width,
-                    child: _EpisodeTile(
-                      choice: choice,
-                      info: detail.item.metadata.episode(
-                        choice.season ?? 1,
-                        choice.episode ?? 0,
-                      ),
-                      selected: record?.resourceId == choice.resource?.id,
-                      onTap: () => _play(choice),
+                for (var i = 0; i < groupCount; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _ChoicePill(
+                      label:
+                          '${i * 5 + 1}–${((i + 1) * 5).clamp(1, episodes.length)}',
+                      selected: group == i,
+                      onTap: () => setState(() => _episodeGroup = i),
                     ),
                   ),
               ],
-            );
-          },
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        SizedBox(
+          height: 254,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: episodes.skip(group * 5).take(5).length,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final choice = episodes[group * 5 + index];
+              final info = detail.item.metadata.episode(
+                choice.season ?? 1,
+                choice.episode ?? 0,
+              );
+              return _EpisodeCard(
+                choice: choice,
+                info: info,
+                selected: record?.resourceId == choice.resource?.id,
+                onTap: () => _play(choice),
+              );
+            },
+          ),
         ),
       ],
     );
@@ -773,26 +920,17 @@ class _Hero extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           BackdropArtwork(item: item),
-          const DecoratedBox(
+          DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xAA07080B),
-                  Color(0x2207080B),
-                  Color(0xFF07080B),
+                  const Color(0x10000000),
+                  Colors.transparent,
+                  PosterTone.of(context),
                 ],
-                stops: [0, 0.48, 1],
-              ),
-            ),
-          ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [Color(0xAA07080B), Colors.transparent],
+                stops: const [0, 0.40, 1],
               ),
             ),
           ),
@@ -866,6 +1004,96 @@ Widget _photoPlaceholder(IconData icon) => ColoredBox(
   child: Icon(icon, color: CinemaColors.faint),
 );
 
+class _EpisodeCard extends StatelessWidget {
+  const _EpisodeCard({
+    required this.choice,
+    required this.selected,
+    required this.onTap,
+    this.info,
+  });
+  final EpisodeChoice choice;
+  final bool selected;
+  final VoidCallback onTap;
+  final EpisodeInfo? info;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 258,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: SizedBox(
+              height: 145,
+              width: 258,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (info?.still.isNotEmpty == true)
+                    Image.network(
+                      info!.still,
+                      fit: BoxFit.cover,
+                      cacheWidth: 600,
+                      errorBuilder: (_, _, _) =>
+                          _photoPlaceholder(Icons.movie_outlined),
+                    )
+                  else
+                    _photoPlaceholder(Icons.movie_outlined),
+                  if (selected)
+                    Positioned(
+                      left: 10,
+                      bottom: 10,
+                      child: CinemaGlass(
+                        radius: 12,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        child: const Text(
+                          '上次观看',
+                          style: TextStyle(fontSize: 11),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '${choice.episodeLabel}${info?.name.isNotEmpty == true ? ' · ${info!.name}' : ''}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            info?.overview.isNotEmpty == true
+                ? info!.overview
+                : choice.resource?.technicalSummary ?? '',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              height: 1.5,
+              color: CinemaColors.muted,
+            ),
+          ),
+          if (info?.runtimeMinutes != null && info!.runtimeMinutes > 0)
+            Text(
+              '${info!.runtimeMinutes} 分钟',
+              style: const TextStyle(fontSize: 11, color: CinemaColors.faint),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _EpisodeTile extends StatelessWidget {
   const _EpisodeTile({
     required this.choice,
@@ -883,7 +1111,7 @@ class _EpisodeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final resource = choice.resource;
     return Material(
-      color: selected ? const Color(0xFF142339) : CinemaColors.elevated,
+      color: selected ? const Color(0xFFE2D3C6) : CinemaColors.elevated,
       borderRadius: BorderRadius.circular(8),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -931,7 +1159,7 @@ class _EpisodeTile extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: selected
                         ? CinemaColors.accent
-                        : const Color(0xFF252A34),
+                        : CinemaColors.elevatedHigh,
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: Icon(
@@ -1025,7 +1253,7 @@ class _RoundButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0x77000000),
+      color: const Color(0xBBFFFFFF),
       shape: const CircleBorder(),
       child: IconButton(
         tooltip: tooltip,

@@ -7,6 +7,7 @@ import '../core/app_theme.dart';
 import '../data/api_client.dart';
 import '../widgets/media_cards.dart';
 import '../widgets/poster_artwork.dart';
+import '../widgets/cinema_surface.dart';
 import 'catalog_screen.dart';
 import 'detail_screen.dart';
 
@@ -31,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ApiException? _error;
   bool _loading = false;
   MediaKind? _filter;
+  int _featuredIndex = 0;
 
   @override
   void initState() {
@@ -180,15 +182,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final all = _filteredAll;
+    final hero = all.isEmpty
+        ? null
+        : all[_featuredIndex.clamp(0, all.take(5).length - 1)];
+    return PosterSurface(
+      imageUrl: hero?.backdrop?.isNotEmpty == true
+          ? hero!.backdrop
+          : hero?.poster,
+      child: Builder(builder: _buildHome),
+    );
+  }
+
+  Widget _buildHome(BuildContext context) {
     final services = AppScope.of(context);
     final all = _filteredAll;
-    final hero = all.isEmpty ? null : all.first;
+    final featured = all.take(5).toList();
+    final hero = featured.isEmpty
+        ? null
+        : featured[_featuredIndex.clamp(0, featured.length - 1)];
     final mediaSize = MediaQuery.sizeOf(context);
     final width = mediaSize.width;
     final wide = width >= 900;
     final heroHeight = wide ? 590.0 : (mediaSize.height < 700 ? 450.0 : 525.0);
     return Scaffold(
-      backgroundColor: CinemaColors.background,
+      backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         color: CinemaColors.accent,
         backgroundColor: CinemaColors.elevated,
@@ -205,27 +223,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          BackdropArtwork(item: hero),
-                          const DecoratedBox(
+                          PageView.builder(
+                            key: ValueKey(_filter),
+                            itemCount: featured.length,
+                            onPageChanged: (index) =>
+                                setState(() => _featuredIndex = index),
+                            itemBuilder: (_, index) =>
+                                BackdropArtwork(item: featured[index]),
+                          ),
+                          DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
                                 colors: [
-                                  Color(0xB307080B),
-                                  Color(0x2207080B),
-                                  CinemaColors.background,
+                                  const Color(0x18000000),
+                                  Colors.transparent,
+                                  PosterTone.of(context),
+                                  PosterTone.of(context),
                                 ],
-                                stops: [0, 0.45, 1],
-                              ),
-                            ),
-                          ),
-                          const DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                colors: [Color(0x9907080B), Colors.transparent],
+                                stops: const [0, 0.28, 0.66, 1],
                               ),
                             ),
                           ),
@@ -262,30 +279,41 @@ class _HomeScreenState extends State<HomeScreen> {
                           if (wide) const _SideBrand(),
                           if (!wide)
                             const Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.only(left: 8),
-                                child: Text(
-                                  '影院',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: -0.6,
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: CinemaGlass(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  child: Text(
+                                    '影院',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.6,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           const Spacer(),
-                          IconButton(
-                            tooltip: '搜索',
-                            onPressed: widget.onOpenSearch,
-                            icon: const Icon(Icons.search_rounded, size: 25),
+                          CinemaGlass(
+                            child: IconButton(
+                              tooltip: '搜索',
+                              onPressed: widget.onOpenSearch,
+                              icon: const Icon(Icons.search_rounded, size: 25),
+                            ),
                           ),
-                          IconButton(
-                            tooltip: '我的',
-                            onPressed: widget.onOpenProfile,
-                            icon: const Icon(
-                              Icons.person_outline_rounded,
-                              size: 24,
+                          const SizedBox(width: 8),
+                          CinemaGlass(
+                            child: IconButton(
+                              tooltip: '我的',
+                              onPressed: widget.onOpenProfile,
+                              icon: const Icon(
+                                Icons.person_outline_rounded,
+                                size: 24,
+                              ),
                             ),
                           ),
                         ],
@@ -308,19 +336,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     _FilterChip(
                       label: '精选',
                       selected: _filter == null,
-                      onTap: () => setState(() => _filter = null),
+                      onTap: () => setState(() {
+                        _filter = null;
+                        _featuredIndex = 0;
+                      }),
                     ),
                     const SizedBox(width: 8),
                     _FilterChip(
                       label: '电影',
                       selected: _filter == MediaKind.movie,
-                      onTap: () => setState(() => _filter = MediaKind.movie),
+                      onTap: () => setState(() {
+                        _filter = MediaKind.movie;
+                        _featuredIndex = 0;
+                      }),
                     ),
                     const SizedBox(width: 8),
                     _FilterChip(
                       label: '电视剧',
                       selected: _filter == MediaKind.tv,
-                      onTap: () => setState(() => _filter = MediaKind.tv),
+                      onTap: () => setState(() {
+                        _filter = MediaKind.tv;
+                        _featuredIndex = 0;
+                      }),
                     ),
                     const Spacer(),
                     if (_error != null)
@@ -349,7 +386,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF291416),
+                      color: const Color(0xFFF7E5DF),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -360,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ? _error!.userMessage
                                 : '${_error!.userMessage} 正在显示上次缓存。',
                             style: const TextStyle(
-                              color: Color(0xFFFFB9B9),
+                              color: Color(0xFF864332),
                               fontSize: 12,
                               height: 1.45,
                             ),
@@ -461,10 +498,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (hero.score.isNotEmpty) '评分 ${hero.score}',
     ];
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
         Wrap(
+          alignment: WrapAlignment.center,
           spacing: 8,
           runSpacing: 5,
           children: [for (final value in meta) _MetaLabel(value)],
@@ -472,6 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 10),
         Text(
           hero.name,
+          textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
@@ -479,23 +518,42 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 1.06,
             fontWeight: FontWeight.w900,
             letterSpacing: -1.2,
-            shadows: const [Shadow(color: Colors.black87, blurRadius: 14)],
           ),
         ),
         const SizedBox(height: 12),
         if (hero.overview.isNotEmpty)
           Text(
             hero.overview,
+            textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Color(0xFFDDDFE5),
+              color: CinemaColors.muted,
               fontSize: 14,
               height: 1.6,
             ),
           ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = 0; i < _filteredAll.take(5).length; i++)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                height: 4,
+                width: i == _featuredIndex ? 19 : 5,
+                decoration: BoxDecoration(
+                  color: i == _featuredIndex
+                      ? CinemaColors.accent
+                      : const Color(0x4474665D),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 14),
         Wrap(
+          alignment: WrapAlignment.center,
           spacing: 10,
           runSpacing: 10,
           children: [
@@ -521,10 +579,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   return OutlinedButton.icon(
                     onPressed: () => services.store.toggleFavorite(hero),
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0x44000000),
+                      backgroundColor: const Color(0x88FFFFFF),
                     ),
                     icon: Icon(
-                      favorite ? Icons.check_rounded : Icons.add_rounded,
+                      favorite
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
                       size: 20,
                     ),
                     label: Text(favorite ? '已加入片单' : '我的片单'),
@@ -671,10 +731,10 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: selected ? Colors.white : const Color(0x66171A20),
+          color: selected ? Colors.white : const Color(0x66FFFFFF),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: selected ? Colors.white : const Color(0x333F4653),
+            color: selected ? Colors.white : const Color(0x4474665D),
           ),
         ),
         child: Text(
@@ -700,13 +760,12 @@ class _MetaLabel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0x44000000),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: const Color(0x33FFFFFF)),
+        color: const Color(0x66FFFFFF),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 11, color: Color(0xFFE5E7EB)),
+        style: const TextStyle(fontSize: 11, color: CinemaColors.muted),
       ),
     );
   }
