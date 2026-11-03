@@ -27,6 +27,21 @@ final class CinemaDeviceVitals: NSObject, FlutterPlugin {
   }
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    if call.method == "excludeDownloadsFromBackup" {
+      // Large offline media belongs to this app but must not fill iCloud backups.
+      do {
+        var folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+          .appendingPathComponent("downloads", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try folder.setResourceValues(values)
+        result(nil)
+      } catch {
+        result(FlutterError(code: "download_storage", message: "Unable to configure offline media storage", details: nil))
+      }
+      return
+    }
     guard call.method == "read" else {
       result(FlutterMethodNotImplemented)
       return

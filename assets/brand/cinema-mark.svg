@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<rect width="1024" height="1024" fill="#F3F0EC"/>
+<rect x="192" y="246" width="640" height="532" rx="100" fill="#765440"/>
+<rect x="238" y="339" width="548" height="346" rx="45" fill="#F3F0EC"/>
+<path d="M448 408 L448 616 L620 512 Z" fill="#765440"/>
+<rect x="272" y="284" width="64" height="18" rx="7" fill="#F3F0EC"/>
+<rect x="376" y="284" width="64" height="18" rx="7" fill="#F3F0EC"/>
+<rect x="480" y="284" width="64" height="18" rx="7" fill="#F3F0EC"/>
+<rect x="584" y="284" width="64" height="18" rx="7" fill="#F3F0EC"/>
+<rect x="688" y="284" width="64" height="18" rx="7" fill="#F3F0EC"/>
+<rect x="272" y="722" width="64" height="18" rx="7" fill="#F3F0EC"/>
+<rect x="376" y="722" width="64" height="18" rx="7" fill="#F3F0EC"/>
+<rect x="480" y="722" width="64" height="18" rx="7" fill="#F3F0EC"/>
+<rect x="584" y="722" width="64" height="18" rx="7" fill="#F3F0EC"/>
+<rect x="688" y="722" width="64" height="18" rx="7" fill="#F3F0EC"/>
+</svg>

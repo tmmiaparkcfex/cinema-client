@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,6 +59,14 @@ Future<void> main() async {
     },
   );
   await downloads.restore();
+  if (Platform.isIOS) {
+    try {
+      await const MethodChannel('cinema/device_vitals')
+          .invokeMethod<void>('excludeDownloadsFromBackup');
+    } catch (error) {
+      AppLog.error('download-storage', error.runtimeType);
+    }
+  }
 
   HomeFeed? initialHome;
   try {
