@@ -19,7 +19,9 @@ class RunnerTests: XCTestCase {
     let store = WKWebsiteDataStore.default().httpCookieStore
     let stored = expectation(description: "Fixture stored in WK cookie store")
     store.setCookie(cookie) { stored.fulfill() }
-    wait(for: [stored], timeout: 15)
+    // A cold hosted simulator can take >15s just to launch WebKit's network
+    // process. Keep the fixture and plugin assertions, allow that startup time.
+    wait(for: [stored], timeout: 60)
 
     let captured = expectation(description: "Plugin reads HttpOnly cookie on both hosts")
     captured.expectedFulfillmentCount = 2
@@ -39,3 +41,4 @@ class RunnerTests: XCTestCase {
   }
 
 }
+
