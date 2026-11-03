@@ -48,11 +48,11 @@ class _PosterSurfaceState extends State<PosterSurface> {
   }
 
   void _detach() {
-    if (_stream != null && _listener != null) {
-      _stream!.removeListener(_listener!);
-    }
+    final stream = _stream;
+    final listener = _listener;
     _stream = null;
     _listener = null;
+    if (stream != null && listener != null) stream.removeListener(listener);
   }
 
   void _readArtwork() {
@@ -72,7 +72,7 @@ class _PosterSurfaceState extends State<PosterSurface> {
     late ImageStreamListener listener;
     listener = ImageStreamListener(
       (info, synchronous) async {
-        stream.removeListener(listener);
+        if (identical(_stream, stream) && identical(_listener, listener)) _detach();
         Color? tone;
         try {
           tone = await _imageTone(info.image);
@@ -87,7 +87,7 @@ class _PosterSurfaceState extends State<PosterSurface> {
         setState(() => _tone = tone!);
       },
       onError: (Object error, StackTrace? stack) {
-        stream.removeListener(listener);
+        if (identical(_stream, stream) && identical(_listener, listener)) _detach();
       },
     );
     _stream = stream;

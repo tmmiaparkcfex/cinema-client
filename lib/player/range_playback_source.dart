@@ -10,13 +10,13 @@ class RangePlaybackSource {
     _client
       ..autoUncompress = false
       ..connectionTimeout = const Duration(seconds: 12)
-      ..maxConnectionsPerHost = 2;
+      ..maxConnectionsPerHost = 4;
     _server.autoCompress = false;
     _server.listen((request) => unawaited(_serve(request)));
   }
 
   static const _partSize = 1024 * 1024;
-  static const _window = 2;
+  static const _window = 4;
   final Uri _uri;
   final Map<String, String> _headers;
   final int _length;

@@ -52,7 +52,7 @@ class _AppShellState extends State<AppShell> {
             onOpenSearch: () => _select(1),
             onOpenProfile: () => _select(3),
           ),
-          const SearchScreen(),
+          SearchScreen(key: ValueKey('search-$_homeGeneration')),
           const LibraryScreen(),
           ProfileScreen(onServerChanged: _serverChanged),
         ];

@@ -476,8 +476,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _library(int index) => Navigator.of(context).push(
     MaterialPageRoute<void>(builder: (_) => LibraryScreen(initialIndex: index)),
   );
-  void _downloads() => Navigator.of(context)
-      .push(MaterialPageRoute<void>(builder: (_) => const DownloadsScreen()));
+  Future<void> _downloads() async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DownloadsScreen()));
+    if (mounted) setState(() {});
+  }
 }
 
 class _SectionCard extends StatelessWidget {
