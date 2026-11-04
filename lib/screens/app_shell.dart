@@ -102,11 +102,15 @@ class _AppShellState extends State<AppShell> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              [
-                                CupertinoIcons.house,
-                                CupertinoIcons.square_grid_2x2,
-                                CupertinoIcons.person,
-                              ][i],
+                          (_index == i ? [
+                            CupertinoIcons.house_fill,
+                            CupertinoIcons.square_grid_2x2_fill,
+                            CupertinoIcons.person_fill,
+                          ] : [
+                            CupertinoIcons.house,
+                            CupertinoIcons.square_grid_2x2,
+                            CupertinoIcons.person,
+                          ])[i],
                               size: 23,
                               color: _index == i
                                   ? CinemaColors.accent

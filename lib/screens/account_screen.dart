@@ -54,6 +54,7 @@ class _AccountScreenState extends State<AccountScreen> {
           ? TextInputType.visiblePassword
           : TextInputType.number,
       obscureText: password && _obscured,
+      onChanged: (_) => setState(() {}),
       maxLength: code ? 6 : null,
       decoration: InputDecoration(
         hintText: hint,
@@ -202,7 +203,13 @@ class _AccountScreenState extends State<AccountScreen> {
                                 backgroundColor: Colors.white,
                                 foregroundColor: CinemaColors.accent,
                               ),
-                              onPressed: _unavailable,
+                              onPressed:
+                                  page == AccountPage.phone &&
+                                      (!_agreed ||
+                                          !RegExp(r'^1[0-9]{10}$')
+                                              .hasMatch(_phone.text))
+                                  ? null
+                                  : _unavailable,
                               child: Text(
                                 page == AccountPage.phone
                                     ? '获取验证码'

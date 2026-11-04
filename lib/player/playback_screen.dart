@@ -799,6 +799,8 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     bool isScrollControlled = false,
     bool dark = false,
   }) async {
+    _hideControlsTimer?.cancel();
+    _setStateIfMounted(() => _controlsVisible = false);
     final width = MediaQuery.sizeOf(context).width;
     if (width < 650) {
       await showModalBottomSheet<void>(

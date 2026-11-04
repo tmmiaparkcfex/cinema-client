@@ -36,6 +36,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
   bool _loadingMore = false;
   int _page = 1;
   int _pageCount = 1;
+  int _requestGeneration = 0;
   String? _genre;
   int? _year;
   bool _sortByYear = false;
@@ -66,13 +67,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   Future<void> _loadFirst() async {
+    final generation = ++_requestGeneration;
     setState(() {
       _loading = true;
+      _loadingMore = false;
       _error = null;
     });
     try {
       final value = await AppScope.of(context).api.fetchList(_kind, page: 1);
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
         _items
           ..clear()
@@ -82,14 +85,14 @@ class _CatalogScreenState extends State<CatalogScreen> {
         _loading = false;
       });
     } on ApiException catch (error) {
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
         _error = error;
         _loading = false;
       });
     } catch (error) {
       AppLog.error('catalog', error);
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
         _error = ApiException(
           ApiFailureKind.protocol,
@@ -103,11 +106,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   Future<void> _loadMore() async {
     if (_loadingMore || _page >= _pageCount) return;
+    final generation = _requestGeneration;
     setState(() => _loadingMore = true);
     try {
       final value = await AppScope.of(context).api
           .fetchList(_kind, page: _page + 1);
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
         final merged = uniqueTitles([..._items, ...value.items]);
         _items
@@ -118,7 +122,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
         _loadingMore = false;
       });
     } on ApiException catch (error) {
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() => _loadingMore = false);
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(error.userMessage)));

@@ -14,6 +14,7 @@ import 'package:cinema_client/quark/quark_playback_service.dart';
 import 'package:cinema_client/screens/app_shell.dart';
 import 'package:cinema_client/screens/detail_screen.dart';
 import 'package:cinema_client/screens/home_screen.dart';
+import 'package:cinema_client/screens/catalog_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -35,6 +36,79 @@ class _MemoryHomeCache extends HomeCache {
 
 void main() {
   setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+  testWidgets('late movie pagination cannot contaminate the TV category', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final settings = AppSettings.load(prefs);
+    final latePage = Completer<http.Response>();
+    http.Response response(String kind, String title, int page) =>
+        http.Response.bytes(
+          utf8.encode(
+            jsonEncode({
+              'items': [
+                {'key': '$kind-$page', 'name': title, 'mediaType': kind},
+              ],
+              'page': page,
+              'pagecount': kind == 'movie' ? 2 : 1,
+            }),
+          ),
+          200,
+        );
+    final api = VodApi(
+      settings: settings,
+      client: MockClient((request) async {
+        final kind = request.url.queryParameters['type']!;
+        final page = request.url.queryParameters['pg'];
+        if (kind == 'movie' && page == '2') return latePage.future;
+        return response(kind, kind == 'tv' ? '电视剧结果' : '电影首页结果', 1);
+      }),
+    );
+    final services = AppServices(
+      settings: settings,
+      api: api,
+      store: LocalStore.load(prefs),
+      homeCache: _MemoryHomeCache(),
+      quark: QuarkPlaybackService(
+        accountStore: const QuarkAccountStore(),
+        supportDirectory: Directory('unused'),
+      ),
+    );
+    await tester.pumpWidget(
+      AppScope(
+        services: services,
+        child: MaterialApp(
+          theme: buildCinemaTheme(),
+          home: CatalogScreen(
+            kind: MediaKind.movie,
+            title: '片库',
+            embedded: true,
+            onSearch: () {},
+            onMore: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('加载更多'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('加载更多'));
+    await tester.pump();
+    await tester.tap(find.text('电视剧').first);
+    await tester.pumpAndSettle();
+    expect(find.text('电视剧结果'), findsWidgets);
+    latePage.complete(response('movie', '迟到的电影结果', 2));
+    await tester.pumpAndSettle();
+    expect(find.text('迟到的电影结果'), findsNothing);
+    expect(find.text('电视剧结果'), findsWidgets);
+    await tester.pumpWidget(const SizedBox.shrink());
+    api.close();
+    services.quark.close();
+  });
   for (final warm in [true, false]) {
     testWidgets(
       'playback authentication starts before slow metadata finishes (warm=$warm)',
