@@ -9,12 +9,12 @@ final class ProbeTests: XCTestCase {
         try XCTUnwrap(Bundle.main.url(forResource: name, withExtension: "mkv"))
     }
 
-    private func eventually(_ message: String, seconds: Double = 30, _ condition: () -> Bool) async throws {
+    private func eventually(_ message: @autoclosure () -> String, seconds: Double = 30, _ condition: () -> Bool) async throws {
         let deadline = Date().addingTimeInterval(seconds)
         while !condition() {
             if Date() > deadline {
-                XCTFail(message)
-                throw NSError(domain: "ProbeTestTimeout", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
+                XCTFail(message())
+                throw NSError(domain: "ProbeTestTimeout", code: 1, userInfo: [NSLocalizedDescriptionKey: message()])
             }
             try await Task.sleep(for: .milliseconds(100))
         }
@@ -23,17 +23,33 @@ final class ProbeTests: XCTestCase {
     private func withPlayer(_ body: (MPVPlayer) async throws -> Void) async throws {
         let player = MPVPlayer(configuration: .init(autoPlay: false))
         player.setDiagnosticsEnabled(true)
-        let controller = UIHostingController(rootView: MPVVideoPlayer(player: player))
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 220))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first {
+            $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive
+        })
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let surface = MPVPlatformVideoPlayer(player: player)
+        let controller = UIViewController()
+        controller.view = surface
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 220)
         window.rootViewController = controller
         window.makeKeyAndVisible()
-        defer { player.stop(); window.isHidden = true; window.rootViewController = nil }
+        surface.setNeedsLayout()
+        surface.layoutIfNeeded()
+        surface.activateRenderingSurface()
+        defer {
+            player.stop()
+            surface.detach()
+            window.isHidden = true
+            window.rootViewController = nil
+            previous?.makeKey()
+        }
         try await body(player)
     }
 
     private func load(_ name: String, player: MPVPlayer) async throws {
-        player.load(try fixture(name), autoPlay: false)
-        try await eventually("\(name): first frame and seekable timeline did not become ready: \(String(describing: player.lastError))") {
+        player.load(try fixture(name), autoPlay: false, startTime: .seconds(1))
+        try await eventually("\(name): state=\(player.state), frame=\(player.hasVideoFrame), seekable=\(player.isSeekable), duration=\(player.duration.probeSeconds), error=\(String(describing: player.lastError))") {
             player.hasVideoFrame && player.isSeekable && player.duration.probeSeconds > 10
         }
         XCTAssertNil(player.lastError)
@@ -61,8 +77,9 @@ final class ProbeTests: XCTestCase {
     func testPauseAndResumeAdvanceNativePlayback() async throws {
         try await withPlayer { player in
             try await load("hevc8", player: player)
+            let initial = player.position.probeSeconds
             player.play()
-            try await eventually("play did not advance") { player.position.probeSeconds > 0.5 && !player.isPaused }
+            try await eventually("play did not advance") { player.position.probeSeconds > initial + 0.5 && !player.isPaused }
             player.pause()
             try await eventually("pause did not take effect") { player.isPaused }
             let paused = player.position.probeSeconds
@@ -91,9 +108,9 @@ final class ProbeTests: XCTestCase {
             try await eventually("initial seek failed") { abs(player.position.probeSeconds - 8) < 0.3 }
             player.stop()
             try await load("hevc10", player: player)
-            try await eventually("source switch retained old position") { player.position.probeSeconds < 1 && player.isPaused }
+            try await eventually("source switch retained old position") { abs(player.position.probeSeconds - 1) < 0.2 && player.isPaused }
             player.play()
-            try await eventually("new source did not advance") { player.position.probeSeconds > 0.4 }
+            try await eventually("new source did not advance") { player.position.probeSeconds > 1.4 }
         }
     }
 

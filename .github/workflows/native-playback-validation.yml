@@ -60,12 +60,13 @@ jobs:
             -scheme NativePlaybackProbe -configuration Release -destination "id=$SIMULATOR_ID" \
             -derivedDataPath build/probe-simulator -parallel-testing-enabled NO \
             -resultBundlePath build/native-evidence/probe-tests.xcresult \
-            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/native-evidence/simulator-tests.log
+            CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES 2>&1 | tee build/native-evidence/simulator-tests.log
       - name: Summarize results
         if: always()
         run: |
           if test -d build/native-evidence/probe-tests.xcresult; then
             xcrun xcresulttool get test-results summary --path build/native-evidence/probe-tests.xcresult > build/native-evidence/probe-tests-summary.json
+            xcrun xcresulttool export attachments --path build/native-evidence/probe-tests.xcresult --output-path build/native-evidence/test-attachments || true
           fi
       - name: Upload probe and evidence
         if: always()
@@ -76,7 +77,13 @@ jobs:
             build/probe-ipa/*.ipa
             build/probe-ipa/*.sha256
             build/native-evidence/
-            native-validation/
+            native-validation/*.py
+            native-validation/*.yml
+            native-validation/*.md
+            native-validation/fixtures.json
+            native-validation/Sources/
+            native-validation/Tests/
+            native-validation/UITests/
             upstream-mpvui/Package.swift
             upstream-mpvui/LICENSE
             upstream-mpvui/Build/Inputs.lock.json
