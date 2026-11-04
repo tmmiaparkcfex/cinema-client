@@ -20,7 +20,7 @@ final class ProbeModel {
     var preview: Double?
     private var scopedURL: URL?
 
-    func open(_ url: URL, scoped: Bool = false) {
+    func open(_ url: URL, scoped: Bool = false, autoPlay: Bool = true) {
         stop()
         if scoped {
             guard url.startAccessingSecurityScopedResource() else {
@@ -36,7 +36,7 @@ final class ProbeModel {
             error = nil
             title = url.isFileURL ? url.lastPathComponent : "网络媒体（地址不写入报告）"
             player.setDiagnosticsEnabled(true)
-            player.load(url, autoPlay: true)
+            player.load(url, autoPlay: autoPlay)
         } catch {
             self.error = error.localizedDescription
             stop()
@@ -146,7 +146,7 @@ struct ProbeView: View {
             let arguments = ProcessInfo.processInfo.arguments
             if let index = arguments.firstIndex(of: "--fixture"), arguments.indices.contains(index + 1),
                ["hevc8", "hevc10"].contains(arguments[index + 1]) {
-                openFixture(arguments[index + 1])
+                openFixture(arguments[index + 1], autoPlay: false)
             }
         }
         .fileImporter(isPresented: $importFile, allowedContentTypes: [.movie, .video, .data]) { result in
@@ -173,12 +173,12 @@ struct ProbeView: View {
         .onDisappear { model.stop(); UIApplication.shared.isIdleTimerDisabled = false }
     }
 
-    private func openFixture(_ name: String) {
+    private func openFixture(_ name: String, autoPlay: Bool = true) {
         guard let url = Bundle.main.url(forResource: name, withExtension: "mkv") else {
             model.error = "未找到内置样片。"
             return
         }
-        model.open(url)
+        model.open(url, autoPlay: autoPlay)
     }
 }
 

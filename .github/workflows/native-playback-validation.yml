@@ -51,6 +51,7 @@ jobs:
           cp -R build/probe-device/Build/Products/Release-iphoneos/NativePlaybackProbe.app build/probe-ipa/Payload/
           (cd build/probe-ipa && zip -qry Cinema-native-probe-unsigned.ipa Payload && shasum -a 256 Cinema-native-probe-unsigned.ipa > Cinema-native-probe-unsigned.ipa.sha256)
       - name: Run native iOS playback tests
+        timeout-minutes: 20
         run: |
           set -euo pipefail
           xcrun simctl list devices available -j > build/native-evidence/simulators.json
@@ -59,6 +60,8 @@ jobs:
           xcodebuild test -project native-validation/NativePlaybackProbe.xcodeproj \
             -scheme NativePlaybackProbe -configuration Release -destination "id=$SIMULATOR_ID" \
             -derivedDataPath build/probe-simulator -parallel-testing-enabled NO \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 90 \
+            -maximum-test-execution-time-allowance 120 \
             -resultBundlePath build/native-evidence/probe-tests.xcresult \
             CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=YES 2>&1 | tee build/native-evidence/simulator-tests.log
       - name: Summarize results

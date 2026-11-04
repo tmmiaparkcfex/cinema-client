@@ -16,6 +16,9 @@ final class ProbeUITests: XCTestCase {
         let surface = app.otherElements["gestureSurface"]
         XCTAssertTrue(surface.waitForExistence(timeout: 5))
         let state = app.staticTexts["playbackState"]
+        XCTAssertEqual(state.label, "已暂停")
+        surface.doubleTap()
+        XCTAssertTrue(wait(state, for: NSPredicate(format: "label == %@", "播放中"), timeout: 5))
         surface.doubleTap()
         XCTAssertTrue(wait(state, for: NSPredicate(format: "label == %@", "已暂停"), timeout: 5))
         let progress = app.staticTexts["playbackPosition"]
