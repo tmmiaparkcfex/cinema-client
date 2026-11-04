@@ -58,7 +58,7 @@ final class ProbeModel {
         日期：\(Date().ISO8601Format())
         系统：\(UIDevice.current.systemVersion)
         状态：\(player.state)；暂停：\(player.isPaused)
-        进度：\(player.position.seconds) / \(player.duration.seconds) 秒
+        进度：\(player.position.probeSeconds) / \(player.duration.probeSeconds) 秒
         解码会话：\(d.decoder.session)
         VideoToolbox 实际硬件状态：\(String(describing: d.decoder.videoToolboxSessionUsesHardware))
         编码：\(d.decoder.codec ?? "未知")；像素格式：\(d.decoder.decodedPixelFormat ?? "未知")
@@ -96,7 +96,7 @@ struct ProbeView: View {
                 .background(.black)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 Text(model.title).font(.caption).lineLimit(2)
-                Text(model.player.hasPlaybackFrame ? "画面已输出" : "等待画面").font(.caption).accessibilityIdentifier("playbackReady")
+                Text(model.player.hasVideoFrame ? "画面已输出" : "等待画面").font(.caption).accessibilityIdentifier("playbackReady")
                 Text(model.player.isPaused ? "已暂停" : "播放中").font(.caption).accessibilityIdentifier("playbackState")
                 HStack {
                     Button("导入本地影片") { importFile = true }
@@ -115,8 +115,8 @@ struct ProbeView: View {
                     Button("停止") { model.stop() }
                 }.font(.title2)
                 Slider(
-                    value: Binding(get: { model.preview ?? model.player.position.seconds }, set: { model.preview = $0 }),
-                    in: 0...max(1, model.player.duration.seconds),
+                    value: Binding(get: { model.preview ?? model.player.position.probeSeconds }, set: { model.preview = $0 }),
+                    in: 0...max(1, model.player.duration.probeSeconds),
                     onEditingChanged: { editing in
                         if !editing, let target = model.preview {
                             model.player.seek(to: .seconds(target))
@@ -124,7 +124,7 @@ struct ProbeView: View {
                         }
                     }
                 ).disabled(!model.player.isSeekable)
-                Text(String(format: "%.1f / %.1f 秒", model.preview ?? model.player.position.seconds, model.player.duration.seconds))
+                Text(String(format: "%.1f / %.1f 秒", model.preview ?? model.player.position.probeSeconds, model.player.duration.probeSeconds))
                     .font(.caption.monospacedDigit())
                     .accessibilityIdentifier("playbackPosition")
                 if let failure = model.error ?? model.player.lastError.map({ String(describing: $0) }) {
@@ -221,7 +221,7 @@ struct ProbeGestures: UIViewRepresentable {
                 let velocity = sender.velocity(in: view)
                 horizontal = abs(velocity.x) >= abs(velocity.y)
                 left = sender.location(in: view).x < view.bounds.midX
-                start = horizontal ? player.position.seconds : left ? Double(screen.brightness) : Double(AVAudioSession.sharedInstance().outputVolume)
+                start = horizontal ? player.position.probeSeconds : left ? Double(screen.brightness) : Double(AVAudioSession.sharedInstance().outputVolume)
                 target = nil
             }
             if sender.state == .cancelled || sender.state == .failed { target = nil; preview(nil); return }
@@ -233,7 +233,7 @@ struct ProbeGestures: UIViewRepresentable {
             }
             if horizontal {
                 guard player.isSeekable else { return }
-                target = min(player.duration.seconds, max(0, start + Double(translation.x / max(1, view.bounds.width)) * player.duration.seconds))
+                target = min(player.duration.probeSeconds, max(0, start + Double(translation.x / max(1, view.bounds.width)) * player.duration.probeSeconds))
                 preview(target)
             } else {
                 let value = min(1, max(0, start - Double(translation.y / 250)))

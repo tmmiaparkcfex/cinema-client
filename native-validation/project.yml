@@ -43,7 +43,9 @@ targets:
   ProbeTests:
     type: bundle.unit-test
     platform: iOS
-    sources: [Tests]
+    sources:
+      - path: Tests
+      - path: Sources/DurationValue.swift
     dependencies:
       - target: NativePlaybackProbe
       - package: MPVUI

@@ -34,7 +34,7 @@ final class ProbeTests: XCTestCase {
     private func load(_ name: String, player: MPVPlayer) async throws {
         player.load(try fixture(name), autoPlay: false)
         try await eventually("\(name): first frame and seekable timeline did not become ready: \(String(describing: player.lastError))") {
-            player.hasPlaybackFrame && player.isSeekable && player.duration.seconds > 10
+            player.hasVideoFrame && player.isSeekable && player.duration.probeSeconds > 10
         }
         XCTAssertNil(player.lastError)
         XCTAssertEqual(player.mediaInformation.dimensions?.effectiveWidth, 3840)
@@ -46,7 +46,7 @@ final class ProbeTests: XCTestCase {
         try await withPlayer { player in
             try await load("hevc8", player: player)
             player.seek(to: .seconds(6))
-            try await eventually("8-bit seek did not complete") { abs(player.position.seconds - 6) < 0.3 && player.isPaused }
+            try await eventually("8-bit seek did not complete") { abs(player.position.probeSeconds - 6) < 0.3 && player.isPaused }
         }
     }
 
@@ -54,7 +54,7 @@ final class ProbeTests: XCTestCase {
         try await withPlayer { player in
             try await load("hevc10", player: player)
             player.seek(to: .seconds(6))
-            try await eventually("10-bit seek did not complete") { abs(player.position.seconds - 6) < 0.3 && player.isPaused }
+            try await eventually("10-bit seek did not complete") { abs(player.position.probeSeconds - 6) < 0.3 && player.isPaused }
         }
     }
 
@@ -62,14 +62,14 @@ final class ProbeTests: XCTestCase {
         try await withPlayer { player in
             try await load("hevc8", player: player)
             player.play()
-            try await eventually("play did not advance") { player.position.seconds > 0.5 && !player.isPaused }
+            try await eventually("play did not advance") { player.position.probeSeconds > 0.5 && !player.isPaused }
             player.pause()
             try await eventually("pause did not take effect") { player.isPaused }
-            let paused = player.position.seconds
+            let paused = player.position.probeSeconds
             try await Task.sleep(for: .milliseconds(500))
-            XCTAssertLessThan(abs(player.position.seconds - paused), 0.2)
+            XCTAssertLessThan(abs(player.position.probeSeconds - paused), 0.2)
             player.play()
-            try await eventually("resume did not advance") { player.position.seconds > paused + 0.4 }
+            try await eventually("resume did not advance") { player.position.probeSeconds > paused + 0.4 }
         }
     }
 
@@ -78,7 +78,7 @@ final class ProbeTests: XCTestCase {
             try await load("hevc10", player: player)
             for target in [6.0, 2.0, 9.0, 1.0, 7.0, 3.0] {
                 player.seek(to: .seconds(target))
-                try await eventually("repeated seek failed at \(target)") { abs(player.position.seconds - target) < 0.3 && player.isPaused }
+                try await eventually("repeated seek failed at \(target)") { abs(player.position.probeSeconds - target) < 0.3 && player.isPaused }
                 XCTAssertNil(player.lastError)
             }
         }
@@ -88,12 +88,12 @@ final class ProbeTests: XCTestCase {
         try await withPlayer { player in
             try await load("hevc8", player: player)
             player.seek(to: .seconds(8))
-            try await eventually("initial seek failed") { abs(player.position.seconds - 8) < 0.3 }
+            try await eventually("initial seek failed") { abs(player.position.probeSeconds - 8) < 0.3 }
             player.stop()
             try await load("hevc10", player: player)
-            try await eventually("source switch retained old position") { player.position.seconds < 1 && player.isPaused }
+            try await eventually("source switch retained old position") { player.position.probeSeconds < 1 && player.isPaused }
             player.play()
-            try await eventually("new source did not advance") { player.position.seconds > 0.4 }
+            try await eventually("new source did not advance") { player.position.probeSeconds > 0.4 }
         }
     }
 
