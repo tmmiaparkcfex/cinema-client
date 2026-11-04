@@ -1,0 +1,116 @@
+name: Native MPVUI validation
+on:
+  push:
+    branches: [codex/native-playback-validation]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-validation-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  MPVUI_REF: 23ba5a72375d7472a15898418a49de2c2e9d0d9a
+jobs:
+  ios-probe:
+    name: iOS native probe and playback tests
+    runs-on: xcode-27
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: LePips/MPVUI
+          ref: ${{ env.MPVUI_REF }}
+          path: upstream-mpvui
+      - name: Toolchain and fixture tools
+        run: |
+          set -euo pipefail
+          mkdir -p build/native-evidence
+          xcodebuild -version | tee build/native-evidence/toolchain.txt
+          swift --version | tee -a build/native-evidence/toolchain.txt
+          command -v xcodegen || brew install xcodegen
+          command -v ffmpeg || brew install ffmpeg
+          xcodegen --version | tee -a build/native-evidence/toolchain.txt
+          ffmpeg -version > build/native-evidence/ffmpeg-version.txt
+          git -C upstream-mpvui rev-parse HEAD | tee build/native-evidence/mpvui-ref.txt
+          test "$(git -C upstream-mpvui rev-parse HEAD)" = "$MPVUI_REF"
+      - name: Generate and inspect 4K fixtures
+        run: |
+          set -euo pipefail
+          python3 native-validation/generate_fixtures.py 2>&1 | tee build/native-evidence/fixtures.log
+          cp native-validation/fixtures.json build/native-evidence/
+          xcodegen generate --spec native-validation/project.yml --project native-validation
+      - name: Build unsigned device probe
+        run: |
+          set -euo pipefail
+          xcodebuild build -project native-validation/NativePlaybackProbe.xcodeproj \
+            -scheme NativePlaybackProbe -configuration Release -sdk iphoneos \
+            -destination 'generic/platform=iOS' -derivedDataPath build/probe-device \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/native-evidence/device-build.log
+          mkdir -p build/probe-ipa/Payload
+          cp -R build/probe-device/Build/Products/Release-iphoneos/NativePlaybackProbe.app build/probe-ipa/Payload/
+          (cd build/probe-ipa && zip -qry Cinema-native-probe-unsigned.ipa Payload && shasum -a 256 Cinema-native-probe-unsigned.ipa > Cinema-native-probe-unsigned.ipa.sha256)
+      - name: Run native iOS playback tests
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available -j > build/native-evidence/simulators.json
+          SIMULATOR_ID=$(python3 -c 'import json; d=json.load(open("build/native-evidence/simulators.json")); print(next(x["udid"] for runtime,group in d["devices"].items() if "iOS" in runtime for x in group if x.get("isAvailable") and x["name"].startswith("iPhone")))')
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          xcodebuild test -project native-validation/NativePlaybackProbe.xcodeproj \
+            -scheme NativePlaybackProbe -configuration Release -destination "id=$SIMULATOR_ID" \
+            -derivedDataPath build/probe-simulator -parallel-testing-enabled NO \
+            -resultBundlePath build/native-evidence/probe-tests.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/native-evidence/simulator-tests.log
+      - name: Summarize results
+        if: always()
+        run: |
+          if test -d build/native-evidence/probe-tests.xcresult; then
+            xcrun xcresulttool get test-results summary --path build/native-evidence/probe-tests.xcresult > build/native-evidence/probe-tests-summary.json
+          fi
+      - name: Upload probe and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-playback-probe
+          path: |
+            build/probe-ipa/*.ipa
+            build/probe-ipa/*.sha256
+            build/native-evidence/
+            native-validation/
+            upstream-mpvui/Package.swift
+            upstream-mpvui/LICENSE
+            upstream-mpvui/Build/Inputs.lock.json
+          if-no-files-found: error
+          retention-days: 14
+  upstream-tests:
+    name: Upstream core and native playback controls
+    runs-on: xcode-27
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: LePips/MPVUI
+          ref: ${{ env.MPVUI_REF }}
+      - name: Prepare tools
+        run: |
+          set -euo pipefail
+          mkdir -p validation-evidence
+          xcodebuild -version | tee validation-evidence/toolchain.txt
+          swift --version | tee -a validation-evidence/toolchain.txt
+          command -v ffmpeg || brew install ffmpeg
+      - name: Core regression tests
+        run: |
+          set -o pipefail
+          make test-core JSON=1 2>&1 | tee validation-evidence/core-tests.log
+      - name: Native playback control regression tests
+        run: |
+          set -o pipefail
+          make test-swift ARGS='--filter MPVPlaybackControlTests' JSON=1 2>&1 | tee validation-evidence/playback-tests.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: upstream-native-test-evidence
+          path: |
+            validation-evidence/
+            .build/validation/
+          retention-days: 14

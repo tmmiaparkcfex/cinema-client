@@ -1,0 +1,62 @@
+name: NativePlaybackProbe
+options:
+  deploymentTarget:
+    iOS: '18.6'
+packages:
+  MPVUI:
+    path: ../upstream-mpvui
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    CODE_SIGNING_ALLOWED: NO
+    TARGETED_DEVICE_FAMILY: '1,2'
+targets:
+  NativePlaybackProbe:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Fixtures
+        buildPhase: resources
+    dependencies:
+      - package: MPVUI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tmmiaparkcfex.cinemaPlaybackProbe
+        MARKETING_VERSION: '0.1.0'
+        CURRENT_PROJECT_VERSION: '1'
+    info:
+      path: Generated/Info.plist
+      properties:
+        CFBundleDisplayName: 影院播放验证
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        CADisableMinimumFrameDurationOnPhone: true
+        NSLocalNetworkUsageDescription: 连接你指定的局域网媒体地址进行播放测试。
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+  ProbeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    dependencies:
+      - target: NativePlaybackProbe
+      - package: MPVUI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tmmiaparkcfex.cinemaPlaybackProbe.tests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  NativePlaybackProbe:
+    build:
+      targets:
+        NativePlaybackProbe: all
+    test:
+      targets: [ProbeTests]
+      gatherCoverageData: false
+      parallelizable: false
