@@ -98,6 +98,8 @@ jobs:
           xcodebuild -version | tee validation-evidence/toolchain.txt
           swift --version | tee -a validation-evidence/toolchain.txt
           command -v ffmpeg || brew install ffmpeg
+          command -v dovi_tool || brew install dovi_tool
+          command -v img2webp || brew install webp
       - name: Core regression tests
         run: |
           set -o pipefail
@@ -113,4 +115,5 @@ jobs:
           path: |
             validation-evidence/
             .build/validation/
+          include-hidden-files: true
           retention-days: 14

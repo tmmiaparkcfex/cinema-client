@@ -51,12 +51,22 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.tmmiaparkcfex.cinemaPlaybackProbe.tests
         GENERATE_INFOPLIST_FILE: YES
+  ProbeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: NativePlaybackProbe
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tmmiaparkcfex.cinemaPlaybackProbe.uitests
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
   NativePlaybackProbe:
     build:
       targets:
         NativePlaybackProbe: all
     test:
-      targets: [ProbeTests]
+      targets: [ProbeTests, ProbeUITests]
       gatherCoverageData: false
       parallelizable: false

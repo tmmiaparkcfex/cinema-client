@@ -96,6 +96,8 @@ struct ProbeView: View {
                 .background(.black)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 Text(model.title).font(.caption).lineLimit(2)
+                Text(model.player.hasPlaybackFrame ? "画面已输出" : "等待画面").font(.caption).accessibilityIdentifier("playbackReady")
+                Text(model.player.isPaused ? "已暂停" : "播放中").font(.caption).accessibilityIdentifier("playbackState")
                 HStack {
                     Button("导入本地影片") { importFile = true }
                     Button("打开媒体地址") { enterURL = true }
@@ -124,6 +126,7 @@ struct ProbeView: View {
                 ).disabled(!model.player.isSeekable)
                 Text(String(format: "%.1f / %.1f 秒", model.preview ?? model.player.position.seconds, model.player.duration.seconds))
                     .font(.caption.monospacedDigit())
+                    .accessibilityIdentifier("playbackPosition")
                 if let failure = model.error ?? model.player.lastError.map({ String(describing: $0) }) {
                     Text(failure).font(.caption).foregroundStyle(.red)
                 }
@@ -139,6 +142,13 @@ struct ProbeView: View {
             }.padding()
         }
         .preferredColorScheme(.dark)
+        .task {
+            let arguments = ProcessInfo.processInfo.arguments
+            if let index = arguments.firstIndex(of: "--fixture"), arguments.indices.contains(index + 1),
+               ["hevc8", "hevc10"].contains(arguments[index + 1]) {
+                openFixture(arguments[index + 1])
+            }
+        }
         .fileImporter(isPresented: $importFile, allowedContentTypes: [.movie, .video, .data]) { result in
             switch result {
             case .success(let url): model.open(url, scoped: true)
@@ -178,6 +188,8 @@ struct ProbeGestures: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(player: player, preview: preview) }
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
+        view.isAccessibilityElement = true
+        view.accessibilityIdentifier = "gestureSurface"
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.doubleTap))
         tap.numberOfTapsRequired = 2
         let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.pan(_:)))
