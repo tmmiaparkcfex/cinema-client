@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../core/app_log.dart';
 import '../core/app_models.dart';
@@ -11,6 +12,8 @@ import '../player/playback_screen.dart';
 import '../widgets/poster_artwork.dart';
 import '../widgets/cinema_surface.dart';
 import 'downloads_screen.dart';
+import 'search_screen.dart';
+import '../widgets/reference_chrome.dart';
 
 class DetailScreen extends StatefulWidget {
   const DetailScreen({super.key, required this.item, this.autoPlay = false});
@@ -30,7 +33,6 @@ class _DetailScreenState extends State<DetailScreen> {
   String? _group;
   int? _season;
   bool _autoPlayHandled = false;
-  bool _expandedOverview = false;
   int _episodeGroup = 0;
   int _loadGeneration = 0;
   Future<VodDetail>? _detailsUpdate;
@@ -322,312 +324,325 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget build(BuildContext context) {
     final item = _detail?.item ?? widget.item;
     return PosterSurface(
-      imageUrl: item.backdrop?.isNotEmpty == true ? item.backdrop : item.poster,
+      imageUrl: item.poster ?? item.backdrop,
       child: Builder(builder: _buildDetail),
     );
   }
 
   Widget _buildDetail(BuildContext context) {
     final detail = _detail;
-    final services = AppScope.of(context);
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final horizontal = screenWidth >= 900 ? 56.0 : 18.0;
+    final width = MediaQuery.sizeOf(context).width;
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (detail == null) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: _ErrorBody(
+          message: _error?.userMessage ?? '暂时无法读取影片',
+          onRetry: _load,
+        ),
+      );
+    }
+    final h = width >= 900 ? 56.0 : 16.0;
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null && detail == null
-                ? _ErrorBody(message: _error!.userMessage, onRetry: _load)
-                : detail == null
-                ? const SizedBox.shrink()
-                : SingleChildScrollView(
-                    padding: EdgeInsets.only(
-                      bottom: 40 + MediaQuery.paddingOf(context).bottom,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Stack(
-                          children: [
-                            _Hero(
-                              item: detail.item,
-                              height: screenWidth >= 900 ? 530 : 470,
-                            ),
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              top: 0,
-                              child: SafeArea(
-                                bottom: false,
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    10,
-                                    6,
-                                    10,
-                                    12,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      _RoundButton(
-                                        icon: Icons.arrow_back_ios_new_rounded,
-                                        onTap: () =>
-                                            Navigator.of(context).pop(),
-                                        tooltip: '返回',
-                                      ),
-                                      const Spacer(),
-                                      AnimatedBuilder(
-                                        animation: services.store,
-                                        builder: (context, _) {
-                                          final favorite = services.store
-                                              .isFavoriteItem(detail.item);
-                                          return _RoundButton(
-                                            icon: favorite
-                                                ? Icons.favorite_rounded
-                                                : Icons.favorite_border_rounded,
-                                            tooltip: favorite ? '已在片单' : '加入片单',
-                                            onTap: _toggleFavorite,
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Transform.translate(
-                          offset: const Offset(0, -64),
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: horizontal,
-                            ),
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 1040),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _titleBlock(detail),
-                                  const SizedBox(height: 18),
-                                  _actionRow(detail),
-                                  const SizedBox(height: 26),
-                                  _description(detail.item),
-                                  const SizedBox(height: 30),
-                                  _linePicker(detail),
-                                  if (_updating ||
-                                      _error != null ||
-                                      !detail.seasonsLoaded)
-                                    TextButton.icon(
-                                      onPressed: _updating ? null : _load,
-                                      icon: const Icon(Icons.refresh),
-                                      label: Text(
-                                        _updating
-                                            ? '正在读取片源与其他季…'
-                                            : _error?.userMessage ??
-                                                  '部分季暂未读取，重试',
-                                      ),
-                                    ),
-                                  const SizedBox(height: 24),
-                                  if (detail.isSeries)
-                                    _episodeSection(detail)
-                                  else
-                                    _movieVersionSection(),
-                                  if (detail.item.metadata.credits.isNotEmpty ||
-                                      detail.item.actors.isNotEmpty ||
-                                      detail.item.directors.isNotEmpty) ...[
-                                    const SizedBox(height: 28),
-                                    _credits(detail.item),
-                                  ],
-                                  if (detail
-                                      .item
-                                      .metadata
-                                      .studios
-                                      .isNotEmpty) ...[
-                                    const SizedBox(height: 24),
-                                    Text(
-                                      detail.item.metadata.studios.join(' · '),
-                                      style: const TextStyle(
-                                        color: CinemaColors.faint,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                  if (detail
-                                      .item
-                                      .metadata
-                                      .source
-                                      .isNotEmpty) ...[
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      '影视资料来自 ${detail.item.metadata.source.toUpperCase()}',
-                                      style: const TextStyle(
-                                        color: CinemaColors.faint,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
-                                ],
+      body: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.paddingOf(context).bottom + 24,
+        ),
+        child: Column(
+          children: [
+            SizedBox(
+              height: width >= 900 ? 530 : width * 0.67,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _Hero(item: detail.item, height: width * 0.67),
+                  SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: ReferenceHeader(
+                          onBack: () => Navigator.pop(context),
+                          onSearch: () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => PosterSurface(
+                                imageUrl: detail.item.poster,
+                                child: const SearchScreen(),
                               ),
                             ),
                           ),
+                          onMore: () => _more(detail),
                         ),
-                      ],
+                      ),
                     ),
                   ),
-          ),
-        ],
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: h),
+              child: Column(
+                children: [
+                  FeatureTitle(item: detail.item, height: 60),
+                  const SizedBox(height: 8),
+                  Text(
+                    [
+                      if (detail.item.genres.isNotEmpty)
+                        detail.item.genres.first,
+                      if (detail.isSeries) '第${_season ?? 1}季',
+                      if (detail.item.coverage != null &&
+                          detail.item.coverage!.expected > 0)
+                        '全${detail.item.coverage!.expected}集'
+                      else if (detail.item.year != null)
+                        '${detail.item.year}',
+                    ].join(' · '),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _selectedLine
+                            ?.entries
+                            .firstOrNull
+                            ?.resource
+                            ?.technicalSummary ??
+                        '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: CinemaColors.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _actionRow(detail),
+                  const SizedBox(height: 12),
+                  AnimatedBuilder(
+                    animation: AppScope.of(context).store,
+                    builder: (context, _) {
+                      final store = AppScope.of(context).store;
+                      final watched = store.hasWatched(detail.item);
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => store.toggleWatched(detail.item),
+                            icon: Icon(
+                              watched
+                                  ? CupertinoIcons.checkmark_circle_fill
+                                  : CupertinoIcons.checkmark_circle,
+                              size: 24,
+                            ),
+                            label: Text(watched ? '已看' : '看过'),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 16,
+                            margin: const EdgeInsets.symmetric(horizontal: 20),
+                            color: const Color(0x55765440),
+                          ),
+                          TextButton.icon(
+                            onPressed: _toggleFavorite,
+                            icon: Icon(
+                              store.isFavoriteItem(detail.item)
+                                  ? CupertinoIcons.heart_fill
+                                  : CupertinoIcons.heart,
+                              size: 24,
+                            ),
+                            label: const Text('收藏'),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () => _intro(detail),
+                    child: Text(
+                      detail.item.metadata.tagline.isNotEmpty
+                          ? detail.item.metadata.tagline
+                          : detail.item.overview,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        height: 1.5,
+                        color: CinemaColors.muted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  if (_updating || _error != null || !detail.seasonsLoaded)
+                    TextButton.icon(
+                      onPressed: _updating ? null : _load,
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: Text(_updating ? '正在读取剧集…' : '重试读取剧集'),
+                    ),
+                  if (detail.isSeries)
+                    _episodeSection(detail)
+                  else
+                    _movieVersionSection(),
+                  if (detail.item.metadata.credits.isNotEmpty ||
+                      detail.item.actors.isNotEmpty) ...[
+                    const SizedBox(height: 22),
+                    _credits(detail.item),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _titleBlock(VodDetail detail) {
-    final meta = <String>[
-      if (detail.item.year != null) '${detail.item.year}',
-      detail.item.typeLabel,
-      if (detail.item.area.isNotEmpty) detail.item.area,
-      if (detail.item.language.isNotEmpty) detail.item.language,
-      ...detail.item.genres,
-      if (detail.item.runtimeMinutes != null)
-        '${detail.item.runtimeMinutes} 分钟',
-      if (detail.item.score.isNotEmpty) '评分 ${detail.item.score}',
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          detail.item.name,
-          style: const TextStyle(
-            fontSize: 32,
-            height: 1.08,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.8,
-          ),
-        ),
-        if (detail.item.metadata.originalTitle.isNotEmpty &&
-            detail.item.metadata.originalTitle != detail.item.name) ...[
-          const SizedBox(height: 7),
-          Text(
-            detail.item.metadata.originalTitle,
-            style: const TextStyle(color: CinemaColors.muted, fontSize: 14),
-          ),
-        ],
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 6,
-          children: [for (final text in meta) _MetaChip(text: text)],
-        ),
-        if (detail.isSeries) ...[
-          const SizedBox(height: 10),
-          Text(
-            '${detail.allEntries.map((e) => e.season ?? 1).toSet().length} 季 · ${detail.allEntries.where((e) => e.episode != null).map((e) => '${e.season ?? 1}/${e.episode}').toSet().length} 集可播',
-            style: const TextStyle(color: CinemaColors.muted, fontSize: 12),
-          ),
-        ],
-      ],
-    );
-  }
+  Widget _actionRow(VodDetail detail) => SizedBox(
+    width: double.infinity,
+    height: 42,
+    child: FilledButton.icon(
+      onPressed: detail.playableLines.isEmpty ? null : _playDefault,
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: CinemaColors.text,
+      ),
+      icon: const Icon(CupertinoIcons.play_fill, size: 22),
+      label: const Text(
+        '播放',
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      ),
+    ),
+  );
 
-  Widget _actionRow(VodDetail detail) {
-    final store = AppScope.of(context).store;
-    final record = store.recordForItem(detail.item);
-    final buttonLabel = record?.completed == true
-        ? '重新播放'
-        : record == null
-        ? '播放'
-        : record.episodeText.isEmpty
-        ? '继续播放'
-        : '继续播放 ${record.episodeText}';
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 48,
-            child: FilledButton.icon(
-              onPressed: detail.playableLines.isEmpty ? null : _playDefault,
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: CinemaColors.text,
+  void _intro(VodDetail detail) => Navigator.push(
+    context,
+    MaterialPageRoute<void>(
+      builder: (_) => PosterSurface(
+        imageUrl: detail.item.poster,
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Column(
+            children: [
+              const ReferencePageHeader(title: '剧情与演职员'),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 84,
+                          height: 126,
+                          child: PosterArtwork(item: detail.item),
+                        ),
+                        const SizedBox(width: 18),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                detail.item.name,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                [
+                                  detail.item.year,
+                                  ...detail.item.genres,
+                                ].where((v) => v != null).join(' · '),
+                              ),
+                              const SizedBox(height: 10),
+                              FilledButton.icon(
+                                onPressed: _playDefault,
+                                icon: const Icon(CupertinoIcons.play_fill),
+                                label: const Text('播放'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      '剧情简介',
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      detail.item.overview.isEmpty
+                          ? '暂无剧情简介'
+                          : detail.item.overview,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.75,
+                        color: CinemaColors.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+                    _credits(detail.item),
+                  ],
+                ),
               ),
-              icon: const Icon(Icons.play_arrow_rounded, size: 25),
-              label: Text(
-                buttonLabel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  void _more(VodDetail detail) => showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(CupertinoIcons.info_circle),
+              title: const Text('剧情与演职员'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _intro(detail);
+              },
+            ),
+            if (AppScope.of(context).downloads != null)
+              ListTile(
+                leading: const Icon(CupertinoIcons.arrow_down_circle),
+                title: const Text('下载原画'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _download();
+                },
+              ),
+            StatefulBuilder(
+              builder: (context, update) => GestureDetector(
+                onTap: () => update(() {}),
+                child: _linePicker(detail, onChanged: () => update(() {})),
               ),
             ),
-          ),
+          ],
         ),
-        const SizedBox(width: 12),
-        SizedBox(
-          width: 48,
-          height: 48,
-          child: AnimatedBuilder(
-            animation: store,
-            builder: (context, _) {
-              final favorite = store.isFavoriteItem(detail.item);
-              return IconButton.outlined(
-                onPressed: _toggleFavorite,
-                tooltip: favorite ? '从片单移除' : '加入片单',
-                icon: Icon(
-                  favorite
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
-                  size: 20,
-                ),
-              );
-            },
-          ),
-        ),
-        if (AppScope.of(context).downloads != null) ...[
-          const SizedBox(width: 8),
-          IconButton.outlined(
-            tooltip: '下载原画',
-            onPressed: _download,
-            icon: const Icon(Icons.download_rounded),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _description(VodItem item) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '剧情简介',
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          item.overview.isEmpty ? '简介暂未提供，等待片库资料补齐。' : item.overview,
-          maxLines: _expandedOverview ? null : 3,
-          overflow: _expandedOverview
-              ? TextOverflow.visible
-              : TextOverflow.ellipsis,
-          style: TextStyle(
-            color: item.overview.isEmpty
-                ? CinemaColors.faint
-                : CinemaColors.muted,
-            height: 1.6,
-            fontSize: 14,
-          ),
-        ),
-        if (item.overview.length > 100)
-          TextButton(
-            style: TextButton.styleFrom(padding: EdgeInsets.zero),
-            onPressed: () =>
-                setState(() => _expandedOverview = !_expandedOverview),
-            child: Text(_expandedOverview ? '收起简介' : '展开简介'),
-          ),
-      ],
-    );
-  }
+      ),
+    ),
+  );
 
   Widget _credits(VodItem item) {
     final credits = item.metadata.credits;
@@ -635,7 +650,7 @@ class _DetailScreenState extends State<DetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '演职员',
+          '演职人员',
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         const SizedBox(height: 8),
@@ -728,7 +743,7 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _linePicker(VodDetail detail) {
+  Widget _linePicker(VodDetail detail, {VoidCallback? onChanged}) {
     if (detail.playableLines.length <= 1) {
       return const SizedBox.shrink();
     }
@@ -752,10 +767,12 @@ class _DetailScreenState extends State<DetailScreen> {
                   final seasons = EpisodeChoice.seasonsForLine(line);
                   setState(() {
                     _group = line.group;
+                    _episodeGroup = 0;
                     if (seasons.isNotEmpty && !seasons.contains(_season)) {
                       _season = seasons.first;
                     }
                   });
+                  onChanged?.call();
                 },
               ),
           ],
@@ -782,55 +799,30 @@ class _DetailScreenState extends State<DetailScreen> {
       children: [
         Row(
           children: [
-            const Text(
-              '剧集',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-            ),
+            PopupMenuButton<int>(onSelected: _selectSeason,
+              itemBuilder: (_) => [for (final season in seasons)
+                PopupMenuItem(value: season, child: Text('第$season季'))],
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text('第${_season ?? 1}季', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+                const SizedBox(width: 8), const Icon(CupertinoIcons.chevron_down, size: 18),
+              ])),
             const Spacer(),
             TextButton(
-              onPressed: () => showModalBottomSheet<void>(
-                context: context,
-                showDragHandle: true,
-                isScrollControlled: true,
-                builder: (context) => SafeArea(
-                  child: SizedBox(
-                    height: MediaQuery.sizeOf(context).height * 0.7,
-                    child: ListView.separated(
-                      padding: const EdgeInsets.all(18),
-                      itemCount: episodes.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+              onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (pageContext) =>
+                PosterSurface(imageUrl: detail.item.poster, child: Scaffold(backgroundColor: Colors.transparent,
+                  body: Column(children: [const ReferencePageHeader(title: '全部剧集'),
+                    Expanded(child: ListView.separated(padding: const EdgeInsets.all(18),
+                      itemCount: episodes.length, separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final choice = episodes[index];
-                        return _EpisodeTile(
-                          choice: choice,
-                          info: detail.item.metadata.episode(
-                            choice.season ?? 1,
-                            choice.episode ?? 0,
-                          ),
+                        return _EpisodeTile(choice: choice,
+                          info: detail.item.metadata.episode(choice.season ?? 1, choice.episode ?? 0),
                           selected: record?.resourceId == choice.resource?.id,
-                          onTap: () {
-                            Navigator.pop(context);
-                            _play(choice);
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-              child: const Text('全部'),
+                          onTap: () { Navigator.pop(pageContext); _play(choice); });
+                      })),
+                  ]))))),
+              child: const Text('全部剧集 ›'),
             ),
-            if (seasons.length > 1)
-              DropdownButton<int>(
-                value: _season ?? seasons.first,
-                dropdownColor: CinemaColors.elevatedHigh,
-                underline: const SizedBox.shrink(),
-                items: [
-                  for (final season in seasons)
-                    DropdownMenuItem(value: season, child: Text('第$season季')),
-                ],
-                onChanged: _selectSeason,
-              ),
           ],
         ),
         const SizedBox(height: 12),
@@ -855,7 +847,7 @@ class _DetailScreenState extends State<DetailScreen> {
           const SizedBox(height: 16),
         ],
         SizedBox(
-          height: 254,
+          height: (MediaQuery.sizeOf(context).width - 44) / 2 * 0.5625 + 100,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: episodes.skip(group * 5).take(5).length,
@@ -907,59 +899,14 @@ class _DetailScreenState extends State<DetailScreen> {
 
 class _Hero extends StatelessWidget {
   const _Hero({required this.item, required this.height});
-
   final VodItem item;
   final double height;
-
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          BackdropArtwork(item: item),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0x10000000),
-                  Colors.transparent,
-                  PosterTone.of(context),
-                ],
-                stops: const [0, 0.40, 1],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetaChip extends StatelessWidget {
-  const _MetaChip({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: const Color(0x33FFFFFF),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: const Color(0x22FFFFFF)),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 11, color: CinemaColors.muted),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => SizedBox(
+    height: height,
+    width: double.infinity,
+    child: FeaturePoster(item: item, faded: true),
+  );
 }
 
 class _ChoicePill extends StatelessWidget {
@@ -977,20 +924,18 @@ class _ChoicePill extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? CinemaColors.accent : CinemaColors.elevated,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? CinemaColors.accent : CinemaColors.border,
-          ),
+          color: selected ? Colors.white : Colors.white.withValues(alpha: 0.32),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.transparent),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : CinemaColors.muted,
+            color: selected ? CinemaColors.text : CinemaColors.muted,
             fontSize: 12,
           ),
         ),
@@ -1018,18 +963,18 @@ class _EpisodeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: 258,
+    width: (MediaQuery.sizeOf(context).width - 44) / 2,
     child: InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(12),
             child: SizedBox(
-              height: 145,
-              width: 258,
+              height: (MediaQuery.sizeOf(context).width - 44) / 2 * 0.5625,
+              width: (MediaQuery.sizeOf(context).width - 44) / 2,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -1234,31 +1179,6 @@ class _EpisodeTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _RoundButton extends StatelessWidget {
-  const _RoundButton({
-    required this.icon,
-    required this.onTap,
-    required this.tooltip,
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-  final String tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xBBFFFFFF),
-      shape: const CircleBorder(),
-      child: IconButton(
-        tooltip: tooltip,
-        onPressed: onTap,
-        icon: Icon(icon, size: 20),
       ),
     );
   }

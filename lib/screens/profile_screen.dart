@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 import '../core/app_log.dart';
@@ -9,13 +10,30 @@ import '../core/app_theme.dart';
 import '../quark/quark_login_screen.dart';
 import '../quark/quark_playback_service.dart';
 import '../widgets/cinema_surface.dart';
+import '../widgets/reference_chrome.dart';
 import 'downloads_screen.dart';
 import 'library_screen.dart';
+import 'account_screen.dart';
+import 'support_screen.dart';
+import 'playback_settings_screen.dart';
+import 'privacy_notification_screen.dart';
+import '../core/app_models.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, required this.onServerChanged});
+  const ProfileScreen({
+    super.key,
+    required this.onServerChanged,
+    this.artworkUrl,
+    this.artworkItem,
+    this.onSearch,
+    this.settingsMode = false,
+  });
 
   final VoidCallback onServerChanged;
+  final String? artworkUrl;
+  final VodItem? artworkItem;
+  final VoidCallback? onSearch;
+  final bool settingsMode;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -236,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                '0.4.0 · 原画随心看',
+                '0.4.1 · 原画随心看',
                 style: TextStyle(color: CinemaColors.muted),
               ),
               const SizedBox(height: 24),
@@ -275,7 +293,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () => showLicensePage(
                   context: context,
                   applicationName: '影院',
-                  applicationVersion: '0.4.0',
+                  applicationVersion: '0.4.1',
                 ),
               ),
             ],
@@ -285,176 +303,273 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _settings() => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => PosterSurface(
+        imageUrl: widget.artworkUrl,
+        child: ProfileScreen(
+          onServerChanged: widget.onServerChanged,
+          artworkUrl: widget.artworkUrl,
+          artworkItem: widget.artworkItem,
+          settingsMode: true,
+        ),
+      ),
+    ),
+  );
+
+  void _account(AccountPage page) => Navigator.push(
+    context,
+    MaterialPageRoute<void>(
+      builder: (_) => AccountScreen(page: page, artwork: widget.artworkItem),
+    ),
+  );
+  void _help() => Navigator.push(
+    context,
+    MaterialPageRoute<void>(
+      builder: (_) => SupportScreen(artworkUrl: widget.artworkUrl),
+    ),
+  );
+  void _playbackSettings() => Navigator.push(
+    context,
+    MaterialPageRoute<void>(
+      builder: (_) => PlaybackSettingsScreen(artworkUrl: widget.artworkUrl),
+    ),
+  );
+
+  void _privacy({bool notifications = false}) => Navigator.push(context,
+    MaterialPageRoute<void>(builder: (_) => PrivacyNotificationScreen(
+      artworkUrl: widget.artworkUrl, notifications: notifications)));
+
   @override
   Widget build(BuildContext context) {
-    final services = AppScope.of(context);
+    if (widget.settingsMode) return _buildSettings();
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('我的影院'),
-        automaticallyImplyLeading: false,
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(22, 8, 22, 110),
+          children: [
+            ReferenceHeader(
+              onSearch: widget.onSearch ?? () {},
+              onMore: _settings,
+            ),
+            const SizedBox(height: 48),
+            InkWell(
+              onTap: () => _account(AccountPage.phone),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 39,
+                    backgroundColor: Color(0x80F8EFE6),
+                    child: Icon(
+                      CupertinoIcons.person_fill,
+                      size: 46,
+                      color: CinemaColors.accent,
+                    ),
+                  ),
+                  const SizedBox(width: 18),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '点击登录',
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '游客 · 记录保存在本机',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xDEFFFFFF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    CupertinoIcons.chevron_right,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            CinemaGlass(
+              padding: const EdgeInsets.symmetric(vertical: 23),
+              child: Row(
+                children: [
+                  _shortcut(CupertinoIcons.clock, '观看历史', () => _library(1)),
+                  _shortcut(CupertinoIcons.heart, '我的收藏', () => _library(0)),
+                  _shortcut(
+                    CupertinoIcons.arrow_down_circle,
+                    '我的下载',
+                    _downloads,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            CinemaGlass(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Column(
+                children: [
+                  _row(CupertinoIcons.gear, '设置', '', _settings),
+                  const Divider(height: 1, color: Color(0x22765440)),
+                  _row(CupertinoIcons.question_circle, '帮助与反馈', '', _help),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
+    );
+  }
+
+  Widget _shortcut(IconData icon, String text, VoidCallback action) => Expanded(
+    child: InkWell(
+      onTap: action,
+      child: Column(
         children: [
-          const Row(
+          Icon(icon, size: 27, color: CinemaColors.accent),
+          const SizedBox(height: 9),
+          Text(
+            text,
+            style: const TextStyle(fontSize: 13, color: CinemaColors.accent),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _buildSettings() => Scaffold(
+    backgroundColor: Colors.transparent,
+    body: Column(
+      children: [
+        const ReferencePageHeader(title: '设置'),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
             children: [
-              CircleAvatar(
-                radius: 32,
-                backgroundColor: CinemaColors.elevatedHigh,
-                child: Icon(
-                  Icons.person_rounded,
-                  size: 36,
-                  color: CinemaColors.accent,
+              CinemaGlass(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const CircleAvatar(
+                    radius: 25,
+                    backgroundColor: Color(0x55FFFFFF),
+                    child: Icon(
+                      CupertinoIcons.person,
+                      color: CinemaColors.accent,
+                    ),
+                  ),
+                  title: const Text('游客'),
+                  subtitle: const Text(
+                    '编辑个人资料',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  trailing: const Icon(CupertinoIcons.chevron_right, size: 17),
+                  onTap: () => _account(AccountPage.profile),
                 ),
               ),
-              SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 16),
+              _SectionCard(
+                title: '账号与安全',
                 children: [
-                  Text(
-                    '影院观众',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+                  _row(
+                    CupertinoIcons.person_crop_circle,
+                    '账号与安全',
+                    '',
+                    () => _account(AccountPage.security),
                   ),
-                  SizedBox(height: 4),
-                  Text('好故事，慢慢看', style: TextStyle(color: CinemaColors.muted)),
+                  _row(
+                    CupertinoIcons.cloud,
+                    '夸克播放账号',
+                    _hasQuark == true ? '已连接' : '连接后播放原画',
+                    _hasQuark == true ? _validateQuark : _loginQuark,
+                  ),
+                  if (_accountMessage != null)
+                    Text(
+                      _accountMessage!,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  if (_hasQuark == true)
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: _loginQuark,
+                          child: const Text('重新登录'),
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: _logoutQuark,
+                          child: const Text('断开连接'),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _SectionCard(
+                title: '播放与通知',
+                children: [
+                  _row(
+                    CupertinoIcons.play_circle,
+                    '播放设置',
+                    '原画 · 自动硬件解码',
+                    _playbackSettings,
+                  ),
+                  _row(CupertinoIcons.bell, '通知设置', '', () => _privacy(notifications: true)),
+                  _row(
+                    CupertinoIcons.link,
+                    '影视接口',
+                    AppScope.of(context).settings.baseUrl,
+                    _editServer,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _SectionCard(
+                title: '隐私与存储',
+                children: [
+                  _row(
+                    CupertinoIcons.lock,
+                    '隐私与权限',
+                    '',
+                    _privacy,
+                  ),
+                  _row(
+                    CupertinoIcons.trash,
+                    '清理播放临时文件',
+                    '清理本应用创建的网盘临时文件',
+                    _cleanupTemporaryFiles,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _SectionCard(
+                title: '帮助',
+                children: [
+                  _row(CupertinoIcons.question_circle, '帮助与反馈', '', _help),
+                  _row(CupertinoIcons.info_circle, '关于影院', '0.4.1', _about),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 26),
-          AnimatedBuilder(
-            animation: services.store,
-            builder: (context, _) => Row(
-              children: [
-                Expanded(
-                  child: _stat(
-                    '${services.store.favorites.length}',
-                    '我的收藏',
-                    () => _library(0),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _stat(
-                    '${services.store.history.length}',
-                    '观看记录',
-                    () => _library(1),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _stat(
-                    '${services.downloads?.jobs.length ?? 0}',
-                    '我的下载',
-                    _downloads,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 26),
-          _SectionCard(
-            title: '播放账号',
-            children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.cloud_outlined),
-                title: const Text('夸克网盘'),
-                subtitle: Text(
-                  _hasQuark == true ? '已连接 · 会话仅保存在本机' : '连接后播放或下载原画',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: CinemaColors.muted,
-                  ),
-                ),
-                trailing: FilledButton(
-                  onPressed: _hasQuark == true ? _validateQuark : _loginQuark,
-                  child: Text(_hasQuark == true ? '检查' : '连接'),
-                ),
-              ),
-              if (_accountMessage != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    _accountMessage!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: CinemaColors.muted,
-                    ),
-                  ),
-                ),
-              if (_hasQuark == true)
-                Row(
-                  children: [
-                    TextButton(
-                      onPressed: _loginQuark,
-                      child: const Text('重新登录'),
-                    ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: _logoutQuark,
-                      child: const Text('断开连接'),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _SectionCard(
-            title: '偏好与存储',
-            children: [
-              _row(Icons.download_outlined, '下载管理', '保存原画，离线观看', _downloads),
-              const Divider(height: 1),
-              _row(
-                Icons.dns_outlined,
-                '影视接口',
-                services.settings.baseUrl,
-                _editServer,
-              ),
-              const Divider(height: 1),
-              _row(
-                Icons.cleaning_services_outlined,
-                '清理播放临时文件',
-                '清理本应用创建的网盘临时文件',
-                _cleanupTemporaryFiles,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _SectionCard(
-            title: '关于',
-            children: [
-              _row(
-                Icons.info_outline_rounded,
-                '关于影院',
-                '0.4.0 · 播放信息、隐私与组件许可',
-                _about,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _stat(String value, String label, VoidCallback onTap) => CinemaGlass(
-    radius: 22,
-    onTap: onTap,
-    padding: const EdgeInsets.symmetric(vertical: 20),
-    child: Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: CinemaColors.muted),
         ),
       ],
     ),
   );
+
   Widget _row(
     IconData icon,
     String title,
@@ -464,20 +579,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     contentPadding: EdgeInsets.zero,
     leading: Icon(icon, color: CinemaColors.accent),
     title: Text(title),
-    subtitle: Text(
-      subtitle,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontSize: 11, color: CinemaColors.muted),
-    ),
+    subtitle: subtitle.isEmpty
+        ? null
+        : Text(
+            subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11, color: CinemaColors.muted),
+          ),
     trailing: const Icon(Icons.chevron_right_rounded, size: 20),
     onTap: onTap,
   );
   void _library(int index) => Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => LibraryScreen(initialIndex: index)),
+    MaterialPageRoute<void>(
+      builder: (_) => PosterSurface(
+        imageUrl: widget.artworkUrl,
+        child: LibraryScreen(initialIndex: index),
+      ),
+    ),
   );
   Future<void> _downloads() async {
-    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DownloadsScreen()));
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const DownloadsScreen()));
     if (mounted) setState(() {});
   }
 }

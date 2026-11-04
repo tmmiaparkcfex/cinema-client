@@ -5,6 +5,7 @@ import '../core/app_theme.dart';
 import '../data/local_store.dart';
 import '../widgets/media_cards.dart';
 import '../widgets/poster_artwork.dart';
+import '../widgets/reference_chrome.dart';
 import 'detail_screen.dart';
 
 class LibraryScreen extends StatelessWidget {
@@ -14,43 +15,20 @@ class LibraryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = AppScope.of(context);
-    final wide = MediaQuery.sizeOf(context).width >= 900;
-    return DefaultTabController(
-      length: 2,
-      initialIndex: initialIndex,
-      child: Scaffold(
-        appBar: AppBar(
-          title: wide
-              ? const Text(
-                  '我的片单',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
-                )
-              : const Text('我的片单'),
-          leading: wide ? const SizedBox(width: 52) : null,
-          automaticallyImplyLeading: !wide,
-          bottom: const TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            indicatorColor: CinemaColors.accent,
-            labelColor: CinemaColors.text,
-            unselectedLabelColor: CinemaColors.muted,
-            tabs: [
-              Tab(text: '收藏'),
-              Tab(text: '观看记录'),
-            ],
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Column(
+        children: [
+          ReferencePageHeader(title: initialIndex == 0 ? '我的收藏' : '观看历史'),
+          Expanded(
+            child: AnimatedBuilder(
+              animation: services.store,
+              builder: (context, _) => initialIndex == 0
+                  ? _FavoritesTab(store: services.store)
+                  : _HistoryTab(store: services.store),
+            ),
           ),
-        ),
-        body: AnimatedBuilder(
-          animation: services.store,
-          builder: (context, _) {
-            return TabBarView(
-              children: [
-                _FavoritesTab(store: services.store),
-                _HistoryTab(store: services.store),
-              ],
-            );
-          },
-        ),
+        ],
       ),
     );
   }
@@ -73,8 +51,8 @@ class _FavoritesTab extends StatelessWidget {
     }
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 176,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
         mainAxisSpacing: 22,
         crossAxisSpacing: 12,
         childAspectRatio: 0.56,
@@ -126,7 +104,7 @@ class _HistoryTab extends StatelessWidget {
         }
         final record = records[index];
         return Material(
-          color: CinemaColors.elevated,
+          color: Colors.white.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(9),
           clipBehavior: Clip.antiAlias,
           child: InkWell(

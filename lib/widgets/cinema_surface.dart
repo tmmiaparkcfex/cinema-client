@@ -14,12 +14,14 @@ class PosterTone extends InheritedWidget {
   static Color of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<PosterTone>()?.color ??
       CinemaColors.background;
+  static bool exists(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<PosterTone>() != null;
   @override
   bool updateShouldNotify(PosterTone oldWidget) => color != oldWidget.color;
 }
 
 /// Extract a palette once per artwork, not during scrolling or video playback.
-/// This deliberately uses tinted surfaces rather than stacking GPU blur layers.
+/// A single static, low resolution poster layer supplies the diffuse backdrop.
 class PosterSurface extends StatefulWidget {
   const PosterSurface({super.key, this.imageUrl, required this.child});
   final String? imageUrl;
@@ -30,7 +32,7 @@ class PosterSurface extends StatefulWidget {
 
 class _PosterSurfaceState extends State<PosterSurface> {
   static final _colors = <String, Color>{};
-  Color _tone = CinemaColors.background;
+  Color _tone = const Color(0xFFD2B8AC);
   ImageStream? _stream;
   ImageStreamListener? _listener;
   int _generation = 0;
@@ -72,7 +74,9 @@ class _PosterSurfaceState extends State<PosterSurface> {
     late ImageStreamListener listener;
     listener = ImageStreamListener(
       (info, synchronous) async {
-        if (identical(_stream, stream) && identical(_listener, listener)) _detach();
+        if (identical(_stream, stream) && identical(_listener, listener)) {
+          _detach();
+        }
         Color? tone;
         try {
           tone = await _imageTone(info.image);
@@ -87,7 +91,9 @@ class _PosterSurfaceState extends State<PosterSurface> {
         setState(() => _tone = tone!);
       },
       onError: (Object error, StackTrace? stack) {
-        if (identical(_stream, stream) && identical(_listener, listener)) _detach();
+        if (identical(_stream, stream) && identical(_listener, listener)) {
+          _detach();
+        }
       },
     );
     _stream = stream;
@@ -148,16 +154,53 @@ class _PosterSurfaceState extends State<PosterSurface> {
   @override
   Widget build(BuildContext context) => PosterTone(
     color: _tone,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 350),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [_tone, Color.lerp(_tone, Colors.white, 0.58)!],
+    child: Stack(
+      fit: StackFit.expand,
+      children: [
+        RepaintBoundary(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ColoredBox(color: _tone),
+              if (widget.imageUrl?.startsWith('http') == true)
+                ImageFiltered(
+                  imageFilter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                  child: Image(
+                    image: ResizeImage(
+                      NetworkImage(widget.imageUrl!),
+                      width: 64,
+                    ),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color.lerp(
+                        _tone,
+                        const Color(0xFF40241C),
+                        0.55,
+                      )!.withValues(alpha: 0.64),
+                      _tone.withValues(alpha: 0.72),
+                      Color.lerp(
+                        _tone,
+                        Colors.white,
+                        0.48,
+                      )!.withValues(alpha: 0.84),
+                    ],
+                    stops: const [0, 0.46, 1],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      child: widget.child,
+        widget.child,
+      ],
     ),
   );
 }
@@ -176,7 +219,7 @@ class CinemaGlass extends StatelessWidget {
   final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) => Material(
-    color: Colors.white.withValues(alpha: 0.65),
+    color: Colors.white.withValues(alpha: 0.38),
     borderRadius: BorderRadius.circular(radius),
     clipBehavior: Clip.antiAlias,
     child: InkWell(

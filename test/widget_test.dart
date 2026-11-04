@@ -277,6 +277,10 @@ void main() {
       detailJson['item'] as Map<String, dynamic>,
     );
     await tester.binding.setSurfaceSize(const Size(390, 844));
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       AppScope(
@@ -289,9 +293,9 @@ void main() {
     );
     for (var i = 0; i < 30; i++) {
       await tester.pump(const Duration(milliseconds: 50));
-      if (find.text('剧集').evaluate().isNotEmpty) break;
+      if (find.text('全部剧集 ›').evaluate().isNotEmpty) break;
     }
-    expect(find.text('剧集'), findsOneWidget);
+    expect(find.text('全部剧集 ›'), findsOneWidget);
     final scrollable = tester.state<ScrollableState>(
       find.byType(Scrollable).first,
     );

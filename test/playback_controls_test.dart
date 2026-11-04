@@ -8,9 +8,13 @@ void main() {
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(844, 390));
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(844, 390);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     var played = 0;
-    var seek = 0;
+    var next = 0;
     var tracks = 0;
     var locked = 0;
     var info = 0;
@@ -33,9 +37,8 @@ void main() {
             onTogglePlay: () async {
               played++;
             },
-            onSeekRelative: (seconds) async {
-              seek += seconds;
-            },
+            onSeekRelative: (seconds) async {},
+            onNext: () async => next++,
             onSeekStart: (_) {},
             onSeekChanged: (_) {},
             onSeekEnd: (_) {},
@@ -54,12 +57,12 @@ void main() {
     );
     expect(tester.takeException(), isNull);
     await tester.tap(find.byIcon(Icons.play_arrow_rounded));
-    await tester.tap(find.byIcon(Icons.forward_10_rounded));
-    await tester.tap(find.text('音轨与字幕'));
+    await tester.tap(find.byTooltip('下一集'));
+    await tester.tap(find.text('音轨'));
     await tester.tap(find.byTooltip('锁定屏幕'));
     await tester.tap(find.byTooltip('播放信息'));
     expect(played, 1);
-    expect(seek, 10);
+    expect(next, 1);
     expect(tracks, 1);
     expect(locked, 1);
     expect(info, 1);

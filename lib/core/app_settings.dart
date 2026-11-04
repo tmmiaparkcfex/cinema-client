@@ -15,6 +15,18 @@ class AppSettings extends ChangeNotifier {
   String _baseUrl;
 
   String get baseUrl => _baseUrl;
+  double get playbackRate => _prefs.getDouble('playback_rate') ?? 1;
+  bool get autoNext => _prefs.getBool('auto_next') ?? true;
+  Future<void> setPlaybackRate(double value) async {
+    await _prefs.setDouble('playback_rate', value);
+    notifyListeners();
+  }
+
+  Future<void> setAutoNext(bool value) async {
+    await _prefs.setBool('auto_next', value);
+    notifyListeners();
+  }
+
   List<String> get searchHistory =>
       _prefs.getStringList('cinema_search_history') ?? const [];
 
@@ -29,6 +41,14 @@ class AppSettings extends ChangeNotifier {
 
   Future<void> clearSearchHistory() async {
     await _prefs.remove('cinema_search_history');
+    notifyListeners();
+  }
+
+  Future<void> removeSearch(String query) async {
+    await _prefs.setStringList(
+      'cinema_search_history',
+      searchHistory.where((entry) => entry != query).toList(),
+    );
     notifyListeners();
   }
 

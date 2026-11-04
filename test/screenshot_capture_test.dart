@@ -11,13 +11,13 @@ import 'package:cinema_client/data/api_client.dart';
 import 'package:cinema_client/data/home_cache.dart';
 import 'package:cinema_client/data/local_store.dart';
 import 'package:cinema_client/data/download_manager.dart';
-import 'package:cinema_client/screens/downloads_screen.dart';
 import 'package:cinema_client/quark/quark_account_store.dart';
 import 'package:cinema_client/quark/quark_playback_service.dart';
 import 'package:cinema_client/screens/app_shell.dart';
 import 'package:cinema_client/screens/detail_screen.dart';
 import 'package:cinema_client/quark/quark_login_screen.dart';
 import 'package:cinema_client/player/playback_screen.dart';
+import 'package:cinema_client/player/player_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -159,6 +159,13 @@ void main() {
       final iconLoader = FontLoader('MaterialIcons')
         ..addFont(Future.value(ByteData.sublistView(iconFontBytes)));
       await iconLoader.load();
+      final cupertinoLoader =
+          FontLoader('packages/cupertino_icons/CupertinoIcons')..addFont(
+            rootBundle.load(
+              'packages/cupertino_icons/assets/CupertinoIcons.ttf',
+            ),
+          );
+      await cupertinoLoader.load();
     });
 
     final titles = [
@@ -208,6 +215,10 @@ void main() {
     );
 
     await tester.binding.setSurfaceSize(const Size(390, 844));
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final boundaryKey = GlobalKey();
     await tester.pumpWidget(
@@ -244,20 +255,68 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await _save(tester, boundaryKey, 'home_rows_iphone_testrender.png');
 
-    await tester.tap(find.text('搜索').last);
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.drag(
+      find.byType(CustomScrollView).first,
+      const Offset(0, 600),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('搜索').first);
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsOneWidget);
     await _save(tester, boundaryKey, 'search_iphone_testrender.png');
-    await tester.tap(find.text('我的片单').last);
-    await tester.pump(const Duration(milliseconds: 400));
-    await _save(tester, boundaryKey, 'library_iphone_testrender.png');
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('片库').last);
+    await tester.pumpAndSettle();
+    await _save(tester, boundaryKey, 'catalog_iphone_testrender.png');
     await tester.tap(find.text('我的').last);
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
     await _save(tester, boundaryKey, 'profile_iphone_testrender.png');
-    final profileContext = tester.element(find.text('我的影院'));
-    Navigator.of(profileContext)
-        .push(MaterialPageRoute<void>(builder: (_) => const DownloadsScreen()));
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text('点击登录'));
+    await tester.pumpAndSettle();
+    await _save(tester, boundaryKey, 'login_iphone_testrender.png');
+    await tester.tap(find.text('密码登录  ›'));
+    await tester.pumpAndSettle();
+    await _save(tester, boundaryKey, 'password_iphone_testrender.png');
+    await tester.tap(find.text('忘记密码？'));
+    await tester.pumpAndSettle();
+    await _save(tester, boundaryKey, 'password_reset_iphone_testrender.png');
+    await tester.tap(find.byTooltip('返回'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('验证码登录'));
+    await tester.pumpAndSettle();
+    await _save(tester, boundaryKey, 'code_iphone_testrender.png');
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.byTooltip('返回'));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('我的收藏'));
+    await tester.pumpAndSettle();
+    await _save(tester, boundaryKey, 'library_iphone_testrender.png');
+    Navigator.of(tester.element(find.text('片单还是空的'))).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('设置'));
+    await tester.pumpAndSettle();
+    await _save(tester, boundaryKey, 'settings_iphone_testrender.png');
+    await tester.tap(find.text('播放设置'));
+    await tester.pumpAndSettle();
+    await _save(tester, boundaryKey, 'playback_settings_iphone_testrender.png');
+    await tester.tap(find.byTooltip('返回'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('返回'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('帮助与反馈'));
+    await tester.pumpAndSettle();
+    await _save(tester, boundaryKey, 'help_iphone_testrender.png');
+    await tester.tap(find.text('意见反馈'));
+    await tester.pumpAndSettle();
+    await _save(tester, boundaryKey, 'feedback_iphone_testrender.png');
+    for (var i = 0; i < 2; i++) {
+      await tester.tap(find.byTooltip('返回'));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('我的下载'));
+    await tester.pumpAndSettle();
     await _save(tester, boundaryKey, 'downloads_iphone_testrender.png');
     await tester.pumpWidget(const SizedBox.shrink());
     services.downloads?.dispose();
@@ -281,6 +340,13 @@ void main() {
       final iconLoader = FontLoader('MaterialIcons')
         ..addFont(Future.value(ByteData.sublistView(iconFontBytes)));
       await iconLoader.load();
+      final cupertinoLoader =
+          FontLoader('packages/cupertino_icons/CupertinoIcons')..addFont(
+            rootBundle.load(
+              'packages/cupertino_icons/assets/CupertinoIcons.ttf',
+            ),
+          );
+      await cupertinoLoader.load();
     });
 
     final detailJson = jsonDecode(
@@ -332,6 +398,10 @@ void main() {
     );
 
     await tester.binding.setSurfaceSize(const Size(390, 844));
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final boundaryKey = GlobalKey();
     await tester.pumpWidget(
@@ -359,21 +429,21 @@ void main() {
     );
     for (var i = 0; i < 30; i++) {
       await tester.pump(const Duration(milliseconds: 50));
-      if (find.text('剧集').evaluate().isNotEmpty) break;
+      if (find.text('全部剧集 ›').evaluate().isNotEmpty) break;
     }
-    expect(find.text('剧集'), findsWidgets);
+    expect(find.text('全部剧集 ›'), findsWidgets);
     await tester.pump(const Duration(milliseconds: 800));
     await _save(tester, boundaryKey, 'detail_iphone_testrender.png');
 
     await tester.scrollUntilVisible(
-      find.text('剧集').last,
+      find.text('全部剧集 ›').last,
       240,
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pump(const Duration(milliseconds: 500));
     await _save(tester, boundaryKey, 'detail_episodes_iphone_testrender.png');
     await tester.scrollUntilVisible(
-      find.text('演职员').last,
+      find.text('演职人员').last,
       240,
       scrollable: find.byType(Scrollable).first,
     );
@@ -392,12 +462,17 @@ void main() {
     await tester.pump();
     await _save(tester, boundaryKey, 'cookie_iphone_testrender.png');
     await tester.binding.setSurfaceSize(const Size(844, 390));
+    tester.view.physicalSize = const Size(844, 390);
     await tester.pumpWidget(
       RepaintBoundary(
         key: boundaryKey,
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
-          theme: _screenshotTheme(),
+          theme: buildCinemaPlayerTheme().copyWith(
+            textTheme: buildCinemaPlayerTheme().textTheme.apply(
+              fontFamily: 'ScreenshotCJK',
+            ),
+          ),
           home: Scaffold(
             backgroundColor: Colors.black,
             body: PlaybackControls(
@@ -441,7 +516,7 @@ Future<void> _save(WidgetTester tester, GlobalKey key, String name) async {
   await tester.runAsync(
     () => Future<void>.delayed(const Duration(milliseconds: 100)),
   );
-  await tester.pump();
+  await tester.pumpAndSettle();
   final boundary =
       key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
   final bytes = await tester.runAsync(() async {

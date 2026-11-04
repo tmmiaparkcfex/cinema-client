@@ -81,6 +81,34 @@ class _MediaCardState extends State<MediaCard> {
                         fit: StackFit.expand,
                         children: [
                           PosterArtwork(item: widget.item),
+                          if (widget.item.catalogLines.any(
+                            (line) => line.entries.any(
+                              (entry) =>
+                                  (entry.resource?.width ?? 0) >= 3840 ||
+                                  (entry.resource?.height ?? 0) >= 2160,
+                            ),
+                          ))
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xDDFAF2E9),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  '4K',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: CinemaColors.text,
+                                  ),
+                                ),
+                              ),
+                            ),
                           if (widget.progress != null && widget.progress! > 0)
                             Positioned(
                               left: 6,
@@ -114,7 +142,10 @@ class _MediaCardState extends State<MediaCard> {
                   Text(
                     [
                       if (widget.item.year != null) '${widget.item.year}',
-                      widget.item.typeLabel,
+                      if (widget.item.genres.isNotEmpty)
+                        widget.item.genres.first
+                      else
+                        widget.item.typeLabel,
                     ].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -140,90 +171,58 @@ class ContinueCard extends StatelessWidget {
     required this.onTap,
     required this.onRemove,
   });
-
   final PlaybackRecord record;
   final VoidCallback onTap;
   final VoidCallback onRemove;
-
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 276,
-      child: Material(
-        color: CinemaColors.elevated,
-        borderRadius: BorderRadius.circular(9),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Row(
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    onLongPress: onRemove,
+    child: Row(
+      children: [
+        SizedBox(
+          width: MediaQuery.sizeOf(context).width * 0.43,
+          height: 74,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: PosterArtwork(item: record.toItem(), compact: true),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                width: 132,
-                height: 84,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    PosterArtwork(item: record.toItem(), compact: true),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: LinearProgressIndicator(
-                        value: record.progress,
-                        minHeight: 3,
-                        backgroundColor: Colors.black54,
-                        color: CinemaColors.accent,
-                      ),
-                    ),
-                  ],
+              Text(
+                record.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 9, 4, 9),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        record.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        record.completed
-                            ? '${record.episodeText} 已播完'
-                            : record.episodeText.isEmpty
-                            ? '${(record.progress * 100).round()}%'
-                            : '${record.episodeText} · ${(record.progress * 100).round()}%',
-                        style: const TextStyle(
-                          color: CinemaColors.muted,
-                          fontSize: 12,
-                        ),
-                      ),
-                      const Spacer(),
-                      const Text(
-                        '继续观看',
-                        style: TextStyle(
-                          color: CinemaColors.accent,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              const SizedBox(height: 5),
+              Text(
+                '${record.episodeText} · ${record.completed ? '已播完' : '已看 ${record.positionMs ~/ 60000} 分钟'}',
+                maxLines: 1,
+                style: const TextStyle(fontSize: 12, color: CinemaColors.muted),
               ),
-              IconButton(
-                tooltip: '从继续观看移除',
-                onPressed: onRemove,
-                icon: const Icon(Icons.close_rounded, size: 17),
-                color: CinemaColors.faint,
+              const SizedBox(height: 9),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: record.progress,
+                  minHeight: 3,
+                  color: CinemaColors.accent,
+                  backgroundColor: Colors.white.withValues(alpha: 0.4),
+                ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
 }

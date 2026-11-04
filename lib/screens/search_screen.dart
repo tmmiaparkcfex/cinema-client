@@ -7,7 +7,9 @@ import '../core/app_theme.dart';
 import '../data/api_client.dart';
 import '../widgets/media_cards.dart';
 import 'detail_screen.dart';
-import 'catalog_screen.dart';
+import '../widgets/cinema_surface.dart';
+
+import 'package:flutter/cupertino.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -90,76 +92,89 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width >= 900;
-    return Scaffold(
-      appBar: wide ? null : AppBar(title: const Text('搜索')),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                wide ? 52 : 18,
-                wide ? 28 : 10,
-                wide ? 52 : 18,
-                12,
-              ),
-              child: Row(
-                children: [
-                  if (wide)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 22),
-                      child: Text(
-                        '搜索',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      textInputAction: TextInputAction.search,
-                      onChanged: (_) => setState(() {}),
-                      onSubmitted: (_) => _search(),
-                      decoration: InputDecoration(
-                        hintText: '搜索电影或电视剧名称',
-                        hintStyle: const TextStyle(color: CinemaColors.faint),
-                        prefixIcon: const Icon(Icons.search_rounded),
-                        suffixIcon: _controller.text.isEmpty
-                            ? null
-                            : IconButton(
-                                tooltip: '清空',
-                                onPressed: () => setState(_controller.clear),
-                                icon: const Icon(Icons.close_rounded),
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.transparent,
+    body: SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(22, 12, 22, 18),
+            child: Row(
+              children: [
+                const Text(
+                  '影视',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 18),
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => _search(),
+                    onChanged: (_) => setState(() {}),
+                    style: const TextStyle(fontSize: 14),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: '搜索影片、电视剧',
+                      prefixIcon: const Icon(CupertinoIcons.search, size: 20),
+                      suffixIcon: _controller.text.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: '清空输入',
+                              onPressed: () => setState(_controller.clear),
+                              icon: const Icon(
+                                CupertinoIcons.clear_circled_solid,
+                                size: 16,
                               ),
-                        filled: true,
-                        fillColor: CinemaColors.elevated,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
+                            ),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.6),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    height: 48,
-                    child: FilledButton(
-                      onPressed: _loading ? null : () => _search(),
-                      child: const Text('搜索'),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  child: const Text('取消'),
+                ),
+              ],
             ),
-            Expanded(child: _buildBody()),
-          ],
-        ),
+          ),
+          Expanded(child: _buildBody()),
+        ],
+      ),
+    ),
+  );
+
+  Future<void> _clearHistory() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('清空搜索记录？'),
+        content: const Text('清空后无法恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('清空'),
+          ),
+        ],
       ),
     );
+    if (confirmed != true || !mounted) return;
+    await AppScope.of(context).settings.clearSearchHistory();
+    if (mounted) setState(() {});
   }
 
   Widget _buildBody() {
@@ -176,106 +191,57 @@ class _SearchScreenState extends State<SearchScreen> {
     if (!_searched) {
       final settings = AppScope.of(context).settings;
       return ListView(
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 30),
+        padding: const EdgeInsets.symmetric(horizontal: 22),
         children: [
-          const Text(
-            '发现原画',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            '从片名出发，找到下一部好故事。',
-            style: TextStyle(color: CinemaColors.muted),
-          ),
-          const SizedBox(height: 24),
           Row(
             children: [
-              for (final kind in [MediaKind.movie, MediaKind.tv])
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: Card(
-                      elevation: 0,
-                      color: CinemaColors.elevated,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => CatalogScreen(
-                              kind: kind,
-                              title: kind == MediaKind.movie ? '电影片库' : '电视剧片库',
-                            ),
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                kind == MediaKind.movie
-                                    ? Icons.movie_outlined
-                                    : Icons.tv_rounded,
-                                color: CinemaColors.accent,
-                              ),
-                              const SizedBox(height: 24),
-                              Text(
-                                kind == MediaKind.movie ? '电影' : '电视剧',
-                                style: const TextStyle(
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              const Text(
-                                '浏览全部 →',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: CinemaColors.muted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              const Text(
+                '最近搜索',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: settings.searchHistory.isEmpty
+                    ? null
+                    : _clearHistory,
+                icon: const Icon(CupertinoIcons.trash, size: 15),
+                label: const Text('清空'),
+              ),
             ],
           ),
-          const SizedBox(height: 30),
-          if (settings.searchHistory.isNotEmpty) ...[
-            Row(
-              children: [
-                const Text(
-                  '最近搜索',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () async {
-                    await settings.clearSearchHistory();
-                    if (mounted) setState(() {});
-                  },
-                  child: const Text('清空'),
-                ),
-              ],
+          const SizedBox(height: 10),
+          if (settings.searchHistory.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Text(
+                '暂无搜索记录',
+                style: TextStyle(color: CinemaColors.muted),
+              ),
             ),
-            Wrap(
-              spacing: 10,
-              runSpacing: 8,
-              children: [
-                for (final query in settings.searchHistory)
-                  ActionChip(
-                    label: Text(query),
-                    onPressed: () {
-                      _controller.text = query;
-                      _search();
+          for (final query in settings.searchHistory)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: CinemaGlass(
+                radius: 12,
+                child: ListTile(
+                  dense: true,
+                  leading: const Icon(CupertinoIcons.clock, size: 19),
+                  title: Text(query),
+                  onTap: () {
+                    _controller.text = query;
+                    _search();
+                  },
+                  trailing: IconButton(
+                    tooltip: '删除记录',
+                    icon: const Icon(CupertinoIcons.xmark, size: 14),
+                    onPressed: () async {
+                      await settings.removeSearch(query);
+                      if (mounted) setState(() {});
                     },
                   ),
-              ],
+                ),
+              ),
             ),
-          ],
         ],
       );
     }
@@ -301,8 +267,8 @@ class _SearchScreenState extends State<SearchScreen> {
         Expanded(
           child: GridView.builder(
             padding: const EdgeInsets.fromLTRB(18, 0, 18, 20),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 176,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
               mainAxisSpacing: 22,
               crossAxisSpacing: 12,
               childAspectRatio: 0.56,

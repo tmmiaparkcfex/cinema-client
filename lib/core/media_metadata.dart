@@ -47,6 +47,17 @@ class MediaMetadata {
   String get overview => _text(data['overview']);
   String get poster => _text(data['poster']);
   String get backdrop => _text(data['backdrop']);
+  String get logo {
+    final logos = _object(data['artwork'])['logos'];
+    if (logos is! List) return '';
+    final landscape = logos.whereType<Map>().where(
+      (row) => (_number(row['width']) ?? 0) >= (_number(row['height']) ?? 1),
+    );
+    final preferred = landscape.where((row) => row['language'] == 'zh');
+    final row = preferred.firstOrNull ?? landscape.firstOrNull;
+    return row == null ? '' : _text(row['url']);
+  }
+
   String get source => _text(data['source']);
   String get id => _text(data['tmdbId']);
   int? get runtimeMinutes => _number(data['runtimeMinutes'])?.toInt();

@@ -89,6 +89,14 @@ void main() {
     expect(reloaded.isFavorite(item.key), isTrue);
     expect(reloaded.recordFor(item.key)?.episode, 2);
     expect(reloaded.recordFor(item.key)?.positionMs, 720000);
+    // Marking a title watched must not replace its episode resume position.
+    await reloaded.toggleWatched(item);
+    final marked = LocalStore.load(prefs);
+    expect(marked.hasWatched(item), isTrue);
+    expect(marked.recordFor(item.key)?.positionMs, 720000);
+    await marked.toggleWatched(item);
+    expect(LocalStore.load(prefs).hasWatched(item), isFalse);
+    expect(LocalStore.load(prefs).recordFor(item.key)?.positionMs, 720000);
     await reloaded.removeHistoryRecord(item.key);
     expect(reloaded.history, isEmpty);
   });

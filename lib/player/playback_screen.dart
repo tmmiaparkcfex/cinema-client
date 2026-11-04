@@ -12,6 +12,7 @@ import '../core/app_log.dart';
 import '../core/app_models.dart';
 import '../core/app_scope.dart';
 import 'player_theme.dart';
+import '../core/app_theme.dart';
 import '../core/episode_choice.dart';
 import '../quark/quark_login_screen.dart';
 import '../quark/quark_playback_service.dart';
@@ -56,10 +57,13 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   Size? _displaySize;
   PlaybackDiagnostics _diagnostics = const PlaybackDiagnostics();
 
+  double _panelWidth = 0;
+  int _panelCount = 0;
   bool _started = false;
   bool _loading = true;
   bool _disposed = false;
   bool _buffering = true;
+  DateTime? _bufferingSince;
   bool _playing = false;
   bool _controlsVisible = true;
   bool _locked = false;
@@ -131,6 +135,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     _services = AppScope.of(context);
     if (!_started) {
       _started = true;
+      _rate = _services.settings.playbackRate;
       _enterPlayerMode();
       WidgetsBinding.instance.addPostFrameCallback((_) => _startPlayback());
     }
@@ -205,6 +210,8 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     );
     _player = player;
     _videoController = controller;
+    await configureNativePlayback(player);
+    await player.setRate(_rate);
     _subscriptions.addAll([
       player.stream.playing.listen((value) {
         if (_playing == value && !_loading) return;
@@ -236,9 +243,20 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         if (_buffering == value) return;
         _setStateIfMounted(() => _buffering = value);
         if (value) {
+          _bufferingSince = DateTime.now();
           _startBufferWatchdog();
         } else {
           _bufferTimer?.cancel();
+          final since = _bufferingSince;
+          _bufferingSince = null;
+          if (since != null && _mediaReady) {
+            AppLog.info(
+              'player-buffer',
+              'waitMs=${DateTime.now().difference(since).inMilliseconds} '
+                  'positionMs=${_position.inMilliseconds} '
+                  'aheadMs=${(_buffer - _position).inMilliseconds.clamp(0, 86400000)}',
+            );
+          }
         }
       }),
       player.stream.completed.listen((value) {
@@ -637,7 +655,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     await _saveProgress(completed: true);
     if (_disposed) return;
     final next = EpisodeChoice.nextEpisode(_detail, _choice);
-    if (next == null) {
+    if (next == null || !_services.settings.autoNext) {
       _hideControlsTimer?.cancel();
       _setStateIfMounted(() {
         _ended = true;
@@ -775,10 +793,63 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     _showControlsTemporarily();
   }
 
+  Future<void> _showPlayerPanel({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    bool isScrollControlled = false,
+    bool dark = false,
+  }) async {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width < 650) {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: isScrollControlled,
+        builder: builder,
+      );
+      return;
+    }
+    final panelWidth = (width * 0.4).clamp(300.0, 440.0);
+    _panelCount++;
+    _setStateIfMounted(() => _panelWidth = panelWidth);
+    try {
+      await showGeneralDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: '关闭面板',
+        barrierColor: Colors.transparent,
+        transitionDuration: const Duration(milliseconds: 180),
+        pageBuilder: (context, _, _) => Align(
+          alignment: Alignment.centerRight,
+          child: SizedBox(
+            width: panelWidth,
+            height: double.infinity,
+            child: Theme(
+              data: dark ? buildCinemaPlayerTheme() : buildCinemaTheme(),
+              child: Material(
+                color: dark ? const Color(0xED3D2D26) : const Color(0xF5EADCD2),
+                child: Builder(builder: builder),
+              ),
+            ),
+          ),
+        ),
+        transitionBuilder: (context, animation, _, child) => SlideTransition(
+          position: Tween(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        ),
+      );
+    } finally {
+      _panelCount--;
+      if (_panelCount == 0) _setStateIfMounted(() => _panelWidth = 0);
+    }
+  }
+
   Future<void> _openRatePanel() async {
     _hideControlsTimer?.cancel();
     setState(() => _controlsVisible = false);
-    await showModalBottomSheet<void>(
+    await _showPlayerPanel(
       context: _playerThemeContext,
       builder: (context) => _Panel(
         title: '播放速度',
@@ -805,7 +876,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   Future<void> _openFitPanel() async {
     _hideControlsTimer?.cancel();
     setState(() => _controlsVisible = false);
-    await showModalBottomSheet<void>(
+    await _showPlayerPanel(
       context: _playerThemeContext,
       builder: (context) => _Panel(
         title: '画面比例',
@@ -839,133 +910,142 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     if (mounted) _showControlsTemporarily();
   }
 
-  Future<void> _openTrackPanel() async {
+  Future<void> _openTrackPanel({bool subtitles = false}) async {
     _hideControlsTimer?.cancel();
     setState(() => _controlsVisible = false);
-    await showModalBottomSheet<void>(
+    await _showPlayerPanel(
       context: _playerThemeContext,
       isScrollControlled: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             return _Panel(
-              title: '音轨与字幕',
+              title: subtitles ? '字幕' : '音轨',
               child: DefaultTextStyle(
-                style: const TextStyle(color: PlayerColors.text),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '音轨',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 6),
-                    if (_tracks.audio
-                        .where((t) => t.id != 'auto' && t.id != 'no')
-                        .isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10),
-                        child: Text(
-                          '没有可切换的内嵌音轨',
-                          style: TextStyle(color: PlayerColors.faint),
-                        ),
+                    if (!subtitles) ...[
+                      const Text(
+                        '音轨',
+                        style: TextStyle(fontWeight: FontWeight.w700),
                       ),
-                    for (final audio in _tracks.audio.where(
-                      (t) => t.id != 'auto' && t.id != 'no',
-                    ))
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          _trackLabel(audio.title, audio.language, audio.codec),
-                        ),
-                        subtitle: Text(_audioDetail(audio)),
-                        trailing: _track.audio.id == audio.id
-                            ? const Icon(
-                                Icons.check_rounded,
-                                color: PlayerColors.accent,
-                              )
-                            : null,
-                        onTap: () async {
-                          await _player?.setAudioTrack(audio);
-                          setSheetState(() {});
-                        },
-                      ),
-                    const Divider(height: 24),
-                    const Text(
-                      '字幕',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 6),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('关闭字幕'),
-                      trailing: _track.subtitle.id == 'no'
-                          ? const Icon(
-                              Icons.check_rounded,
-                              color: PlayerColors.accent,
-                            )
-                          : null,
-                      onTap: () async {
-                        await _player?.setSubtitleTrack(SubtitleTrack.no());
-                        setSheetState(() {});
-                      },
-                    ),
-                    if (_tracks.subtitle
-                        .where((t) => t.id != 'auto' && t.id != 'no')
-                        .isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 10),
-                        child: Text(
-                          '没有检测到内嵌字幕',
-                          style: TextStyle(color: PlayerColors.faint),
-                        ),
-                      ),
-                    for (final subtitle in _tracks.subtitle.where(
-                      (t) => t.id != 'auto' && t.id != 'no',
-                    ))
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          _trackLabel(
-                            subtitle.title,
-                            subtitle.language,
-                            subtitle.codec,
+                      const SizedBox(height: 6),
+                      if (_tracks.audio
+                          .where((t) => t.id != 'auto' && t.id != 'no')
+                          .isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          child: Text(
+                            '没有可切换的内嵌音轨',
+                            style: TextStyle(color: PlayerColors.faint),
                           ),
                         ),
-                        subtitle: Text(
-                          [
-                            if (subtitle.codec != null) subtitle.codec!,
-                            if (subtitle.image == true) '图形字幕',
-                          ].join(' · '),
+                      for (final audio in _tracks.audio.where(
+                        (t) => t.id != 'auto' && t.id != 'no',
+                      ))
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            _trackLabel(
+                              audio.title,
+                              audio.language,
+                              audio.codec,
+                            ),
+                          ),
+                          subtitle: Text(_audioDetail(audio)),
+                          trailing: _track.audio.id == audio.id
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  color: CinemaColors.accent,
+                                )
+                              : null,
+                          onTap: () async {
+                            await _player?.setAudioTrack(audio);
+                            setSheetState(() {});
+                          },
                         ),
-                        trailing: _track.subtitle.id == subtitle.id
+                    ],
+                    if (subtitles) ...[
+                      const Text(
+                        '字幕',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 6),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('关闭字幕'),
+                        trailing: _track.subtitle.id == 'no'
                             ? const Icon(
                                 Icons.check_rounded,
-                                color: PlayerColors.accent,
+                                color: CinemaColors.accent,
                               )
                             : null,
                         onTap: () async {
-                          await _player?.setSubtitleTrack(subtitle);
+                          await _player?.setSubtitleTrack(SubtitleTrack.no());
                           setSheetState(() {});
                         },
                       ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.file_open_outlined),
-                      label: const Text('导入外挂字幕'),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        _importSubtitle();
-                      },
-                    ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.tune_rounded),
-                      label: const Text('字幕同步与大小'),
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        _openSubtitleSettings();
-                      },
-                    ),
+                      if (_tracks.subtitle
+                          .where((t) => t.id != 'auto' && t.id != 'no')
+                          .isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          child: Text(
+                            '没有检测到内嵌字幕',
+                            style: TextStyle(color: PlayerColors.faint),
+                          ),
+                        ),
+                      for (final subtitle in _tracks.subtitle.where(
+                        (t) => t.id != 'auto' && t.id != 'no',
+                      ))
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            _trackLabel(
+                              subtitle.title,
+                              subtitle.language,
+                              subtitle.codec,
+                            ),
+                          ),
+                          subtitle: Text(
+                            [
+                              if (subtitle.codec != null) subtitle.codec!,
+                              if (subtitle.image == true) '图形字幕',
+                            ].join(' · '),
+                          ),
+                          trailing: _track.subtitle.id == subtitle.id
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  color: CinemaColors.accent,
+                                )
+                              : null,
+                          onTap: () async {
+                            await _player?.setSubtitleTrack(subtitle);
+                            setSheetState(() {});
+                          },
+                        ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.file_open_outlined),
+                        label: const Text('导入外挂字幕'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _importSubtitle();
+                        },
+                      ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.tune_rounded),
+                        label: const Text('字幕同步与大小'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _openSubtitleSettings();
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -986,7 +1066,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
 
   Future<void> _openSubtitleSettings() async {
     _hideControlsTimer?.cancel();
-    await showModalBottomSheet<void>(
+    await _showPlayerPanel(
       context: _playerThemeContext,
       builder: (context) => StatefulBuilder(
         builder: (context, updateSheet) => _Panel(
@@ -1049,7 +1129,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       _diagnostics = await PlaybackDiagnostics.read(_player!);
     }
     if (!mounted || _disposed) return;
-    await showModalBottomSheet<void>(
+    await _showPlayerPanel(
       context: _playerThemeContext,
       builder: (_) => _Panel(
         title: '播放信息',
@@ -1164,59 +1244,79 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     _hideControlsTimer?.cancel();
     setState(() => _controlsVisible = false);
     final episodes = EpisodeChoice.forLine(_choice.line);
-    await showModalBottomSheet<void>(
+    await _showPlayerPanel(
       context: _playerThemeContext,
+      dark: true,
       isScrollControlled: true,
       builder: (context) => _Panel(
-        title: '选集 · ${_choice.line.group}',
-        child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.62,
-          child: ListView.separated(
-            itemCount: episodes.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final choice = episodes[index];
-              final selected = choice.resource?.id == _choice.resource?.id;
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  selected
-                      ? Icons.play_arrow_rounded
-                      : Icons.play_arrow_outlined,
-                  color: selected ? PlayerColors.accent : PlayerColors.muted,
-                ),
-                title: Text(choice.episodeLabel),
-                subtitle: Text(
-                  choice.resource?.technicalSummary ?? '画质资料待补齐',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: selected
-                    ? const Text(
-                        '当前播放',
+        title: '选集',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '第${_choice.season ?? 1}季 · ${episodes.length}集',
+              style: const TextStyle(color: Color(0xFFDFCCBF)),
+            ),
+            const SizedBox(height: 18),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 6,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 10,
+                childAspectRatio: 1.05,
+              ),
+              itemCount: episodes.length,
+              itemBuilder: (context, index) {
+                final choice = episodes[index];
+                final selected = choice.resource?.id == _choice.resource?.id;
+                return Material(
+                  color: selected
+                      ? const Color(0xFFF3E8D9)
+                      : const Color(0x337F6A5D),
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (!selected) _switchChoice(choice);
+                    },
+                    child: Center(
+                      child: Text(
+                        '${choice.episode ?? index + 1}',
                         style: TextStyle(
-                          color: PlayerColors.accent,
-                          fontSize: 12,
+                          color: selected
+                              ? const Color(0xFF3D2D26)
+                              : const Color(0xFFF3E8D9),
                         ),
-                      )
-                    : null,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  if (!selected) _switchChoice(choice);
-                },
-              );
-            },
-          ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
     if (mounted) _showControlsTemporarily();
   }
 
+  Future<void> _adjacentEpisode(int delta) async {
+    final choices = EpisodeChoice.forLine(_choice.line);
+    final index = choices.indexWhere(
+      (c) => c.resource?.id == _choice.resource?.id,
+    );
+    final target = index + delta;
+    if (index >= 0 && target >= 0 && target < choices.length) {
+      await _switchChoice(choices[target]);
+    }
+  }
+
   Future<void> _openLinePanel() async {
     _hideControlsTimer?.cancel();
     setState(() => _controlsVisible = false);
-    await showModalBottomSheet<void>(
+    await _showPlayerPanel(
       context: _playerThemeContext,
       builder: (context) => _Panel(
         title: '切换线路',
@@ -1310,10 +1410,12 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   Widget build(BuildContext context) {
     return Theme(
       data: buildCinemaPlayerTheme(),
-      child: Builder(builder: (context) {
-        _playerThemeContext = context;
-        return _buildPlayer(context);
-      }),
+      child: Builder(
+        builder: (context) {
+          _playerThemeContext = context;
+          return _buildPlayer(context);
+        },
+      ),
     );
   }
 
@@ -1321,7 +1423,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     final player = _player;
     final controller = _videoController;
     final width = MediaQuery.sizeOf(context).width;
-    final compact = width < 650;
+    final compact = width - _panelWidth < 650;
     return PopScope(
       canPop: true,
       child: Scaffold(
@@ -1395,23 +1497,32 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                           await _player?.setRate(_rate);
                           _showControlsTemporarily();
                         },
-                        child: Video(
-                          controller: controller,
-                          controls: NoVideoControls,
-                          fit: _fit,
-                          wakelock: true,
-                          pauseUponEnteringBackgroundMode: true,
-                          resumeUponEnteringForegroundMode: false,
-                          subtitleViewConfiguration: SubtitleViewConfiguration(
-                            style: TextStyle(
-                              fontSize: compact ? 22 : 28,
-                              height: 1.35,
-                              color: Colors.white,
-                              backgroundColor: Colors.black.withValues(
-                                alpha: 0.66,
-                              ),
-                            ),
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 104),
+                        child: Padding(
+                          padding: EdgeInsets.only(right: _panelWidth),
+                          child: Video(
+                            controller: controller,
+                            controls: NoVideoControls,
+                            fit: _fit,
+                            wakelock: true,
+                            pauseUponEnteringBackgroundMode: true,
+                            resumeUponEnteringForegroundMode: false,
+                            subtitleViewConfiguration:
+                                SubtitleViewConfiguration(
+                                  style: TextStyle(
+                                    fontSize: compact ? 22 : 28,
+                                    height: 1.35,
+                                    color: Colors.white,
+                                    backgroundColor: Colors.black.withValues(
+                                      alpha: 0.66,
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    0,
+                                    20,
+                                    104,
+                                  ),
+                                ),
                           ),
                         ),
                       )
@@ -1459,7 +1570,12 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                   },
                   onRate: _openRatePanel,
                   onEpisodes: _detail.isSeries ? _openEpisodesPanel : null,
-                  onTracks: _openTrackPanel,
+                  onTracks: () => _openTrackPanel(),
+                  onSubtitles: () => _openTrackPanel(subtitles: true),
+                  onPrevious: _detail.isSeries
+                      ? () => _adjacentEpisode(-1)
+                      : null,
+                  onNext: _detail.isSeries ? () => _adjacentEpisode(1) : null,
                   onInfo: _openMediaInfo,
                   onLock: () => setState(() {
                     _locked = true;
@@ -1495,6 +1611,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                   isSeries: _detail.isSeries,
                   canSwitchLine: _detail.playableLines.length > 1,
                   onReplay: _replay,
+                  onNext: EpisodeChoice.nextEpisode(_detail, _choice) != null
+                      ? () => _adjacentEpisode(1)
+                      : null,
                   onSwitchLine: _openLinePanel,
                   onExit: () => Navigator.of(context).maybePop(),
                 ),
@@ -1641,6 +1760,9 @@ class PlaybackControls extends StatelessWidget {
     required this.onLines,
     this.onInfo,
     this.onLock,
+    this.onSubtitles,
+    this.onPrevious,
+    this.onNext,
   });
 
   final bool visible;
@@ -1666,6 +1788,9 @@ class PlaybackControls extends StatelessWidget {
   final VoidCallback? onLines;
   final VoidCallback? onInfo;
   final VoidCallback? onLock;
+  final VoidCallback? onSubtitles;
+  final Future<void> Function()? onPrevious;
+  final Future<void> Function()? onNext;
 
   String _format(Duration value) {
     final seconds = value.inSeconds.clamp(0, 359999);
@@ -1684,6 +1809,7 @@ class PlaybackControls extends StatelessWidget {
         ? duration.inMilliseconds.toDouble()
         : 1.0;
     final value = position.inMilliseconds.clamp(0, max.round()).toDouble();
+    const cream = Color(0xFFF4E9DA);
     return IgnorePointer(
       ignoring: !visible,
       child: ExcludeFocus(
@@ -1697,6 +1823,13 @@ class PlaybackControls extends StatelessWidget {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: onToggleControls,
+                  onDoubleTapDown: (details) => onSeekRelative(
+                    details.localPosition.dx <
+                            MediaQuery.sizeOf(context).width / 2
+                        ? -10
+                        : 10,
+                  ),
+                  onDoubleTap: () {},
                   child: const SizedBox.expand(),
                 ),
               ),
@@ -1709,18 +1842,13 @@ class PlaybackControls extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xCC000000), Colors.transparent],
+                      colors: [Color(0x99000000), Colors.transparent],
                     ),
                   ),
                   child: SafeArea(
                     bottom: false,
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        compact ? 12 : 24,
-                        8,
-                        compact ? 12 : 24,
-                        30,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
                       child: Row(
                         children: [
                           IconButton(
@@ -1728,98 +1856,50 @@ class PlaybackControls extends StatelessWidget {
                             onPressed: onBack,
                             icon: const Icon(
                               Icons.arrow_back_ios_new_rounded,
+                              color: Colors.white,
                               size: 20,
                             ),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                if (subtitle.isNotEmpty)
-                                  Text(
-                                    subtitle,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: PlayerColors.muted,
-                                    ),
-                                  ),
-                              ],
+                            child: Text(
+                              [
+                                title,
+                                if (subtitle.isNotEmpty) subtitle,
+                              ].join(' · '),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
+                          if (onLines != null)
+                            IconButton(
+                              tooltip: '切换线路',
+                              onPressed: onLines,
+                              icon: const Icon(
+                                Icons.alt_route_rounded,
+                                size: 21,
+                                color: Colors.white,
+                              ),
+                            ),
                           if (onInfo != null)
                             IconButton(
                               tooltip: '播放信息',
                               onPressed: onInfo,
                               icon: const Icon(
-                                Icons.info_outline_rounded,
-                                size: 22,
+                                Icons.more_horiz_rounded,
+                                size: 26,
+                                color: Colors.white,
                               ),
-                            ),
-                          if (onLock != null)
-                            IconButton(
-                              tooltip: '锁定屏幕',
-                              onPressed: onLock,
-                              icon: const Icon(
-                                Icons.lock_open_rounded,
-                                size: 22,
-                              ),
-                            ),
-                          if (rate != 1)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0x553B8AFF),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text('$rate×'),
                             ),
                         ],
                       ),
                     ),
                   ),
-                ),
-              ),
-              Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _CenterControl(
-                      icon: Icons.replay_10_rounded,
-                      label: '后退 10 秒',
-                      onTap: () => onSeekRelative(-10),
-                      size: compact ? 46 : 56,
-                    ),
-                    SizedBox(width: compact ? 26 : 44),
-                    _CenterControl(
-                      icon: playing
-                          ? Icons.pause_rounded
-                          : Icons.play_arrow_rounded,
-                      label: playing ? '暂停' : '播放',
-                      onTap: onTogglePlay,
-                      size: compact ? 68 : 82,
-                      emphasized: true,
-                    ),
-                    SizedBox(width: compact ? 26 : 44),
-                    _CenterControl(
-                      icon: Icons.forward_10_rounded,
-                      label: '前进 10 秒',
-                      onTap: () => onSeekRelative(10),
-                      size: compact ? 46 : 56,
-                    ),
-                  ],
                 ),
               ),
               Positioned(
@@ -1831,87 +1911,139 @@ class PlaybackControls extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
-                      colors: [Color(0xE6000000), Colors.transparent],
+                      colors: [Color(0xBB000000), Colors.transparent],
                     ),
                   ),
                   child: SafeArea(
                     top: false,
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
-                        compact ? 14 : 26,
-                        32,
-                        compact ? 14 : 26,
-                        10,
+                        compact ? 12 : 24,
+                        36,
+                        compact ? 12 : 24,
+                        6,
                       ),
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          SliderTheme(
-                            data: SliderThemeData(
-                              trackShape: const RoundedRectSliderTrackShape(),
-                              secondaryActiveTrackColor: Colors.white30,
-                              activeTickMarkColor: Colors.transparent,
-                              inactiveTickMarkColor: Colors.transparent,
-                            ),
-                            child: Slider(
-                              value: value.clamp(0, max),
-                              max: max,
-                              secondaryTrackValue: buffer.inMilliseconds
-                                  .clamp(0, max.round())
-                                  .toDouble(),
-                              onChangeStart: onSeekStart,
-                              onChanged: onSeekChanged,
-                              onChangeEnd: onSeekEnd,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: Row(
-                              children: [
-                                Text(
-                                  _format(position),
-                                  style: const TextStyle(fontSize: 11),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  _format(duration),
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: PlayerColors.muted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 2),
                           Row(
                             children: [
-                              _ControlAction(
-                                icon: Icons.speed_rounded,
-                                label: rate == 1 ? '倍速' : '$rate×',
-                                onTap: onRate,
-                              ),
-                              if (onEpisodes != null)
-                                _ControlAction(
-                                  icon: Icons.playlist_play_rounded,
-                                  label: '选集',
-                                  onTap: onEpisodes!,
+                              Text(
+                                _format(position),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white,
                                 ),
-                              _ControlAction(
-                                icon: Icons.subtitles_outlined,
-                                label: '音轨与字幕',
-                                onTap: onTracks,
                               ),
-                              _ControlAction(
-                                icon: Icons.aspect_ratio_rounded,
-                                label: '画面',
-                                onTap: onFit,
-                              ),
-                              if (onLines != null)
-                                _ControlAction(
-                                  icon: Icons.alt_route_rounded,
-                                  label: '线路',
-                                  onTap: onLines!,
+                              Expanded(
+                                child: SliderTheme(
+                                  data: SliderThemeData(
+                                    activeTrackColor: cream,
+                                    inactiveTrackColor: Colors.white24,
+                                    secondaryActiveTrackColor: Colors.white38,
+                                    thumbColor: cream,
+                                    trackHeight: 2,
+                                    thumbShape: const RoundSliderThumbShape(
+                                      enabledThumbRadius: 4,
+                                    ),
+                                    overlayShape: const RoundSliderOverlayShape(
+                                      overlayRadius: 12,
+                                    ),
+                                  ),
+                                  child: Slider(
+                                    value: value,
+                                    max: max,
+                                    secondaryTrackValue: buffer.inMilliseconds
+                                        .clamp(0, max.round())
+                                        .toDouble(),
+                                    onChangeStart: onSeekStart,
+                                    onChanged: onSeekChanged,
+                                    onChangeEnd: onSeekEnd,
+                                  ),
                                 ),
+                              ),
+                              Text(
+                                _format(duration),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              IconButton(
+                                tooltip: '锁定屏幕',
+                                onPressed: onLock,
+                                icon: const Icon(
+                                  Icons.lock_open_rounded,
+                                  color: Colors.white,
+                                  size: 21,
+                                ),
+                              ),
+                              if (!compact) const Spacer(),
+                              IconButton(
+                                tooltip: '上一集',
+                                onPressed: onPrevious,
+                                icon: const Icon(
+                                  Icons.skip_previous_rounded,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: playing ? '暂停' : '播放',
+                                onPressed: onTogglePlay,
+                                icon: Icon(
+                                  playing
+                                      ? Icons.pause_rounded
+                                      : Icons.play_arrow_rounded,
+                                  color: Colors.white,
+                                  size: 34,
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: '下一集',
+                                onPressed: onNext,
+                                icon: const Icon(
+                                  Icons.skip_next_rounded,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                              ),
+                              if (!compact) const Spacer(),
+                              Expanded(
+                                flex: compact ? 1 : 0,
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _textAction('音轨', onTracks),
+                                      _textAction(
+                                        '字幕',
+                                        onSubtitles ?? onTracks,
+                                      ),
+                                      _textAction(
+                                        rate == 1 ? '倍速' : '$rate×',
+                                        onRate,
+                                      ),
+                                      if (onEpisodes != null)
+                                        _textAction('选集', onEpisodes!),
+                                      IconButton(
+                                        tooltip: '画面比例',
+                                        onPressed: onFit,
+                                        icon: const Icon(
+                                          Icons.aspect_ratio_rounded,
+                                          size: 21,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -1926,85 +2058,16 @@ class PlaybackControls extends StatelessWidget {
       ),
     );
   }
-}
 
-class _ControlAction extends StatelessWidget {
-  const _ControlAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: TextButton(
-        onPressed: onTap,
-        style: TextButton.styleFrom(
-          foregroundColor: PlayerColors.text,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 20),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 11),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CenterControl extends StatelessWidget {
-  const _CenterControl({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.size,
-    this.emphasized = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final double size;
-  final bool emphasized;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      child: InkResponse(
-        onTap: onTap,
-        autofocus: emphasized,
-        radius: size * 0.65,
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: emphasized ? const Color(0x55FFFFFF) : Colors.transparent,
-            border: emphasized
-                ? Border.all(color: const Color(0x99FFFFFF))
-                : null,
-          ),
-          child: Icon(icon, size: emphasized ? size * 0.5 : size * 0.55),
-        ),
-      ),
-    );
-  }
+  Widget _textAction(String label, VoidCallback action) => TextButton(
+    onPressed: action,
+    style: TextButton.styleFrom(
+      foregroundColor: Colors.white,
+      minimumSize: const Size(42, 42),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+    ),
+    child: Text(label, style: const TextStyle(fontSize: 12)),
+  );
 }
 
 class _NextEpisodePrompt extends StatelessWidget {
@@ -2073,6 +2136,7 @@ class _EndedPrompt extends StatelessWidget {
     required this.isSeries,
     required this.canSwitchLine,
     required this.onReplay,
+    this.onNext,
     required this.onSwitchLine,
     required this.onExit,
   });
@@ -2080,6 +2144,7 @@ class _EndedPrompt extends StatelessWidget {
   final bool isSeries;
   final bool canSwitchLine;
   final VoidCallback onReplay;
+  final VoidCallback? onNext;
   final VoidCallback onSwitchLine;
   final VoidCallback onExit;
 
@@ -2106,7 +2171,7 @@ class _EndedPrompt extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                isSeries ? '当前线路的剧集已播放完毕' : '影片已播放完毕',
+                isSeries ? '本集已播放完毕' : '影片已播放完毕',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 17,
@@ -2115,7 +2180,7 @@ class _EndedPrompt extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                isSeries && !canSwitchLine ? '没有更多剧集。' : '进度已保存。',
+                '进度已保存。',
                 style: const TextStyle(color: PlayerColors.muted, fontSize: 12),
               ),
               const SizedBox(height: 18),
@@ -2125,6 +2190,8 @@ class _EndedPrompt extends StatelessWidget {
                 alignment: WrapAlignment.center,
                 children: [
                   FilledButton(onPressed: onReplay, child: const Text('重新播放')),
+                  if (onNext != null)
+                    FilledButton(onPressed: onNext, child: const Text('下一集')),
                   if (canSwitchLine)
                     OutlinedButton(
                       onPressed: onSwitchLine,
@@ -2174,12 +2241,23 @@ class _Panel extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: '关闭面板',
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                  ),
+                ],
               ),
               const SizedBox(height: 14),
               child,
@@ -2210,10 +2288,15 @@ class _PillButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? PlayerColors.accent : PlayerColors.elevatedHigh,
+          color: selected
+              ? const Color(0xFFF9F3EB)
+              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Text(label),
+        child: Text(
+          label,
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
       ),
     );
   }

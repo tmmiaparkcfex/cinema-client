@@ -37,6 +37,70 @@ class PosterArtwork extends StatelessWidget {
   }
 }
 
+/// The reference hero is a portrait composition, not a cropped landscape still.
+class FeaturePoster extends StatelessWidget {
+  const FeaturePoster({super.key, required this.item, this.faded = false});
+  final VodItem item;
+  final bool faded;
+  @override
+  Widget build(BuildContext context) {
+    final url = item.poster ?? item.backdrop;
+    if (url == null || !url.startsWith('http')) {
+      return const ColoredBox(color: Color(0xFF75635B));
+    }
+    final artwork = Image(
+      image: cinemaBackdropImage(url),
+      fit: BoxFit.cover,
+      alignment: Alignment.topCenter,
+      errorBuilder: (_, _, _) => const ColoredBox(color: Color(0xFF75635B)),
+    );
+    if (!faded) return artwork;
+    return ShaderMask(
+      blendMode: BlendMode.dstIn,
+      shaderCallback: (rect) => const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Colors.white, Colors.white, Colors.transparent],
+        stops: [0, 0.5, 1],
+      ).createShader(rect),
+      child: artwork,
+    );
+  }
+}
+
+class FeatureTitle extends StatelessWidget {
+  const FeatureTitle({super.key, required this.item, this.height = 68});
+  final VodItem item;
+  final double height;
+  @override
+  Widget build(BuildContext context) {
+    final fallback = Text(
+      item.name,
+      textAlign: TextAlign.center,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(
+        fontSize: 34,
+        height: 1.15,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    return SizedBox(
+      height: height,
+      child: Center(
+        child: item.metadata.logo.isEmpty
+            ? fallback
+            : Image.network(
+                item.metadata.logo,
+                fit: BoxFit.contain,
+                cacheWidth: 600,
+                errorBuilder: (_, _, _) => fallback,
+              ),
+      ),
+    );
+  }
+}
+
 class _PosterFallback extends StatelessWidget {
   const _PosterFallback({required this.item, required this.compact});
 

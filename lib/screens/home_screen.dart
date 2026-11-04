@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import '../core/app_log.dart';
 import '../core/app_models.dart';
@@ -8,6 +9,7 @@ import '../data/api_client.dart';
 import '../widgets/media_cards.dart';
 import '../widgets/poster_artwork.dart';
 import '../widgets/cinema_surface.dart';
+import '../widgets/reference_chrome.dart';
 import 'catalog_screen.dart';
 import 'detail_screen.dart';
 
@@ -17,11 +19,13 @@ class HomeScreen extends StatefulWidget {
     required this.initialFeed,
     required this.onOpenSearch,
     required this.onOpenProfile,
+    this.onFeaturedChanged,
   });
 
   final HomeFeed? initialFeed;
   final VoidCallback onOpenSearch;
   final VoidCallback onOpenProfile;
+  final ValueChanged<VodItem>? onFeaturedChanged;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -33,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _loading = false;
   MediaKind? _filter;
   int _featuredIndex = 0;
+  bool _anime = false;
 
   @override
   void initState() {
@@ -91,6 +96,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _feed = merged;
         _loading = false;
       });
+      if (_filteredAll.isNotEmpty) {
+        widget.onFeaturedChanged?.call(_filteredAll.first);
+      }
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -139,6 +147,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return feed.all
         .where((item) => item.isResolved)
         .where((item) => _filter == null || item.mediaType == _filter)
+        .where(
+          (item) =>
+              !_anime ||
+              item.genres.any((g) => ['动画', '动漫', 'Animation'].contains(g)),
+        )
         .toList(growable: false);
   }
 
@@ -186,190 +199,212 @@ class _HomeScreenState extends State<HomeScreen> {
     final hero = all.isEmpty
         ? null
         : all[_featuredIndex.clamp(0, all.take(5).length - 1)];
-    return PosterSurface(
-      imageUrl: hero?.backdrop?.isNotEmpty == true
-          ? hero!.backdrop
-          : hero?.poster,
-      child: Builder(builder: _buildHome),
-    );
+    final child = Builder(builder: (context) => _buildHome(context, hero));
+    return PosterTone.exists(context)
+        ? child
+        : PosterSurface(imageUrl: hero?.poster ?? hero?.backdrop, child: child);
   }
 
-  Widget _buildHome(BuildContext context) {
+  void _category(int index) {
+    setState(() {
+      _filter = index == 1
+          ? MediaKind.movie
+          : index == 2
+          ? MediaKind.tv
+          : null;
+      _anime = index == 3;
+      _featuredIndex = 0;
+    });
+    if (_filteredAll.isNotEmpty) {
+      widget.onFeaturedChanged?.call(_filteredAll.first);
+    }
+  }
+
+  Widget _buildHome(BuildContext context, VodItem? hero) {
     final services = AppScope.of(context);
-    final all = _filteredAll;
-    final featured = all.take(5).toList();
-    final hero = featured.isEmpty
-        ? null
-        : featured[_featuredIndex.clamp(0, featured.length - 1)];
-    final mediaSize = MediaQuery.sizeOf(context);
-    final width = mediaSize.width;
-    final wide = width >= 900;
-    final heroHeight = wide ? 590.0 : (mediaSize.height < 700 ? 450.0 : 525.0);
+    final featured = _filteredAll.take(5).toList();
+    final width = MediaQuery.sizeOf(context).width;
+    final horizontal = width >= 900 ? 48.0 : 16.0;
+    final heroHeight = width >= 900
+        ? 600.0
+        : width * 0.97 + MediaQuery.paddingOf(context).top;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: RefreshIndicator(
-        color: CinemaColors.accent,
-        backgroundColor: CinemaColors.elevated,
         onRefresh: _refresh,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
-              child: Stack(
-                children: [
-                  if (hero != null)
-                    SizedBox(
-                      height: heroHeight,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          PageView.builder(
-                            key: ValueKey(_filter),
-                            itemCount: featured.length,
-                            onPageChanged: (index) =>
-                                setState(() => _featuredIndex = index),
-                            itemBuilder: (_, index) =>
-                                BackdropArtwork(item: featured[index]),
-                          ),
-                          DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  const Color(0x18000000),
-                                  Colors.transparent,
-                                  PosterTone.of(context),
-                                  PosterTone.of(context),
-                                ],
-                                stops: const [0, 0.28, 0.66, 1],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    const SizedBox(height: 260),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: wide ? 52 : 20),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 760),
-                        child: hero == null
-                            ? _emptyHero()
-                            : _heroContent(services, hero),
-                      ),
-                    ),
-                  ),
-                  SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        wide ? 36 : 10,
-                        4,
-                        wide ? 36 : 10,
-                        0,
-                      ),
-                      child: Row(
-                        children: [
-                          if (wide) const _SideBrand(),
-                          if (!wide)
-                            const Expanded(
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: CinemaGlass(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  child: Text(
-                                    '影院',
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: -0.6,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          const Spacer(),
-                          CinemaGlass(
-                            child: IconButton(
-                              tooltip: '搜索',
-                              onPressed: widget.onOpenSearch,
-                              icon: const Icon(Icons.search_rounded, size: 25),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          CinemaGlass(
-                            child: IconButton(
-                              tooltip: '我的',
-                              onPressed: widget.onOpenProfile,
-                              icon: const Icon(
-                                Icons.person_outline_rounded,
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  wide ? 52 : 18,
-                  12,
-                  wide ? 52 : 18,
-                  0,
-                ),
-                child: Row(
+              child: SizedBox(
+                height: heroHeight,
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    _FilterChip(
-                      label: '精选',
-                      selected: _filter == null,
-                      onTap: () => setState(() {
-                        _filter = null;
-                        _featuredIndex = 0;
-                      }),
-                    ),
-                    const SizedBox(width: 8),
-                    _FilterChip(
-                      label: '电影',
-                      selected: _filter == MediaKind.movie,
-                      onTap: () => setState(() {
-                        _filter = MediaKind.movie;
-                        _featuredIndex = 0;
-                      }),
-                    ),
-                    const SizedBox(width: 8),
-                    _FilterChip(
-                      label: '电视剧',
-                      selected: _filter == MediaKind.tv,
-                      onTap: () => setState(() {
-                        _filter = MediaKind.tv;
-                        _featuredIndex = 0;
-                      }),
-                    ),
-                    const Spacer(),
-                    if (_error != null)
-                      IconButton(
-                        tooltip: '刷新失败，点击重试',
-                        onPressed: () => _refresh(),
-                        icon: const Icon(
-                          Icons.cloud_off_rounded,
-                          color: CinemaColors.accent,
-                          size: 20,
+                    if (hero != null)
+                      PageView.builder(
+                        itemCount: featured.length,
+                        key: ValueKey('$_filter-$_anime'),
+                        onPageChanged: (index) {
+                          setState(() => _featuredIndex = index);
+                          widget.onFeaturedChanged?.call(featured[index]);
+                        },
+                        itemBuilder: (_, index) =>
+                            FeaturePoster(item: featured[index], faded: true),
+                      ),
+                    SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontal + 6,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            ReferenceHeader(
+                              onSearch: widget.onOpenSearch,
+                              onMore: widget.onOpenProfile,
+                            ),
+                            const SizedBox(height: 14),
+                            ReferenceTabs(
+                              labels: const ['推荐', '电影', '电视剧', '动漫'],
+                              selected: _anime
+                                  ? 3
+                                  : _filter == MediaKind.movie
+                                  ? 1
+                                  : _filter == MediaKind.tv
+                                  ? 2
+                                  : 0,
+                              onSelected: _category,
+                              light: true,
+                            ),
+                          ],
                         ),
                       ),
+                    ),
+                    Positioned(
+                      left: horizontal,
+                      right: horizontal,
+                      bottom: 4,
+                      child: hero == null
+                          ? Padding(
+                              padding: const EdgeInsets.only(bottom: 24),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    _loading ? '正在读取片库…' : '暂时没有影片',
+                                    style: const TextStyle(fontSize: 22),
+                                  ),
+                                  if (_error != null) Text(_error!.userMessage),
+                                ],
+                              ),
+                            )
+                          : Column(
+                              children: [
+                                FeatureTitle(item: hero, height: 62),
+                                const SizedBox(height: 8),
+                                Text(
+                                  [
+                                    if (hero.genres.isNotEmpty)
+                                      hero.genres.first,
+                                    if (hero.isTv) '第1季',
+                                    if (hero.coverage?.expected != null &&
+                                        hero.coverage!.expected > 0)
+                                      '全${hero.coverage!.expected}集',
+                                    if (hero.isTv == false && hero.year != null)
+                                      '${hero.year}',
+                                  ].join(' · '),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: CinemaColors.text,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    for (var i = 0; i < featured.length; i++)
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: i == _featuredIndex
+                                              ? Colors.white
+                                              : Colors.white.withValues(
+                                                  alpha: 0.32,
+                                                ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 30,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 40,
+                                          child: FilledButton.icon(
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: Colors.white,
+                                              foregroundColor:
+                                                  CinemaColors.text,
+                                            ),
+                                            onPressed: () =>
+                                                _open(hero, autoPlay: true),
+                                            icon: const Icon(
+                                              CupertinoIcons.play_fill,
+                                              size: 21,
+                                            ),
+                                            label: const Text(
+                                              '立即播放',
+                                              style: TextStyle(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 9),
+                                      AnimatedBuilder(
+                                        animation: services.store,
+                                        builder: (context, _) => SizedBox(
+                                          width: 40,
+                                          height: 40,
+                                          child: CinemaGlass(
+                                            radius: 22,
+                                            child: IconButton(
+                                              tooltip: '收藏',
+                                              padding: EdgeInsets.zero,
+                                              onPressed: () => services.store
+                                                  .toggleFavorite(hero),
+                                              icon: Icon(
+                                                services.store.isFavoriteItem(
+                                                      hero,
+                                                    )
+                                                    ? CupertinoIcons.heart_fill
+                                                    : CupertinoIcons.heart,
+                                                size: 25,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
                   ],
                 ),
               ),
@@ -377,32 +412,12 @@ class _HomeScreenState extends State<HomeScreen> {
             if (_error != null)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    wide ? 52 : 18,
-                    12,
-                    wide ? 52 : 18,
-                    0,
-                  ),
-                  child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: CinemaGlass(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7E5DF),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
                     child: Row(
                       children: [
-                        Expanded(
-                          child: Text(
-                            _feed == null
-                                ? _error!.userMessage
-                                : '${_error!.userMessage} 正在显示上次缓存。',
-                            style: const TextStyle(
-                              color: Color(0xFF864332),
-                              fontSize: 12,
-                              height: 1.45,
-                            ),
-                          ),
-                        ),
+                        Expanded(child: Text(_error!.userMessage)),
                         TextButton(
                           onPressed: () => _refresh(),
                           child: const Text('重试'),
@@ -412,383 +427,110 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-            if (services.store.history.isNotEmpty)
-              SliverToBoxAdapter(
-                child: AnimatedBuilder(
-                  animation: services.store,
-                  builder: (context, _) {
-                    final history = services.store.history.take(10).toList();
-                    return _Section(
-                      title: '继续观看',
-                      horizontalPadding: wide ? 52 : 18,
-                      child: SizedBox(
-                        height: 86,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: history.length,
-                          separatorBuilder: (_, _) => const SizedBox(width: 10),
-                          itemBuilder: (context, index) {
-                            final record = history[index];
-                            return ContinueCard(
-                              record: record,
-                              onTap: () =>
-                                  _open(record.toItem(), autoPlay: true),
-                              onRemove: () async {
-                                await services.store.removeHistoryRecord(
-                                  record.itemKey,
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
             SliverToBoxAdapter(
-              child: _PosterSection(
-                title: '电影',
-                items: _movies,
-                onMore: () => _openCatalog(MediaKind.movie),
-                onItemTap: (item) => _open(item),
-                horizontalPadding: wide ? 52 : 18,
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: _PosterSection(
-                title: '电视剧',
-                items: _series,
-                onMore: () => _openCatalog(MediaKind.tv),
-                onItemTap: (item) => _open(item),
-                horizontalPadding: wide ? 52 : 18,
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: _PosterSection(
-                title: switch (_filter) {
-                  MediaKind.movie => '最新电影',
-                  MediaKind.tv => '最新剧集',
-                  _ => '最新上线',
-                },
-                items: _latest,
-                onMore: _filter == null ? null : () => _openCatalog(_filter!),
-                onItemTap: (item) => _open(item),
-                horizontalPadding: wide ? 52 : 18,
-              ),
-            ),
-            if (_loading && _feed == null)
-              const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            const SliverToBoxAdapter(child: SizedBox(height: 28)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _heroContent(AppServices services, VodItem hero) {
-    final meta = <String>[
-      if (hero.year != null) '${hero.year}',
-      hero.typeLabel,
-      ...hero.genres.take(2),
-      if (hero.runtimeMinutes != null) '${hero.runtimeMinutes} 分钟',
-      if (hero.score.isNotEmpty) '评分 ${hero.score}',
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 8,
-          runSpacing: 5,
-          children: [for (final value in meta) _MetaLabel(value)],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          hero.name,
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: MediaQuery.sizeOf(context).width >= 900 ? 54 : 42,
-            height: 1.06,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -1.2,
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (hero.overview.isNotEmpty)
-          Text(
-            hero.overview,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: CinemaColors.muted,
-              fontSize: 14,
-              height: 1.6,
-            ),
-          ),
-        const SizedBox(height: 14),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (var i = 0; i < _filteredAll.take(5).length; i++)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                height: 4,
-                width: i == _featuredIndex ? 19 : 5,
-                decoration: BoxDecoration(
-                  color: i == _featuredIndex
-                      ? CinemaColors.accent
-                      : const Color(0x4474665D),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            SizedBox(
-              height: 45,
-              width: 142,
-              child: FilledButton.icon(
-                onPressed: () => _open(hero, autoPlay: true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                ),
-                icon: const Icon(Icons.play_arrow_rounded, size: 23),
-                label: const Text('播放'),
-              ),
-            ),
-            SizedBox(
-              height: 45,
               child: AnimatedBuilder(
                 animation: services.store,
                 builder: (context, _) {
-                  final favorite = services.store.isFavoriteItem(hero);
-                  return OutlinedButton.icon(
-                    onPressed: () => services.store.toggleFavorite(hero),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0x88FFFFFF),
+                  final records = services.store.history.take(5).toList();
+                  if (records.isEmpty) return const SizedBox.shrink();
+                  return Padding(
+                    padding: EdgeInsets.fromLTRB(horizontal, 20, horizontal, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '继续观看',
+                          style: TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          height: 74,
+                          child: PageView.builder(
+                            itemCount: records.length,
+                            itemBuilder: (context, index) => ContinueCard(
+                              record: records[index],
+                              onTap: () => _open(
+                                records[index].toItem(),
+                                autoPlay: true,
+                              ),
+                              onRemove: () => services.store
+                                  .removeHistoryRecord(records[index].itemKey),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    icon: Icon(
-                      favorite
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      size: 20,
-                    ),
-                    label: Text(favorite ? '已加入片单' : '我的片单'),
                   );
                 },
               ),
             ),
+            SliverToBoxAdapter(child: _row('为你推荐', _filteredAll, horizontal)),
+            if (_movies.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _row('电影', _movies, horizontal, kind: MediaKind.movie),
+              ),
+            if (_series.isNotEmpty)
+              SliverToBoxAdapter(
+                child: _row('电视剧', _series, horizontal, kind: MediaKind.tv),
+              ),
+            if (_latest.isNotEmpty)
+              SliverToBoxAdapter(child: _row('最新上线', _latest, horizontal)),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _emptyHero() {
-    return Container(
-      height: 230,
-      alignment: Alignment.bottomLeft,
-      padding: const EdgeInsets.only(bottom: 16),
+  Widget _row(
+    String title,
+    List<VodItem> items,
+    double horizontal, {
+    MediaKind? kind,
+  }) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    final tileWidth =
+        (MediaQuery.sizeOf(context).width - 2 * horizontal - 12) / 3;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(horizontal, 20, 0, 0),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '影院',
-            style: TextStyle(
-              fontSize: 38,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -1,
+          GestureDetector(
+            onTap: kind == null ? null : () => _openCatalog(kind),
+            child: Row(
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(CupertinoIcons.chevron_right, size: 18),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            _loading
-                ? '正在读取影视库…'
-                : '影视库暂时没有可显示的作品。类型资料未补齐的条目不会进入精选，避免把剧集误标为电影。',
-            style: const TextStyle(color: CinemaColors.muted, height: 1.45),
-          ),
-          if (!_loading)
-            TextButton(onPressed: () => _refresh(), child: const Text('重新加载')),
-        ],
-      ),
-    );
-  }
-}
-
-class _PosterSection extends StatelessWidget {
-  const _PosterSection({
-    required this.title,
-    required this.items,
-    required this.onMore,
-    required this.onItemTap,
-    required this.horizontalPadding,
-  });
-
-  final String title;
-  final List<VodItem> items;
-  final VoidCallback? onMore;
-  final ValueChanged<VodItem> onItemTap;
-  final double horizontalPadding;
-
-  @override
-  Widget build(BuildContext context) {
-    if (items.isEmpty) return const SizedBox.shrink();
-    return _Section(
-      title: title,
-      horizontalPadding: horizontalPadding,
-      action: onMore == null
-          ? null
-          : TextButton(onPressed: onMore, child: const Text('更多')),
-      child: SizedBox(
-        height: MediaQuery.sizeOf(context).width >= 900 ? 310 : 250,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.zero,
-          itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 12),
-          itemBuilder: (context, index) => MediaCard(
-            item: items[index],
-            onTap: () => onItemTap(items[index]),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Section extends StatelessWidget {
-  const _Section({
-    required this.title,
-    required this.child,
-    required this.horizontalPadding,
-    this.action,
-  });
-
-  final String title;
-  final Widget child;
-  final double horizontalPadding;
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(horizontalPadding, 22, horizontalPadding, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const Spacer(),
-              ?action,
-            ],
-          ),
           const SizedBox(height: 10),
-          child,
+          SizedBox(
+            height: tileWidth * 1.5 + 48,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: items.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 6),
+              itemBuilder: (context, index) => MediaCard(
+                item: items[index],
+                width: tileWidth,
+                onTap: () => _open(items[index]),
+              ),
+            ),
+          ),
         ],
       ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: selected ? Colors.white : const Color(0x66FFFFFF),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: selected ? Colors.white : const Color(0x4474665D),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.black : CinemaColors.muted,
-            fontSize: 12,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MetaLabel extends StatelessWidget {
-  const _MetaLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: const Color(0x66FFFFFF),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 11, color: CinemaColors.muted),
-      ),
-    );
-  }
-}
-
-class _SideBrand extends StatelessWidget {
-  const _SideBrand();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        Text(
-          'CINEMA',
-          style: TextStyle(
-            fontSize: 19,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 2.2,
-          ),
-        ),
-        SizedBox(width: 8),
-        Text('影院', style: TextStyle(fontSize: 13, color: CinemaColors.muted)),
-      ],
     );
   }
 }

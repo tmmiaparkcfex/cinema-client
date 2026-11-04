@@ -2,7 +2,7 @@ name: Build unsigned iOS IPA
 
 on:
   push:
-    branches: [codex/iphone-metadata-fast-transfer, codex/playback-capacity-buffering-fix, codex/immersive-native-cinema]
+    branches: [codex/iphone-metadata-fast-transfer, codex/playback-capacity-buffering-fix, codex/immersive-native-cinema, codex/reference-ui-realign]
   workflow_dispatch:
     inputs:
       api_base:
@@ -70,7 +70,7 @@ jobs:
             --dart-define=SCREENSHOT_OUTPUT="$PWD/build/evidence/screenshots" \
             2>&1 | tee build/evidence/interface-render.log
 
-      - name: Test native iOS HttpOnly cookie bridge
+      - name: Test native iOS cache properties and HttpOnly cookie bridge
         # Exercise the real iOS cookie plugin before producing the release IPA.
         # The fixture uses no real account and is deleted after the test.
         run: |
@@ -92,6 +92,7 @@ jobs:
             -parallel-testing-enabled NO \
             -resultBundlePath "$PWD/build/evidence/ios-cookie-tests.xcresult" \
             -only-testing:RunnerTests/RunnerTests/testHttpOnlyCookieBridgeAcrossQuarkHosts \
+            -only-testing:RunnerTests/RunnerTests/testNativePlaybackCacheProperties \
             CODE_SIGNING_ALLOWED=NO FLUTTER_BUILD_MODE=debug "DART_DEFINES=$NATIVE_TEST_DEFINES" \
             2>&1 | tee build/evidence/ios-cookie-test.log
 

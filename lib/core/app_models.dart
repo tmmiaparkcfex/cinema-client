@@ -163,12 +163,12 @@ class VodItem {
       name: _firstText(json, const ['name', 'vod_name']) ?? '未命名作品',
       mediaType: parseMediaKind(json['mediaType'] ?? json['type_name']),
       year: _intValue(json['year'] ?? json['vod_year']),
-      poster: poster,
+      poster: poster ?? (metadata.poster.isEmpty ? null : metadata.poster),
       backdrop: _firstText(json, const [
         'backdrop',
         'backdropUrl',
         'background',
-      ]),
+      ]) ?? (metadata.backdrop.isEmpty ? null : metadata.backdrop),
       genres: metadata.genres.isNotEmpty
           ? metadata.genres
           : _stringList(json['genres']),
@@ -203,7 +203,7 @@ class VodItem {
         'backdrop',
         'backdropUrl',
         'background',
-      ]),
+      ]) ?? (metadata.backdrop.isEmpty ? null : metadata.backdrop),
       genres: metadata.genres.isNotEmpty
           ? metadata.genres
           : _stringList(json['genres']),

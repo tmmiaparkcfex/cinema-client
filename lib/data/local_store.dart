@@ -160,6 +160,15 @@ class LocalStore extends ChangeNotifier {
   final SharedPreferences _prefs;
   final Map<String, SavedTitle> _favorites = {};
   final Map<String, PlaybackRecord> _history = {};
+  final Set<String> _watched = {};
+
+  bool hasWatched(VodItem item) => _watched.contains(item.identityKey);
+
+  Future<void> toggleWatched(VodItem item) async {
+    if (!_watched.remove(item.identityKey)) _watched.add(item.identityKey);
+    await _prefs.setStringList('watched_titles_v1', _watched.toList());
+    notifyListeners();
+  }
 
   static LocalStore load(SharedPreferences prefs) => LocalStore._(prefs);
 
@@ -257,6 +266,7 @@ class LocalStore extends ChangeNotifier {
   }
 
   void _load() {
+    _watched.addAll(_prefs.getStringList('watched_titles_v1') ?? const []);
     for (final raw in _prefs.getStringList(_favoritesKey) ?? const <String>[]) {
       try {
         final value = jsonDecode(raw);
