@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:media_kit/media_kit.dart';
 
+import '../core/app_models.dart';
+
 class ApplePlayback {
   ApplePlayback(this.onEvent, {required this.usesAether});
   final ValueChanged<Map<Object?, Object?>> onEvent;
@@ -20,9 +22,24 @@ class ApplePlayback {
   List<(int, String)> chapters = [];
   _AppleFileRelay? _relay;
 
-  static bool canOpen(String name) =>
-      defaultTargetPlatform == TargetPlatform.iOS &&
-      RegExp(r'\.(mp4|mov|m4v|mkv)$', caseSensitive: false).hasMatch(name);
+  static final _dolby = RegExp(
+    r'\b(dv|dovi|dolby vision|atmos|joc)\b|杜比(视界|全景声)',
+    caseSensitive: false,
+  );
+
+  static bool canOpen(MediaResource? resource) {
+    if (defaultTargetPlatform != TargetPlatform.iOS || resource == null) {
+      return false;
+    }
+    final name = resource.fileName;
+    final tags = '${resource.hdr ?? ''} ${resource.audioCodec ?? ''} $name'
+        .replaceAll(RegExp(r'[._-]+'), ' ');
+    return RegExp(
+          r'\.(mp4|mov|m4v|mkv)$',
+          caseSensitive: false,
+        ).hasMatch(name) &&
+        _dolby.hasMatch(tags);
+  }
 
   Widget get view => UiKitView(
     key: ObjectKey(this),

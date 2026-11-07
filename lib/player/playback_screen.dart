@@ -19,10 +19,12 @@ import '../quark/quark_playback_service.dart';
 import '../rex/rex_interactions.dart';
 import '../rex/rex_metadata.dart';
 import 'apple_playback.dart';
+import 'native_player.dart';
+import 'playback_budget.dart';
+import 'range_playback_source.dart';
 import 'rex_player_controls.dart';
 import 'rex_player_tools.dart';
 import 'subtitle_files.dart';
-import 'native_player.dart';
 
 class PlaybackScreen extends StatefulWidget {
   const PlaybackScreen({
@@ -68,6 +70,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   String? _secondarySubtitle;
   static const _device = MethodChannel('cinema/player-device');
   VideoController? _videoController;
+  RangePlaybackSource? _rangeSource;
+  final _uiBudget = PlaybackUiBudget();
+  final _uiElapsed = Stopwatch()..start();
   QuarkPlaybackLease? _lease;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
 
@@ -114,6 +119,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       await _apple!.send('pause');
     } else {
       await _player?.pause();
+      _rangeSource?.setPaused(true);
     }
   }
 
@@ -121,6 +127,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     if (_apple != null) {
       await _apple!.send('play');
     } else {
+      _rangeSource?.setPaused(false);
       await _player?.play();
     }
   }
@@ -129,6 +136,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     if (_apple != null) {
       await _apple!.send('seek', at.inMilliseconds);
     } else {
+      _rangeSource?.setPaused(false);
       await _player?.seek(at);
     }
   }
@@ -148,6 +156,12 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     await apple?.close();
   }
 
+  Future<void> _closeRangeSource() async {
+    final source = _rangeSource;
+    _rangeSource = null;
+    await source?.close();
+  }
+
   void _appleEvent(
     ApplePlayback apple,
     int generation,
@@ -165,18 +179,24 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     }
     final wasPlaying = _playing;
     final complete = event['complete'] == true;
-    setState(() {
-      _playing = event['playing'] == true;
-      _buffering = event['buffering'] == true;
-      if (_dragPositionMs == null) {
-        _position = Duration(milliseconds: event['position'] as int? ?? 0);
-      }
-      _duration = Duration(milliseconds: event['duration'] as int? ?? 0);
-      _buffer = Duration(milliseconds: event['buffer'] as int? ?? 0);
-      _tracks = apple.tracks;
-      _track = apple.track;
-      _appleComplete = complete;
-    });
+    final buffering = event['buffering'] == true;
+    final duration = Duration(milliseconds: event['duration'] as int? ?? 0);
+    final changed =
+        wasPlaying != (event['playing'] == true) ||
+        _buffering != buffering ||
+        _duration != duration ||
+        _appleComplete != complete;
+    _playing = event['playing'] == true;
+    _buffering = buffering;
+    if (_dragPositionMs == null) {
+      _position = Duration(milliseconds: event['position'] as int? ?? 0);
+    }
+    _duration = duration;
+    _buffer = Duration(milliseconds: event['buffer'] as int? ?? 0);
+    _tracks = apple.tracks;
+    _track = apple.track;
+    _appleComplete = complete;
+    _paintPlaybackClock(force: changed);
     if (!wasPlaying && _playing) _armHideControls();
     if (complete) unawaited(_handleCompleted());
     if (DateTime.now().difference(_lastProgressSave).inSeconds >= 10) {
@@ -258,28 +278,66 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     setState(action);
   }
 
+  void _paintPlaybackClock({bool force = false}) {
+    if (!mounted || _disposed) return;
+    if (force ||
+        _tools.commentsEnabled ||
+        _uiBudget.shouldPaint(
+          elapsed: _uiElapsed.elapsed,
+          visible: _controlsVisible && !_locked && !_loading,
+        )) {
+      setState(() {});
+    }
+  }
+
+  Size? _videoDisplayBudget({int? width, int? height}) {
+    if (defaultTargetPlatform != TargetPlatform.iOS ||
+        width == null ||
+        height == null ||
+        width <= 0 ||
+        height <= 0) {
+      return null;
+    }
+    return displayVideoSize(
+      viewport: MediaQuery.sizeOf(context),
+      pixelRatio: MediaQuery.devicePixelRatioOf(context),
+      sourceWidth: width,
+      sourceHeight: height,
+    );
+  }
+
   Future<void> _ensurePlayer() async {
     if (_player != null) return;
     final player = createNativePlayer();
+    final size = _videoDisplayBudget(
+      width: _resource?.width,
+      height: _resource?.height,
+    );
     final controller = VideoController(
       player,
-      configuration: const VideoControllerConfiguration(
+      configuration: VideoControllerConfiguration(
         enableHardwareAcceleration: true,
+        hwdec: 'auto',
+        width: size?.width.toInt(),
+        height: size?.height.toInt(),
       ),
     );
     _player = player;
     _videoController = controller;
     _subscriptions.addAll([
       player.stream.playing.listen((value) {
+        if (_apple != null || _playing == value && !_loading) return;
         _setStateIfMounted(() => _playing = value);
+        if (_mediaReady) _rangeSource?.setPaused(!value);
         if (value) {
           _armHideControls();
         }
       }),
       player.stream.position.listen((value) {
-        if (!mounted) return;
+        if (!mounted || _disposed || _apple != null) return;
         if (_dragPositionMs == null) {
-          setState(() => _position = value);
+          _position = value;
+          _paintPlaybackClock();
         }
         if (DateTime.now().difference(_lastProgressSave).inSeconds >= 10) {
           _lastProgressSave = DateTime.now();
@@ -287,12 +345,16 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         }
       }),
       player.stream.duration.listen((value) {
+        if (_apple != null || _duration == value) return;
         _setStateIfMounted(() => _duration = value);
       }),
       player.stream.buffer.listen((value) {
-        _setStateIfMounted(() => _buffer = value);
+        if (_apple != null) return;
+        _buffer = value;
+        _paintPlaybackClock();
       }),
       player.stream.buffering.listen((value) {
+        if (_apple != null || _buffering == value) return;
         _setStateIfMounted(() => _buffering = value);
         if (value) {
           _startBufferWatchdog();
@@ -301,16 +363,18 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         }
       }),
       player.stream.completed.listen((value) {
-        if (value) unawaited(_handleCompleted());
+        if (value && _apple == null) unawaited(_handleCompleted());
       }),
       player.stream.error.listen((value) {
         AppLog.error('player', value);
-        _handlePlaybackError();
+        if (_apple == null) _handlePlaybackError();
       }),
       player.stream.tracks.listen((value) {
+        if (_apple != null) return;
         _setStateIfMounted(() => _tracks = value);
       }),
       player.stream.track.listen((value) {
+        if (_apple != null) return;
         _setStateIfMounted(() => _track = value);
       }),
     ]);
@@ -345,16 +409,19 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         _loading = false;
         _needsAccount = true;
         _errorTitle = '连接你的夸克账号';
-        _errorDetail = '选片后需要在设备内完成转存并获取播放地址。账号会话只保存在本机安全存储，不使用开发者账号代播。';
+        _errorDetail = '登录后通过夸克快传获取原画。账号会话只保存在本机。';
       });
       return;
     }
 
     _mediaReady = false;
     await _closeApple();
+    if (_disposed || generation != _generation) return;
     if (_player != null) {
       await _player!.stop();
     }
+    if (_disposed || generation != _generation) return;
+    await _closeRangeSource();
     if (_disposed || generation != _generation) return;
     if (!refreshLease) await _releaseLease();
     if (_disposed || generation != _generation) return;
@@ -420,9 +487,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       _stage = '正在起播';
       _setStateIfMounted(() {});
       var appleReady = false;
-      if (widget.rexStyle &&
-          _preferApple &&
-          ApplePlayback.canOpen(resource.fileName)) {
+      if (widget.rexStyle && _preferApple && ApplePlayback.canOpen(resource)) {
         late final ApplePlayback apple;
         apple = ApplePlayback(
           (event) => _appleEvent(apple, generation, event),
@@ -456,10 +521,22 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       if (!appleReady) {
         await _ensurePlayer();
         if (_disposed || generation != _generation) return;
+        final source = resource.sizeBytes > 0
+            ? await RangePlaybackSource.open(
+                uri: lease.mediaUri,
+                headers: lease.headers,
+                length: resource.sizeBytes,
+              )
+            : null;
+        if (_disposed || generation != _generation) {
+          await source?.close();
+          return;
+        }
+        _rangeSource = source;
         await _player!.open(
           Media(
-            lease.mediaUri.toString(),
-            httpHeaders: lease.headers,
+            (source?.uri ?? lease.mediaUri).toString(),
+            httpHeaders: source == null ? lease.headers : null,
             start: resume,
           ),
           play: true,
@@ -474,6 +551,17 @@ class _PlaybackScreenState extends State<PlaybackScreen>
             (_) => cancellation.throwIfCancelled(),
           ),
         ]).timeout(const Duration(seconds: 40));
+        if (_disposed || generation != _generation) return;
+        final size = _videoDisplayBudget(
+          width: _player!.state.width ?? resource.width,
+          height: _player!.state.height ?? resource.height,
+        );
+        if (size != null) {
+          await _videoController!.setSize(
+            width: size.width.toInt(),
+            height: size.height.toInt(),
+          );
+        }
         if (widget.rexStyle && !_disposed && generation == _generation) {
           await _player!.setRate(_rate);
           await _player!.setVolume(_volume);
@@ -485,6 +573,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       }
       _prepareTimer?.cancel();
       _mediaReady = true;
+      _rangeSource?.setPaused(!(_player?.state.playing ?? false));
       _setStateIfMounted(() {
         _loading = false;
         _buffering = appleReady ? _buffering : _player!.state.buffering;
@@ -525,6 +614,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     _bufferTimer?.cancel();
     _nextTimer?.cancel();
     unawaited(_pauseEngine());
+    unawaited(_closeRangeSource());
     _setStateIfMounted(() {
       _loading = false;
       _buffering = false;
@@ -576,6 +666,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       await _closeApple();
       await player?.stop();
     } finally {
+      await _closeRangeSource();
       try {
         await lease?.release();
       } catch (error) {
@@ -1233,10 +1324,11 @@ class _PlaybackScreenState extends State<PlaybackScreen>
             selected: _aspect == 1.3333333333,
           ),
         ]);
-        if (_apple != null) entries.add(const RexMenuEntry('compat', '使用兼容内核'));
-        if (_apple == null &&
-            ApplePlayback.canOpen(_resource?.fileName ?? '')) {
-          entries.add(const RexMenuEntry('apple', '尝试 Apple 原生内核'));
+        if (_apple != null) {
+          entries.add(const RexMenuEntry('compat', '使用影院原播放器'));
+        }
+        if (_apple == null && ApplePlayback.canOpen(_resource)) {
+          entries.add(const RexMenuEntry('apple', '尝试杜比播放'));
         }
       case '音轨':
         for (final audio in _tracks.audio.where(
@@ -1687,7 +1779,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         state == AppLifecycleState.paused) {
       _nextTimer?.cancel();
       unawaited(_saveProgress());
-      if (state == AppLifecycleState.paused && _apple?.pip == false) {
+      if (state == AppLifecycleState.paused && _apple?.pip != true) {
         unawaited(_pauseEngine());
       }
     } else if (state == AppLifecycleState.resumed && _nextChoice != null) {
@@ -1715,6 +1807,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         await _closeApple();
         await player?.dispose();
       } finally {
+        await _closeRangeSource();
         await _subtitleFiles?.dispose();
         try {
           await lease?.release();

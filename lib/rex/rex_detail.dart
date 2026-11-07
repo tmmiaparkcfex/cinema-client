@@ -25,15 +25,11 @@ class RexDetail extends StatefulWidget {
     required this.related,
     required this.onOpen,
     required this.onSearch,
-    this.scrollController,
-    this.sheet = false,
   });
   final VodItem item;
   final List<VodItem> related;
   final ValueChanged<VodItem> onOpen;
   final ValueChanged<String> onSearch;
-  final ScrollController? scrollController;
-  final bool sheet;
   @override
   State<RexDetail> createState() => _RexDetailState();
 }
@@ -261,14 +257,13 @@ class _RexDetailState extends State<RexDetail> {
         .take(8)
         .toList();
     final canPlay = _detail?.allEntries.any((v) => v.resource != null) == true;
-    final top = widget.sheet ? 6.0 : MediaQuery.paddingOf(context).top;
+    final top = MediaQuery.paddingOf(context).top;
     final heroHeight = math.min(MediaQuery.sizeOf(context).width * 1.30, 690.0);
     return Scaffold(
       backgroundColor: _color,
       body: Stack(
         children: [
           CustomScrollView(
-            controller: widget.scrollController,
             slivers: [
               SliverToBoxAdapter(
                 child: SizedBox(
@@ -759,6 +754,26 @@ class _RexDetailState extends State<RexDetail> {
             ],
           ),
           Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: top,
+            child: const IgnorePointer(
+              child: AnnotatedRegion<SystemUiOverlayStyle>(
+                value: SystemUiOverlayStyle.light,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.black38, Colors.transparent],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
             top: top + 6,
             left: 12,
             child: RexGlass(
@@ -770,24 +785,6 @@ class _RexDetailState extends State<RexDetail> {
               ),
             ),
           ),
-          if (widget.sheet)
-            Positioned(
-              top: 7,
-              left: 0,
-              right: 0,
-              child: IgnorePointer(
-                child: Center(
-                  child: Container(
-                    width: 35,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white38,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );

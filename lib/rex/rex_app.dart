@@ -63,38 +63,18 @@ class _RexShellState extends State<RexShell> {
     super.dispose();
   }
 
-  void _open(VodItem item, {bool fullScreen = false}) {
+  void _open(VodItem item) {
     FocusManager.instance.primaryFocus?.unfocus();
-    Widget detail([ScrollController? controller]) => RexDetail(
-      item: item,
-      related: _catalog!.items,
-      onOpen: (v) => _open(v, fullScreen: true),
-      onSearch: _search,
-      scrollController: controller,
-      sheet: !fullScreen,
-    );
-    if (fullScreen) {
-      Navigator.of(context)
-          .push(CupertinoPageRoute<void>(builder: (_) => detail()));
-    } else {
-      showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => DraggableScrollableSheet(
-          initialChildSize: .98,
-          minChildSize: .55,
-          maxChildSize: .98,
-          expand: false,
-          shouldCloseOnMinExtent: true,
-          builder: (_, controller) => ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            child: detail(controller),
-          ),
+    Navigator.of(context).push(
+      CupertinoPageRoute<void>(
+        builder: (_) => RexDetail(
+          item: item,
+          related: _catalog!.items,
+          onOpen: _open,
+          onSearch: _search,
         ),
-      );
-    }
+      ),
+    );
   }
 
   void _search([String query = '']) => Navigator.of(context).push(
@@ -117,7 +97,7 @@ class _RexShellState extends State<RexShell> {
         kind: kind,
         category: category,
         studio: studio,
-        onOpen: (v) => _open(v, fullScreen: true),
+        onOpen: _open,
       ),
     ),
   );
@@ -127,7 +107,7 @@ class _RexShellState extends State<RexShell> {
         title: title,
         initial: items,
         localOnly: true,
-        onOpen: (v) => _open(v, fullScreen: true),
+        onOpen: _open,
       ),
     ),
   );

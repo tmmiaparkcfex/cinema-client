@@ -8,13 +8,16 @@ import 'package:cinema_client/data/api_client.dart';
 import 'package:cinema_client/data/home_cache.dart';
 import 'package:cinema_client/data/local_store.dart';
 import 'package:cinema_client/main.dart';
+import 'package:cinema_client/player/apple_playback.dart';
 import 'package:cinema_client/player/rex_player_controls.dart';
 import 'package:cinema_client/quark/quark_account_store.dart';
 import 'package:cinema_client/quark/quark_playback_service.dart';
+import 'package:cinema_client/rex/rex_detail.dart';
 import 'package:cinema_client/rex/rex_metadata.dart';
 import 'package:cinema_client/rex/rex_store.dart';
 import 'package:cinema_client/rex/rex_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -29,6 +32,28 @@ class _MemoryCache extends HomeCache {
 }
 
 void main() {
+  test('original player stays default for regular 4K and E-AC-3', () {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    MediaResource resource(String name, {String? hdr, String? audioCodec}) =>
+        MediaResource.fromJson({
+          'file': {'name': name},
+          'video': {'width': 3840, 'hdr': hdr, 'audioCodec': audioCodec},
+        });
+
+    expect(ApplePlayback.canOpen(resource('4K.mkv', hdr: 'HDR10')), isFalse);
+    expect(
+      ApplePlayback.canOpen(resource('4K.mp4', audioCodec: 'EAC3')),
+      isFalse,
+    );
+    expect(ApplePlayback.canOpen(resource('4K.mkv', hdr: 'DV HDR10')), isTrue);
+    expect(ApplePlayback.canOpen(resource('Title.2160p.DoVi.mkv')), isTrue);
+    expect(
+      ApplePlayback.canOpen(resource('4K.mp4', audioCodec: 'E-AC-3 JOC')),
+      isTrue,
+    );
+  });
+
   test('public TVBox catalog preserves scraped art, episode data and resource choices', () async {
     SharedPreferences.setMockInitialValues({
       'vod_api_base': 'https://tv.aeu.asia/tvbox.json',
@@ -154,6 +179,8 @@ void main() {
     expect(find.textContaining('发现'), findsWidgets);
     await tester.tap(find.text('测试剧集').first);
     await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.byType(RexDetail)).dy, 0);
+    expect(find.byType(DraggableScrollableSheet), findsNothing);
     expect(find.bySemanticsLabel('收藏'), findsWidgets);
     await tester.tap(find.bySemanticsLabel('收藏').last);
     await tester.pump();
