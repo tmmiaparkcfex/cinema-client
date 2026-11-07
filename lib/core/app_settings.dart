@@ -6,6 +6,11 @@ const String defaultVodApiBase = String.fromEnvironment(
   defaultValue: 'http://172.16.3.70:8790',
 );
 
+const rexVodApiBase = String.fromEnvironment(
+  'VOD_API_BASE',
+  defaultValue: 'https://tv.aeu.asia/tvbox.json',
+);
+
 class AppSettings extends ChangeNotifier {
   AppSettings._(this._prefs, this._baseUrl);
 
@@ -16,12 +21,15 @@ class AppSettings extends ChangeNotifier {
 
   String get baseUrl => _baseUrl;
 
-  static AppSettings load(SharedPreferences prefs) {
+  static AppSettings load(
+    SharedPreferences prefs, {
+    String fallback = defaultVodApiBase,
+  }) {
     final stored = prefs.getString(_baseKey)?.trim();
     return AppSettings._(
       prefs,
-      normalizeApiBase(stored == null || stored.isEmpty ? defaultVodApiBase : stored) ??
-          defaultVodApiBase,
+      normalizeApiBase(stored == null || stored.isEmpty ? fallback : stored) ??
+          fallback,
     );
   }
 

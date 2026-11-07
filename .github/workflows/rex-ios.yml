@@ -1,0 +1,81 @@
+name: Build Rex iOS
+
+on:
+  push:
+    branches: [codex/rex-ios]
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: Cinema API base URL
+        required: true
+        default: https://tv.aeu.asia/tvbox.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rex-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      PUB_HOSTED_URL: https://pub.flutter-io.cn
+      VOD_API_BASE: ${{ inputs.api_base || 'https://tv.aeu.asia/tvbox.json' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.8
+          channel: stable
+          cache: true
+      - name: Prepare toolchain
+        run: |
+          set -euo pipefail
+          mkdir -p build/evidence
+          if test -d /Applications/Xcode_26.3.app; then
+            sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
+          fi
+          flutter --version | tee build/evidence/toolchain.txt
+          xcodebuild -version | tee -a build/evidence/toolchain.txt
+          flutter config --no-enable-swift-package-manager
+          flutter pub get --enforce-lockfile
+      - name: Analyze
+        run: |
+          set -o pipefail
+          flutter analyze 2>&1 | tee build/evidence/analyze.log
+      - name: Test
+        run: |
+          set -o pipefail
+          flutter test --reporter expanded 2>&1 | tee build/evidence/tests.log
+      - name: Build unsigned iPhone and iPad app
+        run: |
+          set -o pipefail
+          flutter build ios --release --no-codesign \
+            --dart-define=VOD_API_BASE="$VOD_API_BASE" \
+            2>&1 | tee build/evidence/ios-build.log
+      - name: Package IPA
+        run: |
+          set -euo pipefail
+          test -d build/ios/iphoneos/Runner.app
+          mkdir -p build/ios/rex/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/rex/Payload/Runner.app
+          cd build/ios/rex
+          zip -qry Cinema-Rex-unsigned.ipa Payload
+          shasum -a 256 Cinema-Rex-unsigned.ipa > Cinema-Rex-unsigned.ipa.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cinema-rex-ios-unsigned
+          if-no-files-found: error
+          path: |
+            build/ios/rex/Cinema-Rex-unsigned.ipa
+            build/ios/rex/Cinema-Rex-unsigned.ipa.sha256
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cinema-rex-build-evidence
+          path: build/evidence/
+          retention-days: 14

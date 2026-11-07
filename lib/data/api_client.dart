@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../core/app_log.dart';
 import '../core/app_models.dart';
 import '../core/app_settings.dart';
+import 'tvbox_catalog.dart';
 
 enum ApiFailureKind { network, timeout, http, protocol, server }
 
@@ -55,10 +56,26 @@ class VodApi {
   final AppSettings settings;
   final http.Client _client;
   final Duration timeout;
+  bool get _usesTvBox =>
+      Uri.parse(settings.baseUrl).path.endsWith('/tvbox.json');
+  Uri get _publicOrigin {
+    final uri = Uri.parse(settings.baseUrl);
+    return Uri(
+      scheme: uri.scheme,
+      host: uri.host,
+      port: uri.hasPort ? uri.port : null,
+    );
+  }
 
   void close() => _client.close();
 
   Uri _uri(String path, [Map<String, String> query = const {}]) {
+    if (_usesTvBox) {
+      return _publicOrigin.replace(
+        path: path,
+        queryParameters: query.isEmpty ? null : query,
+      );
+    }
     final base = settings.baseUrl.endsWith('/')
         ? settings.baseUrl.substring(0, settings.baseUrl.length - 1)
         : settings.baseUrl;
@@ -128,7 +145,11 @@ class VodApi {
   }
 
   Future<HomeFeed> fetchHome() async {
-    final json = await _getJson('/api/home');
+    final json = _usesTvBox
+        ? await _tvBoxPage().then(
+            (page) => {'fourK': page['items'], 'latest': page['items']},
+          )
+        : await _getJson('/api/home');
     final feed = HomeFeed.fromJson(json);
     if (feed.all.isEmpty) {
       throw const ApiException(
@@ -141,6 +162,13 @@ class VodApi {
   }
 
   Future<CatalogPage> fetchList(MediaKind kind, {int page = 1}) async {
+    if (_usesTvBox) {
+      return CatalogPage.fromJson(
+        await _tvBoxPage(
+          query: {'type': kind == MediaKind.tv ? 'tv' : 'movie', 'pg': '$page'},
+        ),
+      );
+    }
     final json = await _getJson(
       '/api/list',
       query: {'type': kind == MediaKind.tv ? 'tv' : 'movie', 'pg': '$page'},
@@ -153,18 +181,54 @@ class VodApi {
     if (value.isEmpty) {
       return const CatalogPage(items: [], total: 0, page: 1, pageCount: 1);
     }
-    final json = await _getJson(
-      '/api/search',
-      query: {'wd': value, 'pg': '$page'},
-    );
+    final json = await _searchJson(value, page);
     return CatalogPage.fromJson(json);
+  }
+
+  Future<Map<String, dynamic>> _searchJson(String value, int page) {
+    final query = {'wd': value, 'pg': '$page'};
+    return _usesTvBox
+        ? _tvBoxPage(query: query)
+        : _getJson('/api/search', query: query);
+  }
+
+  Future<Map<String, dynamic>> _tvBoxPage({
+    Map<String, String> query = const {},
+  }) async {
+    final origin = _publicOrigin;
+    final raw = await _getJson(
+      TvBoxCatalog.feedPath,
+      query: {'ac': 'detail', ...query},
+    );
+    final rows = raw['list'];
+    if (raw['code']?.toString() != '1' || rows is! List) {
+      throw const ApiException(
+        ApiFailureKind.protocol,
+        '影视目录返回格式异常',
+        endpoint: TvBoxCatalog.feedPath,
+      );
+    }
+    return {
+      ...raw,
+      'items': rows
+          .whereType<Map>()
+          .map((row) => TvBoxCatalog.item(row.cast<String, dynamic>(), origin))
+          .toList(),
+    };
   }
 
   Future<VodDetail> fetchDetail(
     String id, {
     bool includeOtherSeasons = true,
   }) async {
-    final json = await _getJson('/api/detail', query: {'id': id});
+    final Map<String, dynamic> json;
+    if (_usesTvBox) {
+      final page = await _tvBoxPage(query: {'ids': id});
+      final item = (page['items'] as List).firstOrNull as Map<String, dynamic>?;
+      json = {'item': item, 'lines': item?['lines']};
+    } else {
+      json = await _getJson('/api/detail', query: {'id': id});
+    }
     final detail = VodDetail.fromJson(json);
     if (detail.item.key.isEmpty) {
       throw const ApiException(
@@ -185,6 +249,10 @@ class VodApi {
       for (final line in detail.lines) line.group: [...line.entries],
     };
     var seasonsLoaded = true;
+    final episodeMetadata = <(Object?, Object?), Map<String, dynamic>>{
+      for (final row in detail.item.episodes)
+        (row['season'], row['episode']): row,
+    };
     final episodeCounts = <int, int>{
       for (final entry in detail.allEntries)
         if (entry.season != null && (detail.item.coverage?.expected ?? 0) > 0)
@@ -194,10 +262,7 @@ class VodApi {
       var page = 1;
       var pageCount = 1;
       do {
-        final found = await _getJson(
-          '/api/search',
-          query: {'wd': detail.item.name, 'pg': '$page'},
-        );
+        final found = await _searchJson(detail.item.name, page);
         pageCount = int.tryParse(found['pagecount']?.toString() ?? '') ?? 1;
         final rows = found['items'];
         if (rows is! List) {
@@ -214,6 +279,9 @@ class VodApi {
           if (seasonItem.workId != detail.item.workId ||
               seasonItem.key == detail.item.key) {
             continue;
+          }
+          for (final episode in seasonItem.episodes) {
+            episodeMetadata[(episode['season'], episode['episode'])] = episode;
           }
           final sources = raw['sources'];
           if (sources is! List) continue;
@@ -243,7 +311,7 @@ class VodApi {
       // A temporary search failure must not prevent playing the selected season.
     }
     return VodDetail(
-      item: detail.item,
+      item: detail.item.copyWith(episodes: episodeMetadata.values.toList()),
       seasonsLoaded: seasonsLoaded,
       episodeCounts: episodeCounts,
       lines: [

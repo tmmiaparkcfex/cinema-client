@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +16,11 @@ import '../core/app_theme.dart';
 import '../core/episode_choice.dart';
 import '../quark/quark_login_screen.dart';
 import '../quark/quark_playback_service.dart';
+import '../rex/rex_interactions.dart';
+import '../rex/rex_metadata.dart';
+import 'apple_playback.dart';
+import 'rex_player_controls.dart';
+import 'rex_player_tools.dart';
 import 'subtitle_files.dart';
 import 'native_player.dart';
 
@@ -24,11 +30,13 @@ class PlaybackScreen extends StatefulWidget {
     required this.detail,
     required this.initialChoice,
     this.updatedDetail,
+    this.rexStyle = false,
   });
 
   final VodDetail detail;
   final EpisodeChoice initialChoice;
   final Future<VodDetail>? updatedDetail;
+  final bool rexStyle;
 
   @override
   State<PlaybackScreen> createState() => _PlaybackScreenState();
@@ -41,6 +49,24 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   late VodDetail _detail;
   SubtitleFiles? _subtitleFiles;
   Player? _player;
+  ApplePlayback? _apple;
+  bool _appleComplete = false;
+  bool _preferApple = true;
+  bool _locked = false, _menuOpen = false;
+  RexPlayerPanel? _dock;
+  int _dockSeason = 1;
+  double _volume = 100, _brightness = .5, _audioDelay = 0;
+  double? _aspect;
+  bool _boosted = false;
+  String? _hud;
+  Timer? _hudTimer;
+  bool _leftGesture = false;
+  double _gestureValue = 0;
+  bool _gestureStarted = false;
+  final _tools = RexPlayerTools();
+  String? _externalSubtitle;
+  String? _secondarySubtitle;
+  static const _device = MethodChannel('cinema/player-device');
   VideoController? _videoController;
   QuarkPlaybackLease? _lease;
   final List<StreamSubscription<dynamic>> _subscriptions = [];
@@ -77,6 +103,87 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   DateTime _lastProgressSave = DateTime.fromMillisecondsSinceEpoch(0);
 
   MediaResource? get _resource => _choice.resource;
+  bool get _completed =>
+      _apple != null ? _appleComplete : _player?.state.completed == true;
+  Duration get _currentPosition =>
+      _apple != null ? _position : _player?.state.position ?? _position;
+  bool get _hasEngine => _apple != null || _player != null;
+
+  Future<void> _pauseEngine() async {
+    if (_apple != null) {
+      await _apple!.send('pause');
+    } else {
+      await _player?.pause();
+    }
+  }
+
+  Future<void> _playEngine() async {
+    if (_apple != null) {
+      await _apple!.send('play');
+    } else {
+      await _player?.play();
+    }
+  }
+
+  Future<void> _seekEngine(Duration at) async {
+    if (_apple != null) {
+      await _apple!.send('seek', at.inMilliseconds);
+    } else {
+      await _player?.seek(at);
+    }
+  }
+
+  Future<void> _rateEngine(double rate) async {
+    if (_apple != null) {
+      await _apple!.send('rate', rate);
+    } else {
+      await _player?.setRate(rate);
+    }
+  }
+
+  Future<void> _closeApple() async {
+    final apple = _apple;
+    _apple = null;
+    _appleComplete = false;
+    await apple?.close();
+  }
+
+  void _appleEvent(
+    ApplePlayback apple,
+    int generation,
+    Map<Object?, Object?> event,
+  ) {
+    if (_disposed ||
+        !mounted ||
+        !identical(_apple, apple) ||
+        generation != _generation) {
+      return;
+    }
+    if (event['failed'] == true) {
+      if (_mediaReady) _handlePlaybackError();
+      return;
+    }
+    final wasPlaying = _playing;
+    final complete = event['complete'] == true;
+    setState(() {
+      _playing = event['playing'] == true;
+      _buffering = event['buffering'] == true;
+      if (_dragPositionMs == null) {
+        _position = Duration(milliseconds: event['position'] as int? ?? 0);
+      }
+      _duration = Duration(milliseconds: event['duration'] as int? ?? 0);
+      _buffer = Duration(milliseconds: event['buffer'] as int? ?? 0);
+      _tracks = apple.tracks;
+      _track = apple.track;
+      _appleComplete = complete;
+    });
+    if (!wasPlaying && _playing) _armHideControls();
+    if (complete) unawaited(_handleCompleted());
+    if (DateTime.now().difference(_lastProgressSave).inSeconds >= 10) {
+      _lastProgressSave = DateTime.now();
+      unawaited(_saveProgress());
+    }
+  }
 
   @override
   void initState() {
@@ -100,7 +207,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
             if (selected != null) _choice = selected;
           });
           if (_ended &&
-              _player?.state.completed == true &&
+              _completed &&
               EpisodeChoice.nextEpisode(updated, _choice) != null) {
             _ended = false;
             unawaited(_handleCompleted());
@@ -244,6 +351,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     }
 
     _mediaReady = false;
+    await _closeApple();
     if (_player != null) {
       await _player!.stop();
     }
@@ -269,7 +377,6 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     });
 
     try {
-      await _ensurePlayer();
       QuarkPlaybackLease? lease = refreshLease ? _lease : null;
       if (lease != null) {
         _setStateIfMounted(() => _stage = '正在刷新播放地址');
@@ -312,22 +419,63 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       );
       _stage = '正在起播';
       _setStateIfMounted(() {});
-      await _player!.open(
-        Media(
-          lease.mediaUri.toString(),
-          httpHeaders: lease.headers,
-          start: resume,
-        ),
-        play: true,
-      );
-      if (_disposed || generation != _generation) {
-        if (!identical(_lease, lease)) await lease.release();
-        return;
+      var appleReady = false;
+      if (widget.rexStyle &&
+          _preferApple &&
+          ApplePlayback.canOpen(resource.fileName)) {
+        late final ApplePlayback apple;
+        apple = ApplePlayback((event) => _appleEvent(apple, generation, event));
+        _setStateIfMounted(() => _apple = apple);
+        try {
+          await Future.any<void>([
+            apple.open(
+              lease.mediaUri,
+              lease.headers,
+              resource.fileName,
+              resume,
+            ),
+            cancellation.whenCancelled.then(
+              (_) => cancellation.throwIfCancelled(),
+            ),
+          ]);
+          if (_disposed || generation != _generation) return;
+          await apple.send('rate', _rate);
+          await apple.send('volume', _volume);
+          await apple.send('fit', _fit.name);
+          appleReady = true;
+        } on Object catch (error) {
+          if (_disposed || generation != _generation) return;
+          AppLog.error('apple-playback-fallback', error.runtimeType);
+          await _closeApple();
+          _setStateIfMounted(() {});
+        }
       }
-      await Future.any<void>([
-        _videoController!.waitUntilFirstFrameRendered,
-        cancellation.whenCancelled.then((_) => cancellation.throwIfCancelled()),
-      ]).timeout(const Duration(seconds: 40));
+      if (!appleReady) {
+        await _ensurePlayer();
+        if (_disposed || generation != _generation) return;
+        await _player!.open(
+          Media(
+            lease.mediaUri.toString(),
+            httpHeaders: lease.headers,
+            start: resume,
+          ),
+          play: true,
+        );
+        if (_disposed || generation != _generation) {
+          if (!identical(_lease, lease)) await lease.release();
+          return;
+        }
+        await Future.any<void>([
+          _videoController!.waitUntilFirstFrameRendered,
+          cancellation.whenCancelled.then(
+            (_) => cancellation.throwIfCancelled(),
+          ),
+        ]).timeout(const Duration(seconds: 40));
+        if (widget.rexStyle && !_disposed && generation == _generation) {
+          await _player!.setRate(_rate);
+          await _player!.setVolume(_volume);
+        }
+      }
       if (_disposed || generation != _generation) {
         if (!identical(_lease, lease)) await lease.release();
         return;
@@ -336,7 +484,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       _mediaReady = true;
       _setStateIfMounted(() {
         _loading = false;
-        _buffering = _player!.state.buffering;
+        _buffering = appleReady ? _buffering : _player!.state.buffering;
         _ended = false;
         _errorTitle = null;
         _controlsVisible = true;
@@ -373,7 +521,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     _prepareTimer?.cancel();
     _bufferTimer?.cancel();
     _nextTimer?.cancel();
-    unawaited(_player?.pause());
+    unawaited(_pauseEngine());
     _setStateIfMounted(() {
       _loading = false;
       _buffering = false;
@@ -403,7 +551,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         return;
       }
       _showError('加载超时', '连续缓冲超过 40 秒。本次等待已停止，请检查网络或切换线路；不会无限加载。');
-      unawaited(_player?.pause());
+      unawaited(_pauseEngine());
     });
   }
 
@@ -422,6 +570,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       _errorDetail = '本次播放准备已取消。如果资源已经转存，会在后台清理。';
     });
     try {
+      await _closeApple();
       await player?.stop();
     } finally {
       try {
@@ -455,17 +604,16 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   }
 
   Future<void> _retryPlayback() async {
-    final position = _player?.state.position ?? _position;
+    final position = _currentPosition;
     await _saveProgress();
     if (_disposed) return;
     await _startPlayback(resumeAt: position, refreshLease: _lease != null);
   }
 
   Future<void> _saveProgress({bool completed = false}) async {
-    final player = _player;
     final resource = _resource;
     if (!_mediaReady ||
-        player == null ||
+        !_hasEngine ||
         resource == null ||
         resource.id.isEmpty ||
         _savingProgress) {
@@ -473,8 +621,8 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     }
     final duration = _duration.inMilliseconds > 0
         ? _duration
-        : player.state.duration;
-    final position = player.state.position;
+        : _player?.state.duration ?? Duration.zero;
+    final position = _currentPosition;
     if (duration.inMilliseconds <= 0 && position.inMilliseconds <= 0) return;
     _savingProgress = true;
     try {
@@ -484,7 +632,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         position: position,
         duration: duration,
         lineGroup: _choice.line.group,
-        completed: completed || player.state.completed,
+        completed: completed || _completed,
       );
     } finally {
       _savingProgress = false;
@@ -515,11 +663,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   }
 
   Future<void> _replay() async {
-    final player = _player;
-    if (player == null) return;
+    if (!_hasEngine) return;
     _cancelOverlays();
-    await player.seek(Duration.zero);
-    await player.play();
+    await _seekEngine(Duration.zero);
+    await _playEngine();
     _setStateIfMounted(() {
       _ended = false;
       _controlsVisible = true;
@@ -569,14 +716,21 @@ class _PlaybackScreenState extends State<PlaybackScreen>
 
   Future<void> _switchChoice(EpisodeChoice choice) async {
     final sameEpisode = EpisodeChoice.isSameEpisode(_choice, choice);
-    final position = sameEpisode
-        ? (_player?.state.position ?? _position)
-        : Duration.zero;
-    await _saveProgress(completed: _player?.state.completed == true);
+    final position = sameEpisode ? _currentPosition : Duration.zero;
+    await _saveProgress(completed: _completed);
     if (_disposed) return;
     _mediaReady = false;
     _setStateIfMounted(() {
       _choice = choice;
+      _dock = null;
+      _externalSubtitle = null;
+      _secondarySubtitle = null;
+      if (!sameEpisode) {
+        _tools.comments = [];
+        _tools.commentsEnabled = false;
+        _tools.marks.clear();
+        _tools.segmentStart = null;
+      }
       _position = Duration.zero;
       _duration = Duration.zero;
       _buffer = Duration.zero;
@@ -587,13 +741,12 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   }
 
   Future<void> _seekRelative(int seconds) async {
-    final player = _player;
-    if (player == null) return;
+    if (!_hasEngine) return;
     final targetMs = (_position.inMilliseconds + seconds * 1000).clamp(
       0,
       _duration.inMilliseconds > 0 ? _duration.inMilliseconds : 1 << 62,
     );
-    await player.seek(Duration(milliseconds: targetMs));
+    await _seekEngine(Duration(milliseconds: targetMs));
     _showControlsTemporarily();
   }
 
@@ -604,7 +757,15 @@ class _PlaybackScreenState extends State<PlaybackScreen>
 
   void _armHideControls() {
     _hideControlsTimer?.cancel();
-    if (_errorTitle != null || _loading || _nextChoice != null) return;
+    if (_errorTitle != null ||
+        _loading ||
+        _nextChoice != null ||
+        _menuOpen ||
+        _dock != null ||
+        _locked ||
+        _boosted) {
+      return;
+    }
     _hideControlsTimer = Timer(const Duration(seconds: 4), () {
       if (mounted && _playing) setState(() => _controlsVisible = false);
     });
@@ -620,22 +781,21 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   }
 
   Future<void> _togglePlay() async {
-    final player = _player;
-    if (player == null) return;
-    if (player.state.completed) {
+    if (!_hasEngine) return;
+    if (_completed) {
       await _replay();
       return;
     }
     if (_playing) {
-      await player.pause();
+      await _pauseEngine();
     } else {
-      await player.play();
+      await _playEngine();
     }
     _showControlsTemporarily();
   }
 
   Future<void> _selectRate(double value) async {
-    await _player?.setRate(value);
+    await _rateEngine(value);
     _setStateIfMounted(() => _rate = value);
     _showControlsTemporarily();
   }
@@ -858,6 +1018,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
       await _player?.setSubtitleTrack(
         SubtitleTrack.uri(imported.path, title: file.name),
       );
+      if (widget.rexStyle && mounted) {
+        setState(() => _externalSubtitle = file.name);
+      }
       _showControlsTemporarily();
     } catch (error) {
       if (!mounted) return;
@@ -939,6 +1102,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
   }
 
   Future<void> _openLinePanel() async {
+    if (widget.rexStyle && !_loading && _errorTitle == null && !_ended) {
+      _showDock(RexPlayerPanel.resources);
+      return;
+    }
     _hideControlsTimer?.cancel();
     setState(() => _controlsVisible = false);
     await showModalBottomSheet<void>(
@@ -980,12 +1147,523 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     if (mounted) _showControlsTemporarily();
   }
 
+  void _showDock(RexPlayerPanel panel) {
+    _hideControlsTimer?.cancel();
+    setState(() {
+      _dockSeason = _choice.season ?? 1;
+      _controlsVisible = true;
+      _dock = _dock == panel ? null : panel;
+    });
+    if (_dock == null) _armHideControls();
+  }
+
+  void _closeDock() {
+    setState(() => _dock = null);
+    _armHideControls();
+  }
+
+  Future<void> _openRexMenu(String name, BuildContext anchor) async {
+    if (name == '选集' || name == '线路') {
+      _showDock(
+        name == '选集' ? RexPlayerPanel.episodes : RexPlayerPanel.resources,
+      );
+      return;
+    }
+    if (name == '画中画') {
+      if (_apple == null) {
+        _showHud('当前线路使用兼容内核，无法开启系统画中画');
+      } else {
+        try {
+          await _apple!.send('pip');
+        } on PlatformException {
+          _showHud('当前设备或线路无法开启画中画');
+        }
+      }
+      return;
+    }
+    final entries = <RexMenuEntry<String>>[];
+    switch (name) {
+      case '倍速':
+        for (final rate in [2.0, 1.75, 1.5, 1.25, 1.0, .75, .5]) {
+          entries.add(
+            RexMenuEntry(
+              'rate:$rate',
+              '${rate.toString().replaceFirst(RegExp(r'\.0$'), '')}×',
+              selected: rate == _rate,
+            ),
+          );
+        }
+      case '填充模式':
+        for (final (fit, label) in [
+          (BoxFit.contain, '适应屏幕'),
+          (BoxFit.cover, '填满屏幕'),
+          (BoxFit.fill, '拉伸填满'),
+        ]) {
+          entries.add(
+            RexMenuEntry(
+              'fit:${fit.name}',
+              label,
+              selected: _fit == fit && _aspect == null,
+            ),
+          );
+        }
+        entries.addAll([
+          RexMenuEntry(
+            'aspect:1.7777777778',
+            '画面比例 · 16:9',
+            selected: _aspect == 1.7777777778,
+          ),
+          RexMenuEntry(
+            'aspect:1.3333333333',
+            '画面比例 · 4:3',
+            selected: _aspect == 1.3333333333,
+          ),
+        ]);
+        if (_apple != null) entries.add(const RexMenuEntry('compat', '使用兼容内核'));
+        if (_apple == null &&
+            ApplePlayback.canOpen(_resource?.fileName ?? '')) {
+          entries.add(const RexMenuEntry('apple', '尝试 Apple 原生内核'));
+        }
+      case '音轨':
+        for (final audio in _tracks.audio.where(
+          (v) => v.id != 'auto' && v.id != 'no',
+        )) {
+          entries.add(
+            RexMenuEntry(
+              'audio:${audio.id}',
+              _trackLabel(audio.title, audio.language, audio.codec),
+              selected: audio.id == _track.audio.id,
+            ),
+          );
+        }
+        if (_apple == null) {
+          entries.add(
+            RexMenuEntry(
+              'audio-delay',
+              '音频延迟 · ${_audioDelay.toStringAsFixed(1)}s',
+            ),
+          );
+        }
+      case '字幕':
+        entries.add(
+          RexMenuEntry(
+            'subtitle:no',
+            '关闭字幕',
+            selected: _track.subtitle.id == 'no',
+          ),
+        );
+        for (final subtitle in _tracks.subtitle.where(
+          (v) => v.id != 'auto' && v.id != 'no',
+        )) {
+          entries.add(
+            RexMenuEntry(
+              'subtitle:${subtitle.id}',
+              _trackLabel(subtitle.title, subtitle.language, subtitle.codec),
+              selected: subtitle.id == _track.subtitle.id,
+            ),
+          );
+        }
+        if (_apple == null) {
+          entries.addAll([
+            RexMenuEntry(
+              'secondary',
+              '副字幕${_secondarySubtitle == null ? '' : ' · 已开启'}',
+              icon: CupertinoIcons.text_bubble,
+            ),
+            RexMenuEntry(
+              'import-subtitle',
+              _externalSubtitle == null ? '导入字幕' : '外挂字幕 · $_externalSubtitle',
+              icon: CupertinoIcons.folder,
+            ),
+          ]);
+        } else {
+          entries.add(const RexMenuEntry('compat', '外挂字幕 · 切换兼容内核'));
+        }
+      case '片段':
+        final native = _player?.platform;
+        if (_apple == null && native is NativePlayer) {
+          try {
+            final count =
+                int.tryParse(await native.getProperty('chapter-list/count')) ??
+                0;
+            for (var i = 0; i < count.clamp(0, 100); i++) {
+              final seconds = double.tryParse(
+                await native.getProperty('chapter-list/$i/time'),
+              );
+              if (seconds == null || !seconds.isFinite || seconds < 0) continue;
+              final at = (seconds * 1000).round();
+              final label = await native.getProperty('chapter-list/$i/title');
+              entries.add(
+                RexMenuEntry(
+                  'jump:$at',
+                  '${playbackClock(Duration(milliseconds: at))} · ${label.isEmpty ? '片段 ${i + 1}' : label}',
+                ),
+              );
+            }
+          } on Object {
+            /* This source has no readable chapter list. */
+          }
+        }
+        for (final mark in _tools.marks.entries) {
+          entries.add(
+            RexMenuEntry(
+              'jump:${mark.key}',
+              '${playbackClock(Duration(milliseconds: mark.key))} · ${mark.value}',
+            ),
+          );
+        }
+        entries.addAll([
+          const RexMenuEntry(
+            'intro-mark',
+            '标记片头',
+            icon: CupertinoIcons.backward_end,
+          ),
+          RexMenuEntry(
+            'segment',
+            _tools.segmentStart == null ? '创建片段' : '保存片段结束时间',
+            icon: CupertinoIcons.recordingtape,
+          ),
+        ]);
+      case '弹幕':
+        entries.addAll([
+          const RexMenuEntry(
+            'import-comments',
+            '导入弹幕',
+            icon: CupertinoIcons.folder,
+          ),
+          const RexMenuEntry(
+            'comments-style',
+            '显示设置',
+            icon: CupertinoIcons.gear,
+          ),
+          const RexMenuEntry(
+            'keywords',
+            '过滤关键词',
+            icon: CupertinoIcons.line_horizontal_3_decrease,
+          ),
+          RexMenuEntry(
+            'toggle-comments',
+            _tools.commentsEnabled ? '关闭弹幕' : '开启弹幕',
+          ),
+        ]);
+      case '投屏':
+        _showHud('AirPlay 需要支持的原生播放线路与接收设备');
+        return;
+    }
+    if (!mounted || !anchor.mounted) return;
+    if (entries.isEmpty) {
+      _showHud('当前片源没有可切换的$name');
+      return;
+    }
+    _hideControlsTimer?.cancel();
+    _menuOpen = true;
+    final value = await showRexMenu(context, anchor: anchor, entries: entries);
+    if (!mounted) return;
+    _menuOpen = false;
+    if (value != null) await _applyRexMenu(value);
+    if (mounted) _showControlsTemporarily();
+  }
+
+  Future<void> _applyRexMenu(String value) async {
+    final parts = value.split(':');
+    final parameter = parts.length > 1 ? parts.sublist(1).join(':') : '';
+    switch (parts.first) {
+      case 'rate':
+        await _selectRate(double.parse(parameter));
+      case 'fit':
+        setState(() {
+          _fit = BoxFit.values.byName(parameter);
+          _aspect = null;
+        });
+        await _apple?.send('fit', parameter);
+      case 'aspect':
+        setState(() => _aspect = double.parse(parameter));
+      case 'audio':
+        if (_apple != null) {
+          await _apple!.send('audio', parameter);
+        } else {
+          final audio = _tracks.audio
+              .where((v) => v.id == parameter)
+              .firstOrNull;
+          if (audio != null) await _player?.setAudioTrack(audio);
+        }
+      case 'subtitle':
+        if (_apple != null) {
+          await _apple!.send('subtitle', parameter);
+        } else {
+          final sub = _tracks.subtitle
+              .where((v) => v.id == parameter)
+              .firstOrNull;
+          if (parameter == 'no' || sub != null) {
+            await _player?.setSubtitleTrack(sub ?? SubtitleTrack.no());
+          }
+        }
+      case 'audio-delay':
+        await _showAdjustment(audio: true);
+      case 'secondary':
+        await _chooseSecondarySubtitle();
+      case 'import-subtitle':
+        await _importSubtitle();
+      case 'compat':
+      case 'apple':
+        _preferApple = value == 'apple';
+        await _retryPlayback();
+      case 'jump':
+        await _seekEngine(Duration(milliseconds: int.parse(parameter)));
+      case 'intro-mark':
+        _tools.marks[_currentPosition.inMilliseconds] = '片头结束';
+        _showHud('已标记片头结束');
+      case 'segment':
+        final now = _currentPosition.inMilliseconds;
+        final start = _tools.segmentStart;
+        if (start == null) {
+          _tools.segmentStart = now;
+          _showHud('已记录片段起点');
+        } else if (now > start) {
+          _tools.marks[start] =
+              '片段 · ${playbackClock(Duration(milliseconds: now - start))}';
+          _tools.segmentStart = null;
+          _showHud('已保存片段');
+        } else {
+          _showHud('请在起点之后选择结束时间');
+        }
+      case 'toggle-comments':
+        if (_tools.comments.isEmpty) {
+          _showHud('请先导入弹幕文件');
+        } else {
+          setState(() => _tools.commentsEnabled = !_tools.commentsEnabled);
+        }
+      case 'import-comments':
+        await _importComments();
+      case 'comments-style':
+        await _showAdjustment(audio: false);
+      case 'keywords':
+        await _editKeywords();
+    }
+  }
+
+  Future<void> _chooseSecondarySubtitle() async {
+    final selected = await showCupertinoModalPopup<String>(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: const Text('副字幕'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context, 'no'),
+            child: const Text('关闭副字幕'),
+          ),
+          for (final track in _tracks.subtitle.where(
+            (v) => int.tryParse(v.id) != null && v.id != _track.subtitle.id,
+          ))
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context, track.id),
+              child: Text(
+                _trackLabel(track.title, track.language, track.codec),
+              ),
+            ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+      ),
+    );
+    if (!mounted || selected == null) return;
+    final native = _player?.platform;
+    if (native is NativePlayer) {
+      await native.setProperty('secondary-sid', selected);
+      if (mounted) {
+        setState(() => _secondarySubtitle = selected == 'no' ? null : selected);
+      }
+    }
+  }
+
+  Future<void> _importComments() async {
+    final generation = _generation;
+    try {
+      final file = await openFile(
+        acceptedTypeGroups: const [
+          XTypeGroup(
+            label: '弹幕',
+            extensions: ['xml', 'json'],
+            uniformTypeIdentifiers: ['public.xml', 'public.json'],
+          ),
+        ],
+      );
+      if (file == null || !mounted || generation != _generation) return;
+      if (await file.length() > 4 * 1024 * 1024) {
+        throw const FormatException('弹幕文件超过 4 MB');
+      }
+      final raw = await file.readAsString();
+      if (!mounted || generation != _generation) return;
+      _tools.loadComments(raw);
+      setState(() {});
+      _showHud('已导入 ${_tools.comments.length} 条弹幕');
+    } on Object {
+      if (mounted) _showHud('无法导入弹幕，请检查 XML 或 JSON 格式');
+    }
+  }
+
+  Future<void> _editKeywords() async {
+    var value = _tools.keywords;
+    final selected = await showCupertinoDialog<String>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('过滤关键词'),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: CupertinoTextFormFieldRow(
+            initialValue: value,
+            padding: EdgeInsets.zero,
+            placeholder: '用逗号分隔关键词',
+            onChanged: (text) => value = text,
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          CupertinoDialogAction(
+            onPressed: () => Navigator.pop(context, value),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    if (mounted && selected != null) setState(() => _tools.keywords = selected);
+  }
+
+  Future<void> _showAdjustment({required bool audio}) async {
+    await showGeneralDialog<void>(
+      context: context,
+      barrierLabel: '关闭设置',
+      barrierDismissible: true,
+      barrierColor: const Color(0x22000000),
+      pageBuilder: (context, _, _) => SafeArea(
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: Material(
+            borderRadius: BorderRadius.circular(24),
+            color: const Color(0xEF3C373E),
+            child: SizedBox(
+              width: 315,
+              child: StatefulBuilder(
+                builder: (context, refresh) => Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      title: Text(audio ? '音频延迟' : '弹幕显示设置'),
+                      trailing: IconButton(
+                        icon: const Icon(CupertinoIcons.xmark),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    ListTile(
+                      title: Text(
+                        '${audio ? '音频延迟' : '延迟显示'} · ${(audio ? _audioDelay : _tools.delay).toStringAsFixed(1)}s',
+                      ),
+                      subtitle: Slider(
+                        min: -5,
+                        max: 5,
+                        divisions: 100,
+                        value: audio ? _audioDelay : _tools.delay,
+                        onChanged: (v) {
+                          refresh(() {
+                            if (audio) {
+                              _audioDelay = v;
+                            } else {
+                              _tools.delay = v;
+                            }
+                          });
+                          if (mounted) setState(() {});
+                        },
+                        onChangeEnd: (v) {
+                          final native = _player?.platform;
+                          if (audio && native is NativePlayer) {
+                            unawaited(native.setProperty('audio-delay', '$v'));
+                          }
+                        },
+                      ),
+                    ),
+                    if (!audio)
+                      ListTile(
+                        title: const Text('透明度'),
+                        subtitle: Slider(
+                          min: .1,
+                          max: 1,
+                          value: _tools.opacity,
+                          onChanged: (v) {
+                            refresh(() => _tools.opacity = v);
+                            if (mounted) setState(() {});
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showHud(String text) {
+    if (!mounted || _disposed) return;
+    _hudTimer?.cancel();
+    setState(() => _hud = text);
+    _hudTimer = Timer(
+      const Duration(milliseconds: 1500),
+      () => _setStateIfMounted(() => _hud = null),
+    );
+  }
+
+  void _toggleLock() {
+    setState(() {
+      _locked = !_locked;
+      _dock = null;
+      _controlsVisible = true;
+    });
+    if (_locked) {
+      _hideControlsTimer?.cancel();
+    } else {
+      _armHideControls();
+    }
+  }
+
+  Future<void> _adjustVertical(double delta) async {
+    if (_locked || !_gestureStarted) return;
+    final value = (_gestureValue - delta / 250).clamp(0.0, 1.0);
+    _gestureValue = value;
+    if (_leftGesture && defaultTargetPlatform == TargetPlatform.iOS) {
+      _brightness = value;
+      try {
+        await _device.invokeMethod<double>('brightness', value);
+      } on PlatformException {
+        return;
+      }
+      _showHud('亮度 ${(value * 100).round()}%');
+    } else {
+      _volume = value * 100;
+      if (_apple != null) {
+        await _apple!.send('volume', _volume);
+      } else {
+        await _player?.setVolume(_volume);
+      }
+      _showHud('音量 ${_volume.round()}%');
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
       _nextTimer?.cancel();
       unawaited(_saveProgress());
+      if (state == AppLifecycleState.paused && _apple?.pip == false) {
+        unawaited(_pauseEngine());
+      }
     } else if (state == AppLifecycleState.resumed && _nextChoice != null) {
       _showNextPrompt(_nextChoice!);
     }
@@ -998,6 +1676,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     WidgetsBinding.instance.removeObserver(this);
     _generation++;
     _cancelOverlays();
+    _hudTimer?.cancel();
     unawaited(_saveProgress());
     for (final sub in _subscriptions) {
       unawaited(sub.cancel());
@@ -1007,6 +1686,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     final player = _player;
     unawaited(() async {
       try {
+        await _closeApple();
         await player?.dispose();
       } finally {
         await _subtitleFiles?.dispose();
@@ -1027,6 +1707,42 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     final controller = _videoController;
     final width = MediaQuery.sizeOf(context).width;
     final compact = width < 650;
+    final apple = _apple;
+    final position = _dragPositionMs == null
+        ? _position
+        : Duration(milliseconds: _dragPositionMs!.round());
+    final next = EpisodeChoice.nextEpisode(_detail, _choice);
+    final episodeInfo = _detail.item.episodeInfo(
+      _choice.season ?? 1,
+      _choice.episode ?? 1,
+    );
+    final episodeName = episodeInfo?['name']?.toString();
+    final video =
+        apple?.view ??
+        (player != null && controller != null
+            ? Video(
+                controller: controller,
+                controls: NoVideoControls,
+                fit: _fit,
+                wakelock: true,
+                pauseUponEnteringBackgroundMode: true,
+                resumeUponEnteringForegroundMode: false,
+                subtitleViewConfiguration: SubtitleViewConfiguration(
+                  style: TextStyle(
+                    fontSize: compact ? 22 : 28,
+                    height: 1.35,
+                    color: Colors.white,
+                    backgroundColor: Colors.black.withValues(alpha: .66),
+                  ),
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    0,
+                    20,
+                    widget.rexStyle ? 35 : 104,
+                  ),
+                ),
+              )
+            : const SizedBox.shrink());
     return PopScope(
       canPop: true,
       child: Scaffold(
@@ -1070,60 +1786,145 @@ class _PlaybackScreenState extends State<PlaybackScreen>
             children: [
               ColoredBox(
                 color: Colors.black,
-                child: player != null && controller != null
+                child: _hasEngine
                     ? GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
                           if (_nextChoice != null) return;
+                          if (_locked) {
+                            setState(
+                              () => _controlsVisible = !_controlsVisible,
+                            );
+                            return;
+                          }
+                          if (_dock != null) {
+                            _closeDock();
+                            return;
+                          }
                           if (_controlsVisible) {
                             setState(() => _controlsVisible = false);
                           } else {
                             _showControlsTemporarily();
                           }
                         },
-                        onDoubleTapDown: (details) {
-                          final left = details.localPosition.dx < width / 2;
-                          unawaited(_seekRelative(left ? -10 : 10));
+                        onDoubleTapDown: (details) =>
+                            _doubleTapX = details.localPosition.dx,
+                        onDoubleTap: () {
+                          if (_locked) return;
+                          if (widget.rexStyle &&
+                              _doubleTapX > width * .33 &&
+                              _doubleTapX < width * .67) {
+                            unawaited(_togglePlay());
+                          } else {
+                            final seconds = widget.rexStyle ? 15 : 10;
+                            unawaited(
+                              _seekRelative(
+                                _doubleTapX < width / 2 ? -seconds : seconds,
+                              ),
+                            );
+                          }
                         },
-                        onDoubleTap: () {},
                         onLongPressStart: (_) async {
+                          if (_locked || !_mediaReady) return;
                           _hideControlsTimer?.cancel();
-                          await _player?.setRate(2);
+                          _boosted = true;
+                          await _rateEngine(2);
+                          if (widget.rexStyle) _showHud('2× 快进');
                           _setStateIfMounted(() => _controlsVisible = true);
                         },
-                        onLongPressEnd: (_) async {
-                          await _player?.setRate(_rate);
-                          _showControlsTemporarily();
-                        },
-                        child: Video(
-                          controller: controller,
-                          controls: NoVideoControls,
-                          fit: _fit,
-                          wakelock: true,
-                          pauseUponEnteringBackgroundMode: true,
-                          resumeUponEnteringForegroundMode: false,
-                          subtitleViewConfiguration: SubtitleViewConfiguration(
-                            style: TextStyle(
-                              fontSize: compact ? 22 : 28,
-                              height: 1.35,
-                              color: Colors.white,
-                              backgroundColor: Colors.black.withValues(
-                                alpha: 0.66,
+                        onLongPressEnd: (_) => _endBoost(),
+                        onLongPressCancel: _endBoost,
+                        onVerticalDragStart: widget.rexStyle
+                            ? (details) {
+                                _leftGesture =
+                                    details.localPosition.dx < width / 2;
+                                _gestureValue =
+                                    _leftGesture &&
+                                        defaultTargetPlatform ==
+                                            TargetPlatform.iOS
+                                    ? _brightness
+                                    : _volume / 100;
+                                _gestureStarted = true;
+                              }
+                            : null,
+                        onVerticalDragUpdate: widget.rexStyle
+                            ? (details) =>
+                                  unawaited(_adjustVertical(details.delta.dy))
+                            : null,
+                        onVerticalDragEnd: (_) => _gestureStarted = false,
+                        onVerticalDragCancel: () => _gestureStarted = false,
+                        child: _aspect == null
+                            ? video
+                            : Center(
+                                child: AspectRatio(
+                                  aspectRatio: _aspect!,
+                                  child: video,
+                                ),
                               ),
-                            ),
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 104),
-                          ),
-                        ),
                       )
                     : const SizedBox.shrink(),
               ),
               if (_loading) _buildLoading(compact),
+              if (widget.rexStyle &&
+                  _tools.commentsEnabled &&
+                  !_loading &&
+                  _errorTitle == null)
+                RexComments(tools: _tools, position: position),
               if (_errorTitle != null) _buildError(compact),
               if (!_loading && _errorTitle == null && _buffering)
                 const Center(
                   child: CircularProgressIndicator(color: Colors.white),
                 ),
-              if (!_loading && _errorTitle == null)
+              if (!_loading && _errorTitle == null && widget.rexStyle)
+                RexPlayerControls(
+                  visible: _controlsVisible,
+                  title: [
+                    _detail.item.name,
+                    if (_detail.isSeries) _choice.fullLabel,
+                    if (episodeName?.isNotEmpty == true) episodeName!,
+                  ].join(' · '),
+                  position: position,
+                  duration: _duration,
+                  buffer: _buffer,
+                  playing: _playing,
+                  rate: _rate,
+                  quality: playbackQuality(_resource),
+                  locked: _locked,
+                  hasEpisodes: _detail.isSeries,
+                  airPlay: apple == null
+                      ? null
+                      : const UiKitView(viewType: 'cinema/apple-route'),
+                  onBack: () => Navigator.of(context).maybePop(),
+                  onPlay: _togglePlay,
+                  onNext: next == null ? null : () => _switchChoice(next),
+                  onSeekStart: (value) {
+                    _hideControlsTimer?.cancel();
+                    setState(() => _dragPositionMs = value);
+                  },
+                  onSeekChanged: (value) =>
+                      setState(() => _dragPositionMs = value),
+                  onSeekEnd: _finishSeek,
+                  onMenu: _openRexMenu,
+                  onLock: _toggleLock,
+                  panel: _dock == null
+                      ? null
+                      : RexPlayerDock(
+                          panel: _dock!,
+                          detail: _detail,
+                          current: _choice,
+                          season: _dockSeason,
+                          onSeason: (season) =>
+                              setState(() => _dockSeason = season),
+                          onClose: _closeDock,
+                          onChoice: (choice) {
+                            _closeDock();
+                            if (choice.resource?.id != _resource?.id) {
+                              unawaited(_switchChoice(choice));
+                            }
+                          },
+                        ),
+                ),
+              if (!_loading && _errorTitle == null && !widget.rexStyle)
                 PlaybackControls(
                   visible: _controlsVisible,
                   title: _detail.item.name,
@@ -1152,11 +1953,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                   },
                   onSeekChanged: (value) =>
                       setState(() => _dragPositionMs = value),
-                  onSeekEnd: (value) async {
-                    await _player?.seek(Duration(milliseconds: value.round()));
-                    _setStateIfMounted(() => _dragPositionMs = null);
-                    _showControlsTemporarily();
-                  },
+                  onSeekEnd: _finishSeek,
                   onRate: _openRatePanel,
                   onEpisodes: _detail.isSeries ? _openEpisodesPanel : null,
                   onTracks: _openTrackPanel,
@@ -1180,11 +1977,55 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                   onSwitchLine: _openLinePanel,
                   onExit: () => Navigator.of(context).maybePop(),
                 ),
+              if (_hud != null)
+                Positioned(
+                  top: MediaQuery.viewPaddingOf(context).top + 9,
+                  left: 20,
+                  right: 20,
+                  child: IgnorePointer(
+                    child: Center(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: const Color(0xEB39363C),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 10,
+                            horizontal: 20,
+                          ),
+                          child: Text(
+                            _hud!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  double _doubleTapX = 0;
+  Future<void> _finishSeek(double value) async {
+    await _seekEngine(Duration(milliseconds: value.round()));
+    _setStateIfMounted(() => _dragPositionMs = null);
+    _showControlsTemporarily();
+  }
+
+  void _endBoost() {
+    if (!_boosted) return;
+    _boosted = false;
+    unawaited(_rateEngine(_rate));
+    _showControlsTemporarily();
   }
 
   Widget _buildLoading(bool compact) {

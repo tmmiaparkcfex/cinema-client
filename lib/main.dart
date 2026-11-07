@@ -10,13 +10,15 @@ import 'core/app_log.dart';
 import 'core/app_models.dart';
 import 'core/app_scope.dart';
 import 'core/app_settings.dart';
-import 'core/app_theme.dart';
 import 'data/api_client.dart';
 import 'data/home_cache.dart';
 import 'data/local_store.dart';
 import 'quark/quark_account_store.dart';
 import 'quark/quark_playback_service.dart';
-import 'screens/app_shell.dart';
+import 'rex/rex_app.dart';
+import 'rex/rex_scope.dart';
+import 'rex/rex_store.dart';
+import 'rex/rex_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +37,7 @@ Future<void> main() async {
   };
 
   final prefs = await SharedPreferences.getInstance();
-  final settings = AppSettings.load(prefs);
+  final settings = AppSettings.load(prefs, fallback: rexVodApiBase);
   final store = LocalStore.load(prefs);
   final cache = HomeCache(supportDirectory);
   final api = VodApi(settings: settings);
@@ -58,10 +60,18 @@ Future<void> main() async {
     homeCache: cache,
     quark: quark,
   );
-  runApp(CinemaApp(services: services, initialHome: initialHome));
-  unawaited(quark.cleanupStale().catchError((Object error) {
-    AppLog.error('quark-startup-cleanup', error);
-  }));
+  runApp(
+    CinemaApp(
+      services: services,
+      initialHome: initialHome,
+      rexStore: RexStore(prefs),
+    ),
+  );
+  unawaited(
+    quark.cleanupStale().catchError((Object error) {
+      AppLog.error('quark-startup-cleanup', error);
+    }),
+  );
 }
 
 class CinemaApp extends StatelessWidget {
@@ -69,23 +79,28 @@ class CinemaApp extends StatelessWidget {
     super.key,
     required this.services,
     required this.initialHome,
+    required this.rexStore,
   });
 
   final AppServices services;
   final HomeFeed? initialHome;
+  final RexStore rexStore;
 
   @override
   Widget build(BuildContext context) {
     return AppScope(
       services: services,
-      child: MaterialApp(
-        title: '影院',
-        debugShowCheckedModeBanner: false,
-        theme: buildCinemaTheme(),
-        scrollBehavior: const MaterialScrollBehavior().copyWith(
-          overscroll: false,
+      child: RexScope(
+        store: rexStore,
+        child: MaterialApp(
+          title: '影院',
+          debugShowCheckedModeBanner: false,
+          theme: buildRexTheme(),
+          scrollBehavior: const MaterialScrollBehavior().copyWith(
+            overscroll: false,
+          ),
+          home: RexEntry(store: rexStore, initialHome: initialHome),
         ),
-        home: AppShell(initialHome: initialHome),
       ),
     );
   }

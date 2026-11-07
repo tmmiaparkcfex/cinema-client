@@ -106,6 +106,8 @@ class VodItem {
     this.language = '',
     this.updatedAt = '',
     this.coverage,
+    this.metadata = const {},
+    this.episodes = const [],
   });
 
   final String key;
@@ -128,6 +130,8 @@ class VodItem {
   final String language;
   final String updatedAt;
   final Coverage? coverage;
+  final Map<String, dynamic> metadata;
+  final List<Map<String, dynamic>> episodes;
 
   bool get isTv => mediaType == MediaKind.tv;
   bool get isResolved => mediaType != MediaKind.unknown;
@@ -175,6 +179,8 @@ class VodItem {
       coverage: json['coverage'] == null
           ? null
           : Coverage.fromJson(json['coverage']),
+      metadata: _map(json['metadata']),
+      episodes: _mapList(json['episodes']),
     );
   }
 
@@ -204,6 +210,8 @@ class VodItem {
       coverage: json['coverage'] == null
           ? null
           : Coverage.fromJson(json['coverage']),
+      metadata: _map(json['metadata']),
+      episodes: _mapList(json['episodes']),
     );
   }
 
@@ -226,6 +234,8 @@ class VodItem {
     String? language,
     String? updatedAt,
     Coverage? coverage,
+    Map<String, dynamic>? metadata,
+    List<Map<String, dynamic>>? episodes,
   }) {
     return VodItem(
       key: key ?? this.key,
@@ -247,6 +257,8 @@ class VodItem {
       language: language ?? this.language,
       updatedAt: updatedAt ?? this.updatedAt,
       coverage: coverage ?? this.coverage,
+      metadata: metadata ?? this.metadata,
+      episodes: episodes ?? this.episodes,
     );
   }
 
@@ -267,6 +279,8 @@ class VodItem {
     'score': score,
     'updatedAt': updatedAt,
     'coverage': coverage?.toJson(),
+    'metadata': metadata,
+    'episodes': episodes,
   };
 
   factory VodItem.fromCacheJson(Map<String, dynamic> json) =>
@@ -294,6 +308,8 @@ class MediaResource {
     this.durationSeconds,
     this.bitDepth,
     this.verificationLevel,
+    this.hdr,
+    this.audioCodec,
   });
 
   final String id;
@@ -315,6 +331,8 @@ class MediaResource {
   final double? durationSeconds;
   final int? bitDepth;
   final String? verificationLevel;
+  final String? hdr;
+  final String? audioCodec;
 
   bool get isLarge => tier == 'large';
 
@@ -365,6 +383,8 @@ class MediaResource {
       durationSeconds: _doubleValue(video['durationSeconds']),
       bitDepth: _intValue(video['bitDepth']),
       verificationLevel: _firstText(verification, const ['level']),
+      hdr: _firstText(video, const ['hdr']),
+      audioCodec: _firstText(video, const ['audioCodec']),
     );
   }
 }
