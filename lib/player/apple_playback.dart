@@ -8,22 +8,25 @@ import 'package:flutter/widgets.dart';
 import 'package:media_kit/media_kit.dart';
 
 class ApplePlayback {
-  ApplePlayback(this.onEvent);
+  ApplePlayback(this.onEvent, {required this.usesAether});
   final ValueChanged<Map<Object?, Object?>> onEvent;
+  final bool usesAether;
   MethodChannel? _channel;
   final _attached = Completer<void>();
   bool _closed = false;
   bool pip = false;
   Tracks tracks = const Tracks();
   Track track = const Track();
+  List<(int, String)> chapters = [];
   _AppleFileRelay? _relay;
 
   static bool canOpen(String name) =>
       defaultTargetPlatform == TargetPlatform.iOS &&
-      RegExp(r'\.(mp4|mov|m4v)$', caseSensitive: false).hasMatch(name);
+      RegExp(r'\.(mp4|mov|m4v|mkv)$', caseSensitive: false).hasMatch(name);
 
   Widget get view => UiKitView(
-    viewType: 'cinema/apple-player',
+    key: ObjectKey(this),
+    viewType: usesAether ? 'cinema/aether-player' : 'cinema/apple-player',
     onPlatformViewCreated: (id) {
       if (_closed) return;
       final channel = MethodChannel('cinema/apple-player/$id');
@@ -32,12 +35,19 @@ class ApplePlayback {
         if (call.method != 'state' || call.arguments is! Map) return;
         final event = Map<Object?, Object?>.from(call.arguments as Map);
         pip = event['pip'] == true;
+        chapters = [
+          for (final item
+              in (event['chapters'] as List? ?? []).whereType<Map>())
+            if (item['position'] is int)
+              (item['position'] as int, item['title']?.toString() ?? '片段'),
+        ];
         final audio = <AudioTrack>[
           for (final item in (event['audio'] as List? ?? []).whereType<Map>())
             AudioTrack(
               item['id'].toString(),
               item['name'] as String?,
               item['language'] as String?,
+              codec: item['codec'] as String?,
             ),
         ];
         final subtitles = <SubtitleTrack>[
@@ -47,6 +57,7 @@ class ApplePlayback {
               item['id'].toString(),
               item['name'] as String?,
               item['language'] as String?,
+              codec: item['codec'] as String?,
             ),
         ];
         tracks = Tracks(audio: audio, subtitle: subtitles);
@@ -83,7 +94,7 @@ class ApplePlayback {
           'url': relay.uri.toString(),
           'position': position.inMilliseconds,
         })
-        .timeout(const Duration(seconds: 18));
+        .timeout(Duration(seconds: usesAether ? 25 : 18));
   }
 
   Future<void> send(String action, [Object? value]) async {
@@ -170,7 +181,10 @@ class _AppleFileRelay {
         final value = input.headers.value(name);
         if (value != null) response.headers.set(name, value);
       }
-      response.headers.set(HttpHeaders.contentTypeHeader, 'video/mp4');
+      response.headers.set(
+        HttpHeaders.contentTypeHeader,
+        uri.path.endsWith('.mkv') ? 'video/x-matroska' : 'video/mp4',
+      );
       if (request.method == 'GET') await response.addStream(input);
     } on Object {
       try {

@@ -1,0 +1,8 @@
+AetherEngine 7.59.0, copyright Vincent Herbst. The library is provided under
+LGPL v3 with its Apple Store / DRM Exception. See AetherEngine-LICENSE.txt.
+Corresponding source: https://github.com/superuser404notfound/AetherEngine/tree/7.59.0
+Its FFmpeg libraries and build scripts are available at:
+https://github.com/superuser404notfound/FFmpegBuild
+Its Dolby Vision metadata parser source and build scripts are available at:
+https://github.com/superuser404notfound/LibDovi
+The dependency versions are specified in the pinned package manifest.

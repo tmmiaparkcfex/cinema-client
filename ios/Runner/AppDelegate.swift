@@ -18,6 +18,7 @@ import AVKit
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     let registrar = engineBridge.applicationRegistrar
     registrar.register(ApplePlaybackFactory(messenger: registrar.messenger()), withId: "cinema/apple-player")
+    registrar.register(AetherPlaybackFactory(messenger: registrar.messenger()), withId: "cinema/aether-player")
     registrar.register(AppleRouteFactory(), withId: "cinema/apple-route")
     let device = FlutterMethodChannel(name: "cinema/player-device", binaryMessenger: registrar.messenger())
     device.setMethodCallHandler { call, result in

@@ -424,7 +424,10 @@ class _PlaybackScreenState extends State<PlaybackScreen>
           _preferApple &&
           ApplePlayback.canOpen(resource.fileName)) {
         late final ApplePlayback apple;
-        apple = ApplePlayback((event) => _appleEvent(apple, generation, event));
+        apple = ApplePlayback(
+          (event) => _appleEvent(apple, generation, event),
+          usesAether: resource.fileName.toLowerCase().endsWith('.mkv'),
+        );
         _setStateIfMounted(() => _apple = apple);
         try {
           await Future.any<void>([
@@ -664,6 +667,13 @@ class _PlaybackScreenState extends State<PlaybackScreen>
 
   Future<void> _replay() async {
     if (!_hasEngine) return;
+    if (_apple?.usesAether == true && _completed) {
+      await _startPlayback(
+        resumeAt: Duration.zero,
+        refreshLease: _lease != null,
+      );
+      return;
+    }
     _cancelOverlays();
     await _seekEngine(Duration.zero);
     await _playEngine();
@@ -1015,9 +1025,13 @@ class _PlaybackScreenState extends State<PlaybackScreen>
         return;
       }
       if (generation != _generation) return;
-      await _player?.setSubtitleTrack(
-        SubtitleTrack.uri(imported.path, title: file.name),
-      );
+      if (_apple?.usesAether == true) {
+        await _apple!.send('external-subtitle', imported.path);
+      } else {
+        await _player?.setSubtitleTrack(
+          SubtitleTrack.uri(imported.path, title: file.name),
+        );
+      }
       if (widget.rexStyle && mounted) {
         setState(() => _externalSubtitle = file.name);
       }
@@ -1236,7 +1250,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
             ),
           );
         }
-        if (_apple == null) {
+        if (_apple == null || _apple!.usesAether) {
           entries.add(
             RexMenuEntry(
               'audio-delay',
@@ -1263,7 +1277,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
             ),
           );
         }
-        if (_apple == null) {
+        if (_apple == null || _apple!.usesAether) {
           entries.addAll([
             RexMenuEntry(
               'secondary',
@@ -1280,6 +1294,14 @@ class _PlaybackScreenState extends State<PlaybackScreen>
           entries.add(const RexMenuEntry('compat', '外挂字幕 · 切换兼容内核'));
         }
       case '片段':
+        for (final (at, label) in _apple?.chapters ?? <(int, String)>[]) {
+          entries.add(
+            RexMenuEntry(
+              'jump:$at',
+              '${playbackClock(Duration(milliseconds: at))} · $label',
+            ),
+          );
+        }
         final native = _player?.platform;
         if (_apple == null && native is NativePlayer) {
           try {
@@ -1470,11 +1492,13 @@ class _PlaybackScreenState extends State<PlaybackScreen>
     );
     if (!mounted || selected == null) return;
     final native = _player?.platform;
-    if (native is NativePlayer) {
+    if (_apple?.usesAether == true) {
+      await _apple!.send('secondary', selected);
+    } else if (native is NativePlayer) {
       await native.setProperty('secondary-sid', selected);
-      if (mounted) {
-        setState(() => _secondarySubtitle = selected == 'no' ? null : selected);
-      }
+    }
+    if (mounted) {
+      setState(() => _secondarySubtitle = selected == 'no' ? null : selected);
     }
   }
 
@@ -1580,7 +1604,9 @@ class _PlaybackScreenState extends State<PlaybackScreen>
                         },
                         onChangeEnd: (v) {
                           final native = _player?.platform;
-                          if (audio && native is NativePlayer) {
+                          if (audio && _apple?.usesAether == true) {
+                            unawaited(_apple!.send('audio-delay', v));
+                          } else if (audio && native is NativePlayer) {
                             unawaited(native.setProperty('audio-delay', '$v'));
                           }
                         },
