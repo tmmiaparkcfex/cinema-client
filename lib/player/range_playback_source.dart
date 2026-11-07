@@ -6,7 +6,14 @@ import 'dart:typed_data';
 /// Keeps Quark CDN requests bounded while mpv retains normal seekable HTTP.
 /// All upstream traffic and account headers stay on the viewer's device.
 class RangePlaybackSource {
-  RangePlaybackSource._(this._uri, this._headers, this._length, this._server) {
+  RangePlaybackSource._(
+    this._uri,
+    this._headers,
+    this._length,
+    this._server,
+    this._suffix,
+    this._contentType,
+  ) {
     _client
       ..autoUncompress = false
       ..connectionTimeout = const Duration(seconds: 12)
@@ -21,6 +28,8 @@ class RangePlaybackSource {
   final Map<String, String> _headers;
   final int _length;
   final HttpServer _server;
+  final String _suffix;
+  final ContentType _contentType;
   final HttpClient _client = HttpClient();
   final String _token = List.generate(
     16,
@@ -53,13 +62,29 @@ class RangePlaybackSource {
     required Uri uri,
     required Map<String, String> headers,
     required int length,
+    String? fileName,
   }) async {
     if (length <= 0) throw ArgumentError.value(length, 'length');
+    final extension = fileName?.split('.').last.toLowerCase();
+    final (suffix, contentType) = switch (extension) {
+      'mkv' => ('.mkv', ContentType('video', 'x-matroska')),
+      'mov' => ('.mov', ContentType('video', 'quicktime')),
+      'mp4' || 'm4v' => ('.$extension', ContentType('video', 'mp4')),
+      _ => ('', ContentType.binary),
+    };
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    return RangePlaybackSource._(uri, Map.of(headers), length, server);
+    return RangePlaybackSource._(
+      uri,
+      Map.of(headers),
+      length,
+      server,
+      suffix,
+      contentType,
+    );
   }
 
-  Uri get uri => Uri.parse('http://127.0.0.1:${_server.port}/$_token');
+  String get _path => '/$_token$_suffix';
+  Uri get uri => Uri.parse('http://127.0.0.1:${_server.port}$_path');
 
   Future<Uint8List> _part(
     int start,
@@ -146,7 +171,7 @@ class RangePlaybackSource {
       ),
     );
     try {
-      if (_closed || request.uri.path != '/$_token') {
+      if (_closed || request.uri.path != _path) {
         response.statusCode = HttpStatus.notFound;
         return;
       }
@@ -184,7 +209,7 @@ class RangePlaybackSource {
       response.headers
         ..set(HttpHeaders.acceptRangesHeader, 'bytes')
         ..set(HttpHeaders.cacheControlHeader, 'no-store')
-        ..contentType = ContentType.binary
+        ..contentType = _contentType
         ..contentLength = end - start + 1;
       if (range != null) {
         response.headers.set(

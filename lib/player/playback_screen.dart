@@ -501,6 +501,7 @@ class _PlaybackScreenState extends State<PlaybackScreen>
               lease.headers,
               resource.fileName,
               resume,
+              length: resource.sizeBytes,
             ),
             cancellation.whenCancelled.then(
               (_) => cancellation.throwIfCancelled(),

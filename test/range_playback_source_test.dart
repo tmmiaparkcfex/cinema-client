@@ -43,6 +43,7 @@ void main() {
       uri: Uri.parse('http://127.0.0.1:${upstream.port}/media'),
       headers: {},
       length: bytes.length,
+      fileName: 'film.4K.DoVi.MKV',
     );
   });
   tearDown(() async {
@@ -81,8 +82,10 @@ void main() {
   });
 
   test('HEAD and invalid ranges never fetch upstream video bytes', () async {
+    expect(source.uri.path, endsWith('.mkv'));
     final response = await http.head(source.uri);
     expect(response.headers['content-length'], '${bytes.length}');
+    expect(response.headers['content-type'], 'video/x-matroska');
     expect(ranges, isEmpty);
     for (final range in [
       'bytes=9000000-',

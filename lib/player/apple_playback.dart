@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:media_kit/media_kit.dart';
 
 import '../core/app_models.dart';
+import 'range_playback_source.dart';
 
 class ApplePlayback {
   ApplePlayback(this.onEvent, {required this.usesAether});
@@ -21,6 +22,7 @@ class ApplePlayback {
   Track track = const Track();
   List<(int, String)> chapters = [];
   _AppleFileRelay? _relay;
+  RangePlaybackSource? _range;
 
   static final _dolby = RegExp(
     r'\b(dv|dovi|dolby vision|atmos|joc)\b|杜比(视界|全景声)',
@@ -96,19 +98,32 @@ class ApplePlayback {
     Uri upstream,
     Map<String, String> headers,
     String fileName,
-    Duration position,
-  ) async {
-    final relay = await _AppleFileRelay.start(upstream, headers, fileName);
+    Duration position, {
+    required int length,
+  }) async {
+    final range = length > 0
+        ? await RangePlaybackSource.open(
+            uri: upstream,
+            headers: headers,
+            length: length,
+            fileName: fileName,
+          )
+        : null;
+    final relay = range == null
+        ? await _AppleFileRelay.start(upstream, headers, fileName)
+        : null;
     if (_closed) {
-      await relay.close();
+      await range?.close();
+      await relay?.close();
       throw StateError('Apple playback closed');
     }
+    _range = range;
     _relay = relay;
     await _attached.future.timeout(const Duration(seconds: 4));
     if (_closed) throw StateError('Apple playback closed');
     await _channel!
         .invokeMethod<void>('open', {
-          'url': relay.uri.toString(),
+          'url': (range?.uri ?? relay!.uri).toString(),
           'position': position.inMilliseconds,
         })
         .timeout(Duration(seconds: usesAether ? 25 : 18));
@@ -116,7 +131,9 @@ class ApplePlayback {
 
   Future<void> send(String action, [Object? value]) async {
     if (_closed) return;
+    if (action == 'play' || action == 'seek') _range?.setPaused(false);
     await _channel?.invokeMethod<void>(action, value);
+    if (action == 'pause') _range?.setPaused(true);
   }
 
   Future<void> close() async {
@@ -132,6 +149,7 @@ class ApplePlayback {
     } on Object {
       // A detached platform view has already released the native player.
     } finally {
+      await _range?.close();
       await _relay?.close();
     }
   }
